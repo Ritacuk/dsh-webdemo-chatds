@@ -2,6 +2,14 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and are published under the `next` npm dist-tag.
 
+## 0.9.0-rc.9 – 0.9.0-rc.11 (2026-11-21)
+
+Publishing-mechanics corrections only; package code is identical to 0.9.0-rc.8.
+
+- **rc.9**: repository/homepage/bugs/author metadata pointing at this repository; package README added.
+- **rc.10**: published from the package directory — tarball-based publish does not populate registry metadata.
+- **rc.11**: published with the official npm CLI — neither tarball publish nor `pnpm publish` populates the registry's README metadata, which the npm package page renders.
+
 ## 0.9.0-rc.8 (2026-11-21)
 
 First release prepared for public distribution (GitHub + npm). The project was previously developed privately for personal DSH setups; the changelog below summarizes the meaningful engineering history rather than claiming public release dates that never existed.
