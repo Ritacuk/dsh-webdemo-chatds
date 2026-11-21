@@ -1,0 +1,51 @@
+This package includes substantial code adapted from deepseek-ai/chat-demo at
+5d5dd754ebc1948e977ddb880a9eb5aa25f37b4c (v0.1.1), licensed below.
+
+Scope of the adaptation (as of 0.9.0-rc.8):
+
+- The React client under `client/src/` is a derivative of the official demo's
+  client: a large part of the base/markdown/search UI components, their CSS
+  modules, markdown services, i18n infrastructure and utility modules are
+  taken from or adapted from the upstream sources; conversation-specific
+  screens (session list, chat input, message list, settings, import/export)
+  are heavily modified extensions of the upstream files.
+- The wire-protocol core in the workspace package `@dsh-chat/shared`
+  (`packages/chat-shared/src/chat/` and `packages/chat-shared/src/protocol/`)
+  is ported from the upstream demo; the affected files carry a source note in
+  their headers.
+- Two client modules are directly adapted and additionally noted in their
+  headers: the history ZIP reader (`src/host/archive-zip.ts`) and the
+  microphone recorder (`client/src/services/speech/recorder.ts`).
+- Some host-side fragments are likewise derived from upstream files: the
+  system-prompt constant in `src/host/turns.ts` (from the upstream store), the
+  archive v3 export/validation logic in `src/host/archive.ts` (from the
+  upstream history export code), and `src/host/demo-reminder.ts` (adapted from
+  the upstream latestReminder module).
+
+The remainder of this package — the DSH host integration, local retrieval
+engine, settings/appearance system, DSH session persistence glue, the
+`client.js` module bootstrap, and all build configuration — is original work
+of this project. WebChat is an independent community project and is not an
+official DeepSeek product.
+
+MIT License
+
+Copyright (c) 2026 DeepSeek
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

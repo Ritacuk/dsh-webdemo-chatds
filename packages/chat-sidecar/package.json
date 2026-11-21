@@ -1,0 +1,51 @@
+{
+  "name": "dsh-chat-workspace-sidecar",
+  "version": "0.1.1",
+  "description": "DSH Chat Workspace — Agent 执行上下文旁聊(侧聊)组件。P1 阶段只交付独立模块结构、生命周期接口与未来接入边界,不实现任何未经验证的假功能。",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "manifestVersion": 1
+  },
+  "scripts": {
+    "build": "tsdown",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@types/node": "^24.0.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8",
+    "@deepseek-ai/schemastery": "^3.19.0",
+    "@deepseek-ai/dsh-home-paths": "0.2.2-rc.5",
+    "@dsh-chat/shared": "workspace:*"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/schemastery": ">=3.18.5 <4"
+  }
+}

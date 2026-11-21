@@ -1,0 +1,83 @@
+.container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: var(--scroll-color) transparent;
+}
+
+.scroll {
+  display: contents;
+}
+
+@media not all and (min-width: 768px) {
+  .container {
+    overflow: hidden;
+    scrollbar-gutter: auto;
+  }
+
+  .scroll {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-color: var(--scroll-color) transparent;
+  }
+}
+
+.column {
+  width: calc(var(--message-list-max-width) - 2 * var(--message-list-padding-horizontal));
+  max-width: calc(100% - 40px);
+  margin: 0 auto;
+  padding-bottom: 24px;
+}
+
+.navigationBar {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: var(--message-list-max-width);
+  margin: auto auto 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 20px 4px;
+}
+
+.navigationBar button, .navigationList button {
+  border: none;
+  background: transparent;
+  color: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-align: start;
+}
+
+.navigationBar button:hover, .navigationList button:hover {
+  background-color: var(--interactive-hover, color-mix(in srgb, currentColor 9%, transparent));
+}
+
+.navigationSearch {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  color: inherit;
+  background: transparent;
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+  border-radius: 6px;
+}
+
+.navigationList {
+  list-style: none;
+  padding: 0;
+  max-height: 50vh;
+  overflow: auto;
+}
+
+.navigationList button {
+  width: 100%;
+  overflow-wrap: anywhere;
+}

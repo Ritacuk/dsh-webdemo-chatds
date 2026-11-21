@@ -1,0 +1,14 @@
+node_modules/
+.pnpm-store/
+*.tsbuildinfo
+
+# 构建产物:pnpm run build 可重建(lib/ 由 tsdown 产出,client-dist/ 由 rspack 产出)
+packages/*/lib/
+packages/*/lib/types/
+packages/chat-main/client-dist/
+dist-packages/
+
+# 本地临时
+temp/
+scratch/
+*.log

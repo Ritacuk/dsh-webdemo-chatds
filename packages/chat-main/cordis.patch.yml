@@ -1,0 +1,14 @@
+- insert:
+    - id: chatds-main
+      name: dsh-webdemo-chatds
+      config:
+        pagePath: /chat-workspace
+        apiKeyEnv: DEEPSEEK_API_KEY
+        thinking: disabled
+        search: false
+        title: true
+    - id: chatds-sidecar
+      name: ./sidecar/index.js
+      disabled: true
+      config:
+        pagePath: /chat-workspace-sidecar

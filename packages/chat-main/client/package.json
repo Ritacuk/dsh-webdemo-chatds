@@ -1,0 +1,37 @@
+{
+  "name": "dsh-chat-workspace-client",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "rspack serve -c rspack.config.ts",
+    "build": "node -e \"require('node:fs').rmSync('../client-dist',{recursive:true,force:true})\" && rspack build -c rspack.config.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@dsh-chat/shared": "workspace:*",
+    "clsx": "2.1.1",
+    "katex": "0.16.22",
+    "mdast-util-find-and-replace": "3.0.2",
+    "mdast-util-from-markdown": "2.0.3",
+    "mdast-util-gfm": "3.1.0",
+    "mdast-util-math": "3.0.0",
+    "mermaid": "11.10.1",
+    "micromark-extension-gfm": "3.0.0",
+    "micromark-extension-llm-math": "3.1.0",
+    "prismjs": "1.30.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zustand": "4.4.7"
+  },
+  "devDependencies": {
+    "@rspack/cli": "2.0.2",
+    "@rspack/core": "2.0.2",
+    "@types/katex": "^0.16.5",
+    "@types/mdast": "~4.0.3",
+    "@types/prismjs": "^1.26.1",
+    "@types/react": "~18.3.1",
+    "@types/react-dom": "~18.3.0",
+    "typescript": "^5.9.3"
+  }
+}

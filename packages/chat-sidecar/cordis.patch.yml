@@ -1,0 +1,12 @@
+# dsh-chat-workspace-sidecar bundle patch — Agent 旁聊组件(P1 边界)。
+#
+# P1 交付:独立可启停的插件节点。apply() 仅注册一个可探测的 sidecarService
+# (生命周期接口),不注册任何路由/UI/模型调用 —— 未来阶段在此边界上接入
+# "Agent 执行上下文旁聊"。禁用本行即完整停用;启用后无任何用户可见变化。
+
+- insert:
+    - id: chat-workspace-sidecar
+      name: 'dsh-chat-workspace-sidecar'
+      config:
+        # 未来的独立路由前缀(本阶段不注册,仅声明占有,避免与 main 冲突)。
+        reservedPath: /chat-workspace-sidecar

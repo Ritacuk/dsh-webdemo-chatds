@@ -1,0 +1,52 @@
+/* R8:导入弹窗 */
+.body {
+  display: grid;
+  gap: 10px;
+  max-width: 560px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.body p {
+  margin: 2px 0;
+}
+
+.list {
+  display: grid;
+  gap: 0;
+  max-height: 260px;
+  overflow: auto;
+  border: 1px solid var(--dsw-alias-border-l2, #8884);
+  border-radius: 10px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #8884);
+  cursor: pointer;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row small {
+  flex: none;
+  color: var(--dsw-alias-label-secondary, #777);
+}
+
+.note {
+  color: var(--dsw-alias-label-secondary, #777);
+  font-size: 12px;
+}

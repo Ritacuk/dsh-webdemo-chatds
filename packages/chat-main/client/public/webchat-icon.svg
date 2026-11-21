@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="WebChat">
+  <!-- WebChat original icon: rounded chat bubble with a spark. Not affiliated with DeepSeek. -->
+  <rect x="6" y="10" width="52" height="38" rx="14" fill="#4f6bde"/>
+  <path d="M22 46 L28 58 L36 46 Z" fill="#4f6bde"/>
+  <path d="M32 19 L36.5 28.5 L46 31 L36.5 33.5 L32 43 L27.5 33.5 L18 31 L27.5 28.5 Z" fill="#ffffff"/>
+</svg>

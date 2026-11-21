@@ -1,0 +1,56 @@
+body[data-chat-style="gpt"] {
+  --chat-composer-radius: 18px;
+  --chat-bubble-radius: 18px;
+  --chat-reading-line: 1.55;
+  --dsw-specific-sidebar-fill: #f4f6f5;
+  --dsw-specific-bubble: #e7efeb;
+}
+body.dark[data-chat-style="gpt"] {
+  --dsw-specific-sidebar-fill: #202523;
+  --dsw-specific-bubble: #2c3632;
+}
+body[data-chat-style="gemini"] {
+  --chat-composer-radius: 30px;
+  --chat-bubble-radius: 16px;
+  --chat-reading-line: 1.75;
+  --chat-composer-decoration: linear-gradient(130deg, color-mix(in srgb, #7686e3 13%, transparent), transparent 60%);
+  --dsw-specific-sidebar-fill: #eff1fc;
+  --dsw-specific-bubble: #e9edfd;
+}
+body.dark[data-chat-style="gemini"] {
+  --dsw-specific-sidebar-fill: #202333;
+  --dsw-specific-bubble: #2f3650;
+}
+body[data-chat-style="claude"] {
+  --chat-composer-radius: 14px;
+  --chat-bubble-radius: 12px;
+  --chat-reading-line: 1.8;
+  --chat-reading-family: Georgia, "Microsoft YaHei", serif;
+  --message-list-max-width: 752px;
+  --dsw-alias-bg-base: #faf7f2;
+  --dsw-specific-input-major: #fffcf7;
+  --dsw-specific-sidebar-fill: #f1ebe1;
+  --dsw-specific-bubble: #eee4d5;
+}
+body.dark[data-chat-style="claude"] {
+  --dsw-alias-bg-base: #272420;
+  --dsw-specific-input-major: #302b25;
+  --dsw-specific-sidebar-fill: #211e1a;
+  --dsw-specific-bubble: #3b332a;
+}
+body[data-chat-width="narrow"] { --message-list-max-width: 720px; }
+body[data-chat-width="wide"] { --message-list-max-width: 1040px; }
+
+@supports (backdrop-filter: blur(8px)) {
+  body[data-chat-glass="light"] { --chat-glass-blur: blur(10px); --chat-glass-opacity: 91%; }
+  body[data-chat-glass="strong"] { --chat-glass-blur: blur(18px); --chat-glass-opacity: 83%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-chat-style] *, body[data-chat-style] *::before, body[data-chat-style] *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

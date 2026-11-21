@@ -1,0 +1,72 @@
+/* R8:会话状态条(上下文 + 费用;紧凑单行,不遮挡主要内容) */
+.bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  width: 100%;
+  padding: 3px 8px;
+  border: none;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary, var(--dsw-alias-fg-tertiary, #888));
+  font: inherit;
+  font-size: 11px;
+  line-height: 15px;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.bar:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.item {
+  white-space: nowrap;
+}
+
+.muted {
+  opacity: 0.75;
+}
+
+.nearLimit {
+  white-space: nowrap;
+  color: var(--dsw-alias-state-error-primary, #d03050);
+  font-weight: 500;
+}
+
+.detail {
+  display: grid;
+  gap: 18px;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.detail h3 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-secondary, var(--dsw-alias-fg-secondary));
+}
+
+.detail table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.detail td {
+  padding: 3px 10px 3px 0;
+  border-bottom: 1px solid var(--dsw-alias-border-l2, #8884);
+}
+
+.detail td:last-child {
+  text-align: right;
+}
+
+.detail p {
+  margin: 4px 0;
+}
+
+.detail section {
+  min-width: 0;
+}

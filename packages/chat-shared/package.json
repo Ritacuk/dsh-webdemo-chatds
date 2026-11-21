@@ -1,0 +1,29 @@
+{
+  "name": "@dsh-chat/shared",
+  "private": true,
+  "version": "0.1.0",
+  "description": "DSH Chat Workspace 共享协议核心:官方 demo 的 Rich 协议、SSE 解析、内容块合并与上下文回传规则;供 main 与 sidecar 复用,不依赖任一组件运行实例。",
+  "type": "module",
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,97 @@
+{
+  "name": "dsh-webdemo-chatds",
+  "version": "0.9.0-rc.8",
+  "description": "dsh-webdemo-ChatDS — ChatDS Main 与 Agent Side Chat",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": "./client.js",
+    "./src/*": "./src/*",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json",
+    "./sidecar": "./lib/sidecar.js"
+  },
+  "files": [
+    "lib",
+    "client-dist",
+    "client.js",
+    "NOTICE",
+    "cordis.patch.yml",
+    "sidecar"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-layout",
+        "@deepseek-ai/dsh-client-ui-sidebar",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-theme"
+      ]
+    },
+    "manifestVersion": 1
+  },
+  "scripts": {
+    "build:host": "tsdown",
+    "build:client": "pnpm --filter ./client run build",
+    "build": "pnpm run build:host && pnpm run build:client",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "~4.1.0",
+    "@deepseek-ai/dsh-host-webserver": "0.2.2-rc.5",
+    "@deepseek-ai/schemastery": "^3.19.0",
+    "@dsh-chat/shared": "workspace:*",
+    "@types/node": "^24.0.0",
+    "@deepseek-ai/dsh-agent": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-brand": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-client-connection": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-credentials": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-launch-environment": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-llm": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-llm-deepseek": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session-persistence": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session-projection": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-storage": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-storage-domain": "0.2.2-rc.5",
+    "@deepseek-ai/dsh-session-title": "0.2.2-rc.5",
+    "fflate": "0.8.3",
+    "tsdown": "^0.22.2",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.8",
+    "zod": "4.6.6"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": ">=4.0.5 <5",
+    "@deepseek-ai/dsh-host-webserver": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/schemastery": ">=3.18.5 <4",
+    "@deepseek-ai/dsh-agent": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-brand": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-client-connection": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-credentials": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-launch-environment": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-llm": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-llm-deepseek": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-session": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-session-persistence": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-session-projection": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-storage": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-storage-domain": ">=0.2.2-rc.3 <0.2.3-0",
+    "@deepseek-ai/dsh-session-title": ">=0.2.2-rc.3 <0.2.3-0"
+  }
+}
