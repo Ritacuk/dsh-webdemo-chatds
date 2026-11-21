@@ -53,7 +53,7 @@ dsh plugin --profile web add dsh-webdemo-chatds@next
 从 [Releases](../../releases) 下载 `dsh-webdemo-chatds-<版本>.tgz`：
 
 ```bash
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.8.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.13.tgz
 ```
 
 ### 方式三：从源码构建

@@ -9,7 +9,7 @@ All commands below were executed on real DSH installations. Linux commands verif
 - Recommended: test in an isolated profile first:
 
   ```bash
-  dsh plugin --profile webchat-test add ./dsh-webdemo-chatds-0.9.0-rc.8.tgz
+  dsh plugin --profile webchat-test add dsh-webdemo-chatds@next
   ```
 
   The profile is initialized on first use; remove it by deleting `$DSH_HOME/profiles/webchat-test`.
@@ -22,7 +22,7 @@ All commands below were executed on real DSH installations. Linux commands verif
 # 1. Install into the running profile (official plugin manager):
 dsh plugin --profile web add dsh-webdemo-chatds@next      # from npm
 # or, from a downloaded release tarball:
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.8.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.13.tgz
 
 # 2. Restart the DSH web service so the new plugin is loaded.
 #    If you run DSH under systemd (user service), the usual way:
@@ -33,7 +33,7 @@ curl -s http://127.0.0.1:3080/ -o /dev/null -w '%{http_code}\n'   # 401 (token-g
 
 # 3. In the web UI: the sidebar now has a "WebChat Web" entry.
 #    Health check (cookie-authenticated): /chat-workspace/api/health
-#    → {"ok":true,"plugin":"dsh-webdemo-ChatDS","version":"0.9.0-rc.8","commit":"..."}
+#    → {"ok":true,"plugin":"dsh-webdemo-ChatDS","version":"0.9.0-rc.13","commit":"..."}
 ```
 
 Notes for headless servers: the settings page's file-access section always offers a **manual absolute-path grant** (Host-validated) — use it when DSH's directory picker cannot open a GUI dialog.

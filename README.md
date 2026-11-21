@@ -55,7 +55,7 @@ If your DSH version falls outside the peer range, DSH's version gate will reject
 Download `dsh-webdemo-chatds-<version>.tgz` from [Releases](../../releases):
 
 ```bash
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.8.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.13.tgz
 ```
 
 ### Option 3: build from source
