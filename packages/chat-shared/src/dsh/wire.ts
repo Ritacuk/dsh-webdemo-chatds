@@ -239,10 +239,28 @@ export interface WorkspaceSettings {
   sendShortcut: 'enter' | 'ctrl-enter'
   enableVoiceInput: boolean
   appearanceMode: 'dsh' | 'light' | 'dark' | 'system'
+  /** R8.6(七):多品牌风格已退役;此字段只读兼容,旧值在 Host 加载时迁移到下列自由外观项。 */
   appearanceStyle: 'default' | 'gpt' | 'gemini' | 'claude'
   appearanceGlass: 'off' | 'light' | 'strong'
   readingFontSize: number
   readingWidth: 'preset' | 'narrow' | 'wide'
+  // ── R8.6(七)自由外观系统:全部可选,缺省 = 官方 demo 默认观感(升级无视觉跳变) ──
+  /** 主题强调色(#rrggbb);缺省跟随 DSH。 */
+  appearanceAccent?: string
+  /** 背景不透明度(0.4-1);缺省 1。 */
+  appearanceBgAlpha?: number
+  /** 浮动面板(弹窗/菜单)不透明度(0.4-1);缺省 1。 */
+  appearancePanelAlpha?: number
+  /** 输入框不透明度(0.4-1);缺省 1。 */
+  appearanceComposerAlpha?: number
+  /** 正文行距(1.4-1.9);缺省跟随主题。 */
+  appearanceLineHeight?: number
+  /** 圆角(px,0-30);缺省跟随主题。 */
+  appearanceRadius?: number
+  /** 布局密度;缺省 standard。 */
+  appearanceDensity?: 'compact' | 'standard' | 'relaxed'
+  /** 输入框宽度上限(px,480-1040);缺省跟随内容列。 */
+  appearanceComposerWidth?: number
   /** 默认工作模式。 */
   defaultMode: WorkspaceMode
   /** 默认思考。 */

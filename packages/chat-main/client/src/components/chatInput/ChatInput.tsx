@@ -81,9 +81,11 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const autoSendRef = useRef(false)
   const [importOpen, setImportOpen] = useState(false)
   const [voiceOpen, setVoiceOpen] = useState(false)
-  // R8.5:语音可用 = 显式开启,或 DSH 语音输入组件已提供转写服务(Host 计算)。
-  const voiceAvailable = useChatStore((state) =>
-    state.settings?.enableVoiceInput === true || state.settings?.voiceAvailable === true)
+  // R8.6(九/4.7)状态所有权:麦克风入口只由用户偏好 enableVoiceInput 决定;
+  // dshSpeechAvailable 是服务事实,只决定转写引擎与费用说明(旧 voiceAvailable 混合两者,
+  // 导致关闭语音后按钮仍然显示)。
+  const voiceAvailable = useChatStore((state) => state.settings?.enableVoiceInput === true)
+  const dshSpeechAvailable = useChatStore((state) => state.settings?.dshSpeechAvailable === true)
   const sendShortcut = useChatStore((state) => state.settings?.sendShortcut ?? 'enter')
 
   // 模板「插入并发送」:文本就绪且无上传占用时自动触发一次发送
@@ -183,7 +185,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       {permissionsOpen && <Modal title="插件权限" onClose={() => setPermissionsOpen(false)}>
         <ToolPermissions sessionId={sessionId} />
       </Modal>}
-      {voiceOpen && <VoiceInput onClose={() => setVoiceOpen(false)} onText={(value) => {
+      {voiceOpen && <VoiceInput localEngine={dshSpeechAvailable} onClose={() => setVoiceOpen(false)} onText={(value) => {
         setText((previous) => previous.trim() ? previous + '\n' + value : value)
         setVoiceOpen(false)
         textareaRef.current?.focus({ preventScroll: true })

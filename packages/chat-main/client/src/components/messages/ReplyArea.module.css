@@ -20,7 +20,7 @@
 .titleIcon {
   display: flex;
   margin-right: 6px;
-  color: var(--dsw-alias-brand-primary);
+  color: var(--chat-accent, var(--dsw-alias-brand-primary));
 }
 
 .stoppedIcon {
@@ -97,7 +97,7 @@
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--dsw-alias-brand-primary);
+  background: var(--chat-accent, var(--dsw-alias-brand-primary));
   animation: pulse 1.5s linear infinite;
 
   &.inactive {

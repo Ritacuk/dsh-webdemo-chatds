@@ -70,3 +70,21 @@
 .detail section {
   min-width: 0;
 }
+
+/* R8.6(5.4):详情弹窗内的文字按钮(在 dsh-context 中打开)。 */
+.detail :global(.chatds-link-button),
+.linkButton {
+  background: transparent;
+  border: 1px solid var(--dsw-alias-border-l2, #8884);
+  border-radius: 8px;
+  min-height: 30px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  color: inherit;
+  cursor: pointer;
+}
+
+.linkButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover, #8882);
+}

@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.1 (2026-11-22)
+
+R8.6 — systemic quality round: settings crash root cause, state ownership, voice entry sync, dsh-context native entry, and a free-form appearance system replacing the four brand layouts. Verified live on the isolated Linux DSH profile (incl. 32x settings stress and voice toggle sync); released at the user's explicit instruction. Windows Desktop update: install 0.11.1 via the plugin manager (the crashing 0.11.0 is replaced by this version).
+
+### Fixed
+
+- **[P0] Plugins & tools settings page crashed with a blank section**: `ToolManager` evaluated an out-of-scope `busy` identifier (R8.5 refactor leftover) on every render of the page — the `ReferenceError` collapsed the whole `settings.section` slot to blank (Host stayed alive). Fixed to its own `pending` state. Evidence: real stack trace + before/after screenshots on the isolated 0.11.0 instance.
+- **[P0] Error isolation everywhere**: three-tier error boundaries (per settings page, per plugin bundle, slot-level fallback) with a retry button, sanitized diagnostics (URL tokens/keys/secrets stripped), invalid bundle rows skipped with an explicit count, and integration polling capped (3 consecutive failures stop auto-retry).
+- **[P1] Voice entry state ownership**: the composer mic button now derives solely from the user preference (`enableVoiceInput`); `dshSpeechAvailable` only picks the engine and the cost wording. Toggling voice off hides the mic button immediately — verified live both directions without a reload. Mic errors are classified (denied / not found / busy) instead of a generic permission message, and the cost note distinguishes the local DSH engine from paid DeepSeek ASR.
+- **[P1] Context details open the native dsh-context panel**: the status-bar detail gains "Open in dsh-context" (`ctx.layout.selectPanel('dsh-context')`, panel id verified against the installed plugin). No fake session mapping.
+- **[P1] Session cost no longer lies for Rich-only sessions**: when the native ledger has no record, the status detail falls back to the session-aggregated Rich external usage (session id now recorded in the local ledger; the `external_usage.json` snapshot keeps the official protocol shape) with an honest source note; amounts remain cost-meter's authority.
+- **[P2] Free-form appearance replaces the four brand layouts**: accent color, background/panel/composer opacity, density, line height, corner radius, composer width, font size, reading width, frosted glass (capability-gated) — all optional CSS-variable layers, defaults equal the stock demo look. Legacy `appearanceStyle` (gpt/gemini/claude) migrates once on load preserving colors/reading prefs (migration verified live on a claude-style profile). "Reset WebChat appearance" touches appearance fields only.
+- **[P0] L3 regression suite for the settings shell**: real `client.js` factory + real React 18.3 rendered under jsdom against fixtures captured from the isolated instance — all eight pages render without falling into an error boundary; reintroducing the original bug turns three tests red.
+
+### Verified platforms
+
+| Platform | Status |
+| --- | --- |
+| Linux DSH Web (DSH 0.2.2-rc.5, Node 22, isolated profile) | full R8.6 verification incl. 32x settings stress and voice toggle sync |
+| Windows Desktop | 0.11.0 audit done (crash screenshots match this version); 0.12.0-rc.3 isolated acceptance prepared (launcher + tgz), awaiting user run |
+| macOS | not re-tested this round (no platform-specific changes) |
+
 ## 0.11.0 (2026-11-22)
 
 R8.5 — the ten-item real-user feedback round, verified live on an isolated Linux DSH Web profile (DSH 0.2.2-rc.5) and shipped to the production web profile. Windows Desktop acceptance for this round is in progress.

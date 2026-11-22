@@ -44,6 +44,10 @@ interface LedgerFile {
   records: ExternalUsageRecord[]
 }
 
+/** R8.6(6.3):本地流水账记录可带会话归属(sid),仅供会话级外部用量查询;
+ *  external_usage.json 快照写出去时剥离 sid,保持官方协议形状不变。 */
+type LocalRecord = ExternalUsageRecord & { sid?: string }
+
 /** 对外状态(集成状态页与设置页显示)。 */
 export interface RichLedgerStatus {
   /** cost-meter 是否可用且价表可用。 */
@@ -73,7 +77,7 @@ function dshHome(): string {
 }
 
 export class RichUsageLedger {
-  private records: ExternalUsageRecord[] = []
+  private records: LocalRecord[] = []
   private loaded = false
   private loading: Promise<void> | undefined
   private flushTimer: ReturnType<typeof setTimeout> | undefined
@@ -85,14 +89,14 @@ export class RichUsageLedger {
   constructor(private readonly ctx: Context) {}
 
   /** 记一笔 Rich 用量(fire-and-forget;失败只记状态,绝不影响回合)。 */
-  append(info: { messageId: string; at: number; model: string; usage: NonNullable<DemoAssistant['usage']> }): void {
+  append(info: { messageId: string; sessionId?: string; at: number; model: string; usage: NonNullable<DemoAssistant['usage']> }): void {
     if (this.closed) return
     void this.appendAsync(info).catch((error) => {
       this.lastError = error instanceof Error ? error.message : String(error)
     })
   }
 
-  private async appendAsync(info: { messageId: string; at: number; model: string; usage: NonNullable<DemoAssistant['usage']> }): Promise<void> {
+  private async appendAsync(info: { messageId: string; sessionId?: string; at: number; model: string; usage: NonNullable<DemoAssistant['usage']> }): Promise<void> {
     const usage = info.usage
     const input = Math.max(0, Math.round(usage.input_tokens ?? 0))
     const output = Math.max(0, Math.round(usage.output_tokens ?? 0))
@@ -110,6 +114,7 @@ export class RichUsageLedger {
       // 因此恒写入;cacheWrite/reasoning 保留可选语义。
       cached,
       ...(cacheWrite > 0 ? { cacheWrite } : {}),
+      ...(info.sessionId ? { sid: info.sessionId } : {}),
     }
     await this.ensureLoaded()
     // 稳定 id 幂等:同一消息重放/重写不产生第二条账目。
@@ -153,6 +158,24 @@ export class RichUsageLedger {
     }
   }
 
+  /** R8.6(6.3):会话级 Rich 外部用量聚合(本地流水账;金额由 cost-meter 按价表计,不在此估算)。 */
+  sessionTotals(sessionId: string): { calls: number; input: number; output: number; cached: number; cacheWrite: number } | null {
+    let calls = 0
+    let input = 0
+    let output = 0
+    let cached = 0
+    let cacheWrite = 0
+    for (const record of this.records) {
+      if (record.sid !== sessionId) continue
+      calls += 1
+      input += record.input
+      output += record.output
+      cached += record.cached ?? 0
+      cacheWrite += record.cacheWrite ?? 0
+    }
+    return calls > 0 ? { calls, input, output, cached, cacheWrite } : null
+  }
+
   private scheduleFlush(): void {
     if (this.flushTimer !== undefined) return
     this.flushTimer = setTimeout(() => {
@@ -171,8 +194,17 @@ export class RichUsageLedger {
     const writable: ExternalUsageRecord[] = []
     const skippedModels = new Set<string>()
     for (const record of this.records) {
-      if (await this.ensurePriced(record.model)) writable.push({ ...record, cached: record.cached ?? 0 })
-      else skippedModels.add(record.model)
+      // R8.6(6.3):快照保持官方协议形状,剥离本地会话归属字段 sid。
+      if (await this.ensurePriced(record.model)) {
+        writable.push({
+          id: record.id, at: record.at, provider: record.provider, model: record.model,
+          input: record.input, output: record.output, cached: record.cached ?? 0,
+          ...(record.cacheWrite !== undefined ? { cacheWrite: record.cacheWrite } : {}),
+          ...(record.reasoning !== undefined ? { reasoning: record.reasoning } : {}),
+        })
+      } else {
+        skippedModels.add(record.model)
+      }
     }
     if (skippedModels.size > 0 && writable.length === 0 && this.unavailableReason === undefined) {
       this.unavailableReason = `价表未覆盖模型:${[...skippedModels].join(', ')}(账目暂缓,待价表可用后入账)`

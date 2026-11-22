@@ -17,7 +17,7 @@ body {
   font-family: var(--dsw-font-family);
   font-size: var(--ds-font-size-m);
   color: var(--dsw-alias-label-primary);
-  background-color: var(--dsw-alias-bg-base);
+  background-color: color-mix(in srgb, var(--dsw-alias-bg-base) calc(var(--chat-bg-alpha, 1) * 100%), transparent);
   -webkit-text-size-adjust: none;
   -webkit-tap-highlight-color: transparent;
   font-feature-settings: 'kern';

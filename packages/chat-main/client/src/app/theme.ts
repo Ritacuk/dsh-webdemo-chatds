@@ -17,7 +17,9 @@ const subscribeOsTheme = (listener: () => void) => {
 }
 
 let hostTheme: Theme | undefined
-type Appearance = Pick<WorkspaceSettings, 'appearanceMode' | 'appearanceStyle' | 'appearanceGlass' | 'readingFontSize' | 'readingWidth'>
+type Appearance = Pick<WorkspaceSettings, 'appearanceMode' | 'appearanceStyle' | 'appearanceGlass' | 'readingFontSize' | 'readingWidth'
+  | 'appearanceAccent' | 'appearanceBgAlpha' | 'appearancePanelAlpha' | 'appearanceComposerAlpha' | 'appearanceLineHeight'
+  | 'appearanceRadius' | 'appearanceDensity' | 'appearanceComposerWidth'>
 let parentProfileAppearance: Appearance | undefined
 const getOsTheme = (): Theme => query.matches ? 'dark' : 'light'
 
@@ -63,14 +65,29 @@ let appliedTheme: Theme | null = null
 const syncTheme = () => {
   const settings = parentProfileAppearance ?? useChatStore.getState().settings
   const theme = resolveTheme(settings?.appearanceMode)
-  const style = settings?.appearanceStyle ?? 'default'
   const { body } = document
-  const styleChanged = body.dataset.chatStyle !== style
-  body.dataset.chatStyle = style
+  // R8.6(七):自由外观 → CSS 变量层。变量缺省时不写入,保持官方 demo 默认观感。
+  const vars = body.style
+  const set = (name: string, value: string | undefined) => {
+    if (value === undefined) vars.removeProperty(name)
+    else vars.setProperty(name, value)
+  }
+  set('--chat-accent', settings?.appearanceAccent || undefined)
+  set('--chat-bg-alpha', settings?.appearanceBgAlpha !== undefined ? String(settings.appearanceBgAlpha) : undefined)
+  set('--chat-panel-alpha', settings?.appearancePanelAlpha !== undefined ? String(settings.appearancePanelAlpha) : undefined)
+  set('--chat-composer-alpha', settings?.appearanceComposerAlpha !== undefined ? String(settings.appearanceComposerAlpha) : undefined)
+  set('--chat-reading-line', settings?.appearanceLineHeight !== undefined ? String(settings.appearanceLineHeight) : undefined)
+  set('--chat-radius-px', settings?.appearanceRadius !== undefined ? String(settings.appearanceRadius) : undefined)
+  set('--chat-composer-max-width-px', settings?.appearanceComposerWidth !== undefined ? String(settings.appearanceComposerWidth) : undefined)
+  body.dataset.chatDensity = settings?.appearanceDensity ?? 'standard'
+  if (settings?.appearanceRadius !== undefined) body.dataset.chatRadius = ''
+  else delete body.dataset.chatRadius
+  if (settings?.appearanceComposerWidth !== undefined) body.dataset.chatComposerWidth = ''
+  else delete body.dataset.chatComposerWidth
   body.dataset.chatGlass = settings?.appearanceGlass ?? 'off'
   body.dataset.chatWidth = settings?.readingWidth ?? 'preset'
   body.style.setProperty('--chat-reading-size', `${settings?.readingFontSize ?? 16}px`)
-  if (theme !== appliedTheme || styleChanged) {
+  if (theme !== appliedTheme) {
     appliedTheme = theme
     applyTheme(theme)
   }

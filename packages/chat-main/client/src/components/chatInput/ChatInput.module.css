@@ -11,7 +11,7 @@
   border-radius: var(--chat-composer-radius, 24px);
   border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
   background: var(--dsw-specific-input-major);
-  background-color: color-mix(in srgb, var(--dsw-specific-input-major) var(--chat-glass-opacity, 100%), transparent);
+  background-color: color-mix(in srgb, var(--dsw-specific-input-major) min(var(--chat-glass-opacity, 100%), calc(var(--chat-composer-alpha, 1) * 100%)), transparent);
   backdrop-filter: var(--chat-glass-blur, none);
   background-image: var(--chat-composer-decoration, none);
   overflow: hidden;
@@ -356,7 +356,7 @@
   }
 
   &:focus-visible {
-    outline: 2px solid var(--dsw-alias-brand-primary, #3b64ed);
+    outline: 2px solid var(--chat-accent, var(--dsw-alias-brand-primary, #3b64ed));
     outline-offset: 1px;
   }
 }
@@ -647,7 +647,7 @@
 }
 
 .capabilitySwitch[aria-checked='true'] .switchTrack {
-  background: var(--dsw-alias-brand-primary, #3b64ed);
+  background: var(--chat-accent, var(--dsw-alias-brand-primary, #3b64ed));
 }
 
 .capabilitySwitch[aria-checked='true'] .switchTrack::before {
@@ -659,7 +659,7 @@
 }
 
 .capabilitySwitch:focus-visible .switchTrack {
-  outline: 2px solid var(--dsw-alias-brand-primary, #3b64ed);
+  outline: 2px solid var(--chat-accent, var(--dsw-alias-brand-primary, #3b64ed));
   outline-offset: 1px;
 }
 

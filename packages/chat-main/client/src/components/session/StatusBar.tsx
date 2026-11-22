@@ -24,6 +24,8 @@ interface ContextView {
 interface SessionCostView {
   available: boolean
   reason?: string
+  /** R8.6(6.3):数据来源——native=dsh-cost-meter 原生会话账本;rich=WebChat Rich 外部记录。 */
+  source?: 'native' | 'rich'
   cost?: { own?: { cost?: number; input?: number; output?: number; cacheRead?: number; cacheWrite?: number; calls?: number }; found?: boolean }
 }
 
@@ -145,17 +147,27 @@ export const StatusBar = memo(function StatusBar({ sessionId }: { sessionId: str
           <section>
             <h3>{t('statusDetailContextSection')}</h3>
             {context?.available === true && context.usage !== undefined ? (
-              <table>
-                <tbody>
-                  {Object.entries({ system: t('statusUsageSystem'), tools: t('statusUsageTools'), user: t('statusUsageUser'), inject: t('statusUsageInject'), skill: t('statusUsageSkill'), assistant: t('statusUsageAssistant'), tool: t('statusUsageTool') })
-                    .filter(([key]) => typeof context.usage![key as keyof typeof context.usage] === 'number')
-                    .map(([key, label]) => (
-                      <tr key={key}><td>{label}</td><td>{compact(context.usage![key as keyof typeof context.usage] as number) ?? '0'} tok</td></tr>
-                    ))}
-                  <tr><td>{t('statusUsageTotal')}</td><td>{contextTotal ?? t('statusNoDataShort')} tok</td></tr>
-                  <tr><td>{t('statusContextWindow')}</td><td>{contextWindow ?? t('statusNoDataShort')}</td></tr>
-                </tbody>
-              </table>
+              <>
+                <table>
+                  <tbody>
+                    {Object.entries({ system: t('statusUsageSystem'), tools: t('statusUsageTools'), user: t('statusUsageUser'), inject: t('statusUsageInject'), skill: t('statusUsageSkill'), assistant: t('statusUsageAssistant'), tool: t('statusUsageTool') })
+                      .filter(([key]) => typeof context.usage![key as keyof typeof context.usage] === 'number')
+                      .map(([key, label]) => (
+                        <tr key={key}><td>{label}</td><td>{compact(context.usage![key as keyof typeof context.usage] as number) ?? '0'} tok</td></tr>
+                      ))}
+                    <tr><td>{t('statusUsageTotal')}</td><td>{contextTotal ?? t('statusNoDataShort')} tok</td></tr>
+                    <tr><td>{t('statusContextWindow')}</td><td>{contextWindow ?? t('statusNoDataShort')}</td></tr>
+                  </tbody>
+                </table>
+                {/* R8.6(5.3A):上下文投影可用说明 dsh-context 已安装且启用 → 提供其原生页面入口。
+                    会话由原生面板自行投影,不在 WebChat 侧伪造会话映射(5.5)。 */}
+                {window.parent !== window && (
+                  <button type="button" className={styles.linkButton}
+                    onClick={() => window.parent.postMessage({ type: 'chatds:open-context' }, location.origin)}>
+                    {t('statusOpenDshContext')}
+                  </button>
+                )}
+              </>
             ) : (
               <p className={styles.muted}>{context?.reason ?? t('statusNoDataShort')}</p>
             )}
@@ -163,10 +175,13 @@ export const StatusBar = memo(function StatusBar({ sessionId }: { sessionId: str
           <section>
             <h3>{t('statusDetailSessionSection')}</h3>
             {sessionCost?.available === true && sessionCost.cost?.own !== undefined ? (
-              <p>
-                {t('statusCostLabel')} {formatCost(sessionCost.cost.own.cost) ?? t('statusNoAmount')} · {t('statusInput')} {compact(sessionCost.cost.own.input) ?? '—'} tok ·
-                {t('statusOutput')} {compact(sessionCost.cost.own.output) ?? '—'} tok · {t('statusRequests')} {sessionCost.cost.own.calls ?? '—'}
-              </p>
+              <>
+                <p>
+                  {t('statusCostLabel')} {formatCost(sessionCost.cost.own.cost) ?? t('statusNoAmount')} · {t('statusInput')} {compact(sessionCost.cost.own.input) ?? '—'} tok ·
+                  {t('statusOutput')} {compact(sessionCost.cost.own.output) ?? '—'} tok · {t('statusRequests')} {sessionCost.cost.own.calls ?? '—'}
+                </p>
+                {sessionCost.source === 'rich' && <p className={styles.muted}>{t('statusSessionRichNote')}</p>}
+              </>
             ) : (
               <p className={styles.muted}>{sessionCost?.reason ?? t('statusNoDataShort')}</p>
             )}

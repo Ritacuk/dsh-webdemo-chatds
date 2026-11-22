@@ -246,17 +246,31 @@ export async function costToday(ctx: Context): Promise<CostTodayView> {
   }
 }
 
-/** 单会话费用(官方 costMeter 会话账目)。 */
-export async function costSession(ctx: Context, sessionId: string): Promise<{ available: boolean; reason?: string; cost?: unknown }> {
+/** 单会话费用(官方 costMeter 会话账目;原生账本无记录时回退 Rich 外部用量,来源如实标注)。 */
+export async function costSession(
+  ctx: Context,
+  sessionId: string,
+  ledger?: { sessionTotals(sessionId: string): { calls: number; input: number; output: number; cached: number; cacheWrite: number } | null },
+): Promise<{ available: boolean; reason?: string; source?: 'native' | 'rich'; cost?: unknown }> {
   const meter = costMeter(ctx)
   if (meter === undefined || typeof meter.getSessionCost !== 'function') {
     return { available: false, reason: 'dsh-cost-meter 未安装或版本过旧,费用数据不可用。' }
   }
   const cost = await Promise.resolve().then(() => meter.getSessionCost!(sessionId)).catch(() => undefined)
-  if (!cost || typeof cost !== 'object' || !('own' in cost) || ('found' in cost && cost.found !== true)) {
-    return { available: false, reason: '本会话暂无可用的 dsh-cost-meter 账单。' }
+  if (cost && typeof cost === 'object' && 'own' in cost && (!('found' in cost) || cost.found === true)) {
+    return { available: true, source: 'native', cost }
   }
-  return { available: true, cost }
+  // R8.6(6.3):纯 Rich 会话不在原生账本,但 WebChat 自己有外部记录——如实展示 tokens 与来源,
+  // 不再显示含糊的"暂无账单"(金额仍以 dsh-cost-meter 外部用量区为准,不在插件内二次计价)。
+  const rich = ledger?.sessionTotals(sessionId)
+  if (rich) {
+    return {
+      available: true,
+      source: 'rich',
+      cost: { own: { input: rich.input, output: rich.output, cacheRead: rich.cached, cacheWrite: rich.cacheWrite, calls: rich.calls } },
+    }
+  }
+  return { available: false, reason: '本会话暂无可用的 dsh-cost-meter 账单。' }
 }
 
 /** 官方价格目录(只读透传;不在本插件存储第二份价格)。 */

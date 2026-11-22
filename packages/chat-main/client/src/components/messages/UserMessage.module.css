@@ -73,7 +73,7 @@
 .editor {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--dsw-alias-brand-primary);
+  border: 1px solid var(--chat-accent, var(--dsw-alias-brand-primary));
   border-radius: 22px;
   background-color: var(--dsw-alias-bg-base);
   overflow: hidden;

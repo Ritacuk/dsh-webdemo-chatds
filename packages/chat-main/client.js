@@ -51,10 +51,15 @@ window.__ModuleLoader__.load({
         '插件与工具': 'Plugins & tools', '文件': 'Files', '数据管理': 'Data', '外观': 'Appearance',
         'ChatDS 设置': 'ChatDS settings', '设置': 'Settings', '重试': 'Retry',
         '正在读取 ChatDS 设置…': 'Loading ChatDS settings…', '设置保存失败。': 'Failed to save settings.', '正在处理…': 'Working…',
+        '插件能力加载失败，可以重试或查看诊断信息。': 'Failed to load plugin capabilities. You can retry or view diagnostics.',
+        '设置区暂时无法渲染，可以重试。': 'The settings area failed to render. You can retry.',
+        '诊断信息': 'Diagnostics', '已跳过 {count} 个无法解析的插件条目。': 'Skipped {count} plugin entries that could not be parsed.',
         '聊天界面语言': 'Interface language', '跟随浏览器': 'Follow browser',
         '发送快捷键': 'Send shortcut', 'Enter': 'Enter', 'Ctrl + Enter': 'Ctrl + Enter', '⌘ + Enter': '⌘ + Enter',
         '语音输入': 'Voice input',
         '点击录音并确认转写后，音频会发送到已配置的 DeepSeek 接口，可能产生费用。': 'After you record and confirm transcription, audio is sent to the configured DeepSeek endpoint. Charges may apply.',
+        '已开启。优先使用 DSH 语音服务转写；服务不可用时回退 DeepSeek 转写(可能产生费用)。': 'On. Prefers the DSH speech service for transcription; falls back to DeepSeek (charges may apply) only when it is unavailable.',
+        '已开启。未检测到 DSH 语音服务，转写将使用 DeepSeek 接口，可能产生费用。': 'On. No DSH speech service detected; transcription uses the DeepSeek endpoint. Charges may apply.',
         '默认模式': 'Default mode', '用于新建聊天。': 'Used for new chats.', 'Chat': 'Chat', 'Plan · 只读工具': 'Plan · read-only tools',
         '默认深度思考': 'Default deep thinking', '可在聊天中选择当前模型支持的具体等级。': 'Pick a concrete level supported by the current model inside chats.',
         '默认联网搜索': 'Default web search', '仅 DeepSeek 官方模型支持。': 'Official DeepSeek models only.',
@@ -120,6 +125,13 @@ window.__ModuleLoader__.load({
         '磨砂效果': 'Frosted glass', '标准纯色': 'Solid', '轻度磨砂': 'Light frost', '明显磨砂': 'Strong frost',
         '当前环境使用纯色背景。': 'This environment falls back to solid backgrounds.',
         '正文字号': 'Reading font size', '阅读宽度': 'Reading width', '跟随风格': 'Follow style', '较窄': 'Narrower', '较宽': 'Wider',
+        '主题强调色': 'Accent color', '应用于发送按钮、用户气泡与链接。': 'Applied to the send button, user bubbles and links.',
+        '背景透明度': 'Background opacity', '降低后可透出 DSH 桌面/窗口背景。': 'Lower it to let the DSH desktop or window show through.',
+        '浮动面板透明度': 'Panel opacity', '弹窗与菜单。': 'Dialogs and menus.', '输入框透明度': 'Composer opacity',
+        '布局密度': 'Layout density', '紧凑': 'Compact', '标准': 'Standard', '宽松': 'Relaxed',
+        '行距': 'Line height', '圆角': 'Corner radius', '输入框宽度': 'Composer width',
+        '恢复 WebChat 默认外观': 'Reset WebChat appearance', '只重置外观设置；聊天历史、模型与提示词不受影响。': 'Only appearance settings are reset; history, models and prompts are not affected.',
+        '恢复默认': 'Reset', '默认': 'Default',
         '当前 DSH Desktop 无法打开文件夹选择器。': 'This DSH Desktop cannot open a folder picker.',
         '无法打开文件夹选择器。': 'Unable to open the folder picker.', 'DSH 文件保存服务不可用。': 'The DSH file-save service is unavailable.', '无法在 DSH Desktop 保存文件。': 'Unable to save the file in DSH Desktop.',
         '请求失败(': 'Request failed (', '会话标题须为 1 至 200 个字符': 'Chat titles need 1–200 characters',
@@ -147,10 +159,15 @@ window.__ModuleLoader__.load({
         '插件与工具': 'プラグインとツール', '文件': 'ファイル', '数据管理': 'データ管理', '外观': '外観',
         'ChatDS 设置': 'ChatDS 設定', '设置': '設定', '重试': '再試行',
         '正在读取 ChatDS 设置…': 'ChatDS 設定を読み込み中…', '设置保存失败。': '設定の保存に失敗しました。', '正在处理…': '処理中…',
+        '插件能力加载失败，可以重试或查看诊断信息。': 'プラグイン機能の読み込みに失敗しました。再試行するか診断情報を確認できます。',
+        '设置区暂时无法渲染，可以重试。': '設定エリアを描画できませんでした。再試行できます。',
+        '诊断信息': '診断情報', '已跳过 {count} 个无法解析的插件条目。': '解析できない {count} 個のプラグイン項目をスキップしました。',
         '聊天界面语言': '表示言語', '跟随浏览器': 'ブラウザに従う',
         '发送快捷键': '送信ショートカット',
         '语音输入': '音声入力',
         '点击录音并确认转写后，音频会发送到已配置的 DeepSeek 接口，可能产生费用。': '録音して文字起こしを確定すると、音声は設定済みの DeepSeek エンドポイントへ送信されます。課金が発生する場合があります。',
+        '已开启。优先使用 DSH 语音服务转写；服务不可用时回退 DeepSeek 转写(可能产生费用)。': 'オン。DSH 音声サービスを優先して文字起こしします。利用できない場合のみ DeepSeek にフォールバックします（課金の可能性あり）。',
+        '已开启。未检测到 DSH 语音服务，转写将使用 DeepSeek 接口，可能产生费用。': 'オン。DSH 音声サービスが検出されないため、文字起こしは DeepSeek エンドポイントを使用します。課金が発生する場合があります。',
         '默认模式': '既定モード', '用于新建聊天。': '新しいチャットで使用します。', 'Plan · 只读工具': 'Plan(読み取り専用ツール)',
         '默认深度思考': '既定の深い思考', '可在聊天中选择当前模型支持的具体等级。': 'チャット内で現在のモデルが対応する具体的なレベルを選択できます。',
         '默认联网搜索': '既定のウェブ検索', '仅 DeepSeek 官方模型支持。': 'DeepSeek 公式モデルのみ対応。',
@@ -216,6 +233,13 @@ window.__ModuleLoader__.load({
         '磨砂效果': 'すりガラス効果', '标准纯色': '無地', '轻度磨砂': '弱めのすりガラス', '明显磨砂': '強めのすりガラス',
         '当前环境使用纯色背景。': 'この環境では無地の背景を使用します。',
         '正文字号': '本文フォントサイズ', '阅读宽度': '読書幅', '跟随风格': 'スタイルに従う', '较窄': 'やや狭い', '较宽': 'やや広い',
+        '主题强调色': 'アクセントカラー', '应用于发送按钮、用户气泡与链接。': '送信ボタン・ユーザー吹き出し・リンクに適用されます。',
+        '背景透明度': '背景の不透明度', '降低后可透出 DSH 桌面/窗口背景。': '下げると DSH デスクトップやウィンドウの背景が透けます。',
+        '浮动面板透明度': 'パネルの不透明度', '弹窗与菜单。': 'ダイアログとメニュー。', '输入框透明度': '入力欄の不透明度',
+        '布局密度': 'レイアウト密度', '紧凑': 'コンパクト', '标准': '標準', '宽松': 'ゆったり',
+        '行距': '行間', '圆角': '角丸', '输入框宽度': '入力欄の幅',
+        '恢复 WebChat 默认外观': 'WebChat の外観をリセット', '只重置外观设置；聊天历史、模型与提示词不受影响。': '外観設定のみリセットします。履歴・モデル・プロンプトには影響しません。',
+        '恢复默认': 'リセット', '默认': '既定',
         '当前 DSH Desktop 无法打开文件夹选择器。': 'この DSH Desktop はフォルダ選択子を開けません。',
         '无法打开文件夹选择器。': 'フォルダ選択子を開けません。', 'DSH 文件保存服务不可用。': 'DSH のファイル保存サービスを利用できません。', '无法在 DSH Desktop 保存文件。': 'DSH Desktop でファイルを保存できません。',
         '请求失败(': 'リクエスト失敗(', '会话标题须为 1 至 200 个字符': 'チャットタイトルは 1〜200 文字で入力してください',
@@ -430,15 +454,13 @@ window.__ModuleLoader__.load({
       .chatds-bundle > summary { padding:12px 0; cursor:pointer }
       .chatds-bundle summary > :is(img,strong,small) { margin-inline:4px; vertical-align:middle }
       .chatds-component + .chatds-component { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-preview-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(132px,1fr)); gap:8px; margin-bottom:12px }
-      .chatds-settings button.chatds-preview { display:grid; gap:8px; text-align:left; padding:8px; min-width:0 }
-      .chatds-settings button.chatds-preview[aria-pressed=true] { border-color:var(--preview-accent); outline:1px solid var(--preview-accent); outline-offset:1px }
-      .chatds-preview-chat { display:grid; gap:5px; padding:8px; min-height:85px; border-radius:6px; font-size:11px; color:#25282d; background:#fff }
-      .chatds-preview[data-dark=true] .chatds-preview-chat { background:#262729; color:#f3f1ec }
-      .chatds-preview-chat span:first-child { justify-self:end; padding:3px 6px; border-radius:10px; background:color-mix(in srgb,var(--preview-accent) 22%,transparent) }
-      .chatds-preview-chat span:last-child { border:1px solid currentColor; border-radius:7px; padding:3px }
-      .chatds-preview[data-style=gemini] .chatds-preview-chat { background-image:radial-gradient(ellipse at top,color-mix(in srgb,var(--preview-accent) 20%,transparent),transparent) }
-      .chatds-preview[data-style=claude] .chatds-preview-chat { font-family:Georgia,"Microsoft YaHei",serif; background-image:linear-gradient(color-mix(in srgb,var(--preview-accent) 11%,transparent), color-mix(in srgb,var(--preview-accent) 11%,transparent)) }
+      .chatds-settings-errorbox { border:1px solid color-mix(in srgb,#d03050 40%,transparent); border-radius:10px; padding:12px 14px; margin:14px 0; display:grid; gap:8px; justify-items:start }
+      .chatds-settings-errorbox p { margin:0 }
+      .chatds-settings-errorbox pre { width:100%; box-sizing:border-box; font-size:11px; overflow:auto; max-height:160px; background:var(--dsw-specific-input-major,Canvas); border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; padding:8px; margin:0; white-space:pre-wrap }
+      .chatds-range { display:flex; align-items:center; gap:10px }
+      .chatds-range input[type=range] { width:150px; min-height:20px; padding:0; border:0; background:transparent; accent-color:var(--chat-accent, var(--dsw-alias-brand-primary,#3b64ed)) }
+      .chatds-range small { min-width:64px; text-align:right }
+      .chatds-settings input[type=color] { width:38px; height:28px; padding:2px; border-radius:8px }
       @media (prefers-reduced-motion:reduce) { .chatds-settings-switch span { transition:none } }
     `
 
@@ -458,6 +480,43 @@ window.__ModuleLoader__.load({
       return h('button', { type: 'button', className: 'chatds-settings-switch', role: 'switch', 'aria-label': label,
         'aria-checked': enabled, 'aria-busy': busy === true || undefined, 'data-busy': busy === true || undefined,
         disabled: disabled || busy === true, onClick: onToggle }, h('span', { 'aria-hidden': true }))
+    }
+
+    // ── R8.6(P0):设置区错误边界。任何页面/插件条目渲染异常只降级自身区域, ──
+    // ── 不再把整块设置区(乃至 DSH slot)渲染成空白;重试必须由用户点击触发,不做自动重试。 ──
+
+    /** 脱敏的异常链文本:消息 + 堆栈前几行;剥离 URL 中的 token 等查询参数。 */
+    const describeError = (error) => {
+      const lines = [String(error?.message ?? error)]
+      const stack = typeof error?.stack === 'string' ? error.stack : ''
+      for (const line of stack.split('\n').slice(1, 5)) {
+        lines.push(line.replace(/([?&])(token|key|secret)=[^&\s]*/g, '$1$2=…').trim())
+      }
+      return lines.join('\n')
+    }
+
+    class SettingsBoundary extends React.Component {
+      constructor(props) {
+        super(props)
+        this.state = { error: null }
+      }
+      static getDerivedStateFromError(error) {
+        return { error }
+      }
+      componentDidCatch(error, info) {
+        // 记录完整脱敏异常链,不吞掉详情;组件栈用于定位是哪一页/哪个条目。
+        console.error('[chatds] 设置组件渲染失败(' + (this.props.label ?? '未知区域') + '):',
+          describeError(error), typeof info?.componentStack === 'string' ? info.componentStack : '')
+      }
+      render() {
+        if (!this.state.error) return this.props.children
+        return h('div', { role: 'alert', className: 'chatds-settings-errorbox' },
+          h('p', null, this.props.fallbackText ?? L('插件能力加载失败，可以重试或查看诊断信息。')),
+          h('button', { type: 'button', onClick: () => this.setState({ error: null }) }, L('重试')),
+          h('details', { className: 'chatds-details' },
+            h('summary', null, L('诊断信息')),
+            h('pre', null, describeError(this.state.error))))
+      }
     }
 
     let pendingSave = null
@@ -545,7 +604,12 @@ window.__ModuleLoader__.load({
             children: h('select', { 'aria-label': L('发送快捷键'), value: settings.sendShortcut, disabled: busy,
               onChange: (event) => { const value = event.target.value; void transact(() => ({ sendShortcut: value })) } },
               h('option', { value: 'enter' }, 'Enter'), h('option', { value: 'ctrl-enter' }, IS_MAC_LIKE ? '⌘ + Enter' : 'Ctrl + Enter')) }),
-          h(Row, { keyId: 'voice', label: L('语音输入'), description: L('点击录音并确认转写后，音频会发送到已配置的 DeepSeek 接口，可能产生费用。'),
+          h(Row, { keyId: 'voice', label: L('语音输入'),
+            description: settings.enableVoiceInput
+              ? (settings.dshSpeechAvailable
+                ? L('已开启。优先使用 DSH 语音服务转写；服务不可用时回退 DeepSeek 转写(可能产生费用)。')
+                : L('已开启。未检测到 DSH 语音服务，转写将使用 DeepSeek 接口，可能产生费用。'))
+              : L('点击录音并确认转写后，音频会发送到已配置的 DeepSeek 接口，可能产生费用。'),
             children: Switch({ label: L('语音输入'), enabled: settings.enableVoiceInput, disabled: busy, busy,
               onToggle: () => void transact(() => ({ enableVoiceInput: !settings.enableVoiceInput })) }) }),
           h(Row, { keyId: 'mode', label: L('默认模式'), description: L('用于新建聊天。'),
@@ -583,7 +647,9 @@ window.__ModuleLoader__.load({
         h('style', null, chatDSSettingsStyles),
         h('nav', { 'aria-label': L('ChatDS 设置') },
           pages.map((label) => h('button', { key: label, type: 'button', 'aria-pressed': page === label, onClick: () => setPage(label) }, L(label)))),
-        h('div', { className: 'chatds-settings-card' }, content[page]()), statusLine)
+        // R8.6(P0):每页独立错误边界——单页渲染异常只降级该页卡片,导航仍可切换其他页。
+        h('div', { className: 'chatds-settings-card' },
+          h(SettingsBoundary, { key: page, label: page }, content[page]())), statusLine)
     }
 
     function FileAccess({ settings, busy, transact, pickDirectory }) {
@@ -657,12 +723,22 @@ window.__ModuleLoader__.load({
       ]
     }
 
-    const presets = [
-      ['default', 'WebChat 默认', '#3b64ed'],
-      ['gpt', 'GPT 风格', '#488374'],
-      ['gemini', 'Gemini 风格', '#6467bd'],
-      ['claude', 'Claude 风格', '#a9624b'],
-    ]
+    // ── R8.6(七):自由外观设置——单一默认布局 + 颜色/透明度/尺寸/密度直接可调。 ──
+
+    /** 外观恢复默认补丁(null = Host 端清除该字段,回落官方 demo 默认观感)。 */
+    const appearanceResetPatch = {
+      appearanceAccent: null, appearanceBgAlpha: null, appearancePanelAlpha: null, appearanceComposerAlpha: null,
+      appearanceLineHeight: null, appearanceRadius: null, appearanceDensity: null, appearanceComposerWidth: null,
+    }
+
+    /** 滑杆行:拖动中不提交,松手(native change)才保存;未设置时显示「默认」。 */
+    function RangeRow({ keyId, label, description, min, max, step, value, defaultValue, format, disabled, onCommit }) {
+      const current = value ?? defaultValue
+      return h(Row, { keyId, label, description, children: h('span', { className: 'chatds-range' },
+        h('input', { type: 'range', 'aria-label': label, min, max, step, defaultValue: current, disabled, key: String(current),
+          ref: (el) => { if (el) el.onchange = (event) => onCommit(event.target.valueAsNumber) } }),
+        h('small', null, value === undefined || value === null ? L('默认') : format(current))) })
+    }
 
     function AppearanceSettings({ settings, busy, transact, theme }) {
       const hostMode = React.useSyncExternalStore(theme.subscribe, () => theme.getTheme().active.colorScheme)
@@ -671,28 +747,44 @@ window.__ModuleLoader__.load({
         media.addEventListener('change', listener)
         return () => media.removeEventListener('change', listener)
       }, [media]), () => media.matches)
-      const dark = settings.appearanceMode === 'dark' || (settings.appearanceMode === 'dsh' && hostMode === 'dark')
-        || (settings.appearanceMode === 'system' && systemDark)
       const select = (field, label, options) => h(Row, { key: field, label, children: h('select', {
         'aria-label': label, value: settings[field], disabled: busy, onChange: (event) => {
           const value = event.target.value
           void transact(() => ({ [field]: field === 'readingFontSize' ? Number(value) : value }))
         },
       }, options.map(([key, label]) => h('option', { key, value: key }, label))) })
+      const alphaRow = (field, label, description) => RangeRow({ keyId: field, label, description, min: 0.4, max: 1, step: 0.05,
+        value: settings[field], defaultValue: 1, format: (v) => Math.round(v * 100) + '%',
+        disabled: busy, onCommit: (v) => void transact(() => ({ [field]: Math.abs(v - 1) < 0.026 ? null : v })) })
       return [
         select('appearanceMode', L('颜色模式'), [['dsh', L('跟随 DSH')], ['light', L('浅色')], ['dark', L('深色')], ['system', navigator.platform.startsWith('Win') ? L('跟随 Windows') : L('跟随系统')]]),
-        h('h3', { key: 'title' }, L('聊天界面风格')),
-        h('div', { key: 'styles', className: 'chatds-preview-grid' }, presets.map(([key, label, color]) =>
-          h('button', { key, type: 'button', className: 'chatds-preview', 'data-style': key, 'data-dark': dark,
-            'aria-label': L(label), 'aria-pressed': settings.appearanceStyle === key, disabled: busy,
-            style: { '--preview-accent': color }, onClick: () => void transact(() => ({ appearanceStyle: key })) },
-          h('span', { 'aria-hidden': true, className: 'chatds-preview-chat' },
-            h('span', null, '周末去哪儿？'), h('span', null, '去书店坐坐。'), h('span', null, '发消息　　 ＋　↑')),
-          h('strong', null, L(label))))),
-        select('appearanceGlass', L('磨砂效果'), [['off', L('标准纯色')], ['light', L('轻度磨砂')], ['strong', L('明显磨砂')]]),
-        !CSS.supports('backdrop-filter', 'blur(8px)') && h('p', { key: 'fallback' }, L('当前环境使用纯色背景。')),
+        h(Row, { key: 'accent', label: L('主题强调色'), description: L('应用于发送按钮、用户气泡与链接。'),
+          children: h('span', { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+            h('input', { type: 'color', 'aria-label': L('主题强调色'), disabled: busy,
+              defaultValue: settings.appearanceAccent ?? '#3b64ed', key: settings.appearanceAccent ?? 'follow-dsh',
+              ref: (el) => { if (el) el.onchange = (event) => void transact(() => ({ appearanceAccent: event.target.value })) } }),
+            settings.appearanceAccent
+              ? h('button', { type: 'button', disabled: busy, onClick: () => void transact(() => ({ appearanceAccent: null })) }, L('跟随 DSH'))
+              : h('small', null, L('跟随 DSH'))) }),
+        alphaRow('appearanceBgAlpha', L('背景透明度'), L('降低后可透出 DSH 桌面/窗口背景。')),
+        alphaRow('appearancePanelAlpha', L('浮动面板透明度'), L('弹窗与菜单。')),
+        alphaRow('appearanceComposerAlpha', L('输入框透明度'), null),
+        select('appearanceDensity', L('布局密度'), [['compact', L('紧凑')], ['standard', L('标准')], ['relaxed', L('宽松')]]),
+        RangeRow({ keyId: 'lineHeight', label: L('行距'), min: 1.4, max: 1.9, step: 0.05,
+          value: settings.appearanceLineHeight, defaultValue: 1.65, format: (v) => v.toFixed(2),
+          disabled: busy, onCommit: (v) => void transact(() => ({ appearanceLineHeight: Math.abs(v - 1.65) < 0.026 ? null : v })) }),
+        RangeRow({ keyId: 'radius', label: L('圆角'), min: 0, max: 30, step: 1,
+          value: settings.appearanceRadius, defaultValue: 24, format: (v) => v + ' px',
+          disabled: busy, onCommit: (v) => void transact(() => ({ appearanceRadius: v === 24 ? null : v })) }),
+        RangeRow({ keyId: 'composerWidth', label: L('输入框宽度'), min: 480, max: 1040, step: 20,
+          value: settings.appearanceComposerWidth, defaultValue: 840, format: (v) => v + ' px',
+          disabled: busy, onCommit: (v) => void transact(() => ({ appearanceComposerWidth: v === 840 ? null : v })) }),
         select('readingFontSize', L('正文字号'), [14, 15, 16, 17, 18, 19, 20].map((size) => [size, size + ' px'])),
         select('readingWidth', L('阅读宽度'), [['preset', L('跟随风格')], ['narrow', L('较窄')], ['wide', L('较宽')]]),
+        select('appearanceGlass', L('磨砂效果'), [['off', L('标准纯色')], ['light', L('轻度磨砂')], ['strong', L('明显磨砂')]]),
+        !CSS.supports('backdrop-filter', 'blur(8px)') && h('p', { key: 'fallback' }, L('当前环境使用纯色背景。')),
+        h(Row, { key: 'reset', label: L('恢复 WebChat 默认外观'), description: L('只重置外观设置；聊天历史、模型与提示词不受影响。'),
+          children: h('button', { type: 'button', disabled: busy, onClick: () => void transact(() => appearanceResetPatch) }, L('恢复默认')) }),
       ]
     }
 
@@ -984,18 +1076,29 @@ window.__ModuleLoader__.load({
       const [sessionId, setSessionId] = React.useState(null)
       const [permissions, setPermissions] = React.useState(null)
       const [pending, setPending] = React.useState(false)
+      const [loadAttempt, retryLoad] = React.useReducer((n) => n + 1, 0)
       const current = React.useRef(null)
+      // R8.6(P0):目录 5s 轮询保留(页面卸载即停);连续失败 3 次后停止自动重试,
+      // 改为错误行内"重试"按钮手动恢复,不允许错误期间无限请求。数据未变化时不再触发重渲染。
       React.useEffect(() => {
         let active = true
         let timer
+        let failures = 0
+        let lastJson = ''
         const refresh = async () => {
           try {
             const value = await apiGet('/api/integrations')
-            if (active) setCatalog(value)
+            if (!active) return
+            const nextJson = JSON.stringify(value ?? null)
+            if (nextJson !== lastJson) { lastJson = nextJson; setCatalog(value) }
+            if (failures > 0) { failures = 0; setError('') }
+            timer = setTimeout(refresh, 5000)
           } catch (reason) {
-            if (active) { setCatalog(false); setError(reason.message) }
-          } finally {
-            if (active) timer = setTimeout(refresh, 5000)
+            if (!active) return
+            failures += 1
+            setCatalog(false)
+            setError(reason.message)
+            if (failures < 3) timer = setTimeout(refresh, 5000)
           }
         }
         const frame = document.querySelector('iframe[data-chatds-main]')
@@ -1010,18 +1113,18 @@ window.__ModuleLoader__.load({
         frame?.contentWindow?.postMessage({ type: 'chatds:request-active-session' }, location.origin)
         void refresh()
         return () => { active = false; clearTimeout(timer); window.removeEventListener('message', receive) }
-      }, [])
+      }, [loadAttempt])
       React.useEffect(() => {
         let active = true
         setPermissions(null)
         if (sessionId) apiGet('/api/sessions/' + encodeURIComponent(sessionId) + '/tools').then((data) => {
-          if (active) setPermissions(data.supported)
+          if (active) setPermissions(Array.isArray(data?.supported) ? data.supported : [])
         }, (reason) => { if (active) setError(reason.message) })
         return () => { active = false }
       }, [sessionId])
 
       const grant = async (names, allow) => {
-        if (!sessionId || !permissions || pending) return
+        if (!sessionId || !Array.isArray(permissions) || pending) return
         const granted = permissions.filter((tool) => names.includes(tool.name) ? allow : tool.enabled).map((tool) => tool.name)
         setPending(true)
         setError('')
@@ -1034,41 +1137,56 @@ window.__ModuleLoader__.load({
           setPending(false)
         }
       }
+      // R8.6(P0):单个条目数据不合法时跳过并明确提示,不影响其他条目(不允许空白当作降级)。
+      const bundles = Array.isArray(catalog?.bundles) ? catalog.bundles : []
+      const validBundles = []
+      let invalidBundles = 0
+      for (const bundle of bundles) {
+        if (bundle && typeof bundle === 'object' && typeof bundle.name === 'string' && Array.isArray(bundle.components)) validBundles.push(bundle)
+        else invalidBundles += 1
+      }
       return [
         h('div', { key: 'heading', className: 'chatds-settings-row' },
           h('div', null, h('strong', null, L('已启用的集成')), h('br'), h('small', null, L('模型工具权限只应用于当前 WebChat 会话。'))),
           h('button', { type: 'button', onClick: openPlugins }, L('前往 DSH 插件管理器'))),
-        error && h('p', { key: 'error', role: 'alert' }, error),
+        error && h('p', { key: 'error', role: 'alert' }, error, ' ',
+          h('button', { type: 'button', onClick: () => retryLoad() }, L('重试'))),
         catalog === null && h('p', { key: 'loading', role: 'status' }, L('正在读取插件状态…')),
         catalog && !catalog.managementAvailable && h('p', { key: 'unavailable' }, L('当前 Host 未提供插件管理服务。')),
-        catalog?.managementAvailable && !catalog.bundles.length && h('p', { key: 'empty' }, L('当前没有可用的 WebChat 插件集成。')),
-        ...((catalog && catalog.bundles) || []).map((bundle) => {
-          const includesLocal = bundle.components.some((component) => component.kind === 'local')
-          const enabled = permissions?.filter((tool) => tool.enabled).length ?? 0
-          return h('details', { key: bundle.name, className: 'chatds-bundle' },
-            h('summary', null,
-              bundle.icon && h('img', { src: bundle.icon, width: 18, height: 18, alt: '' }),
-              h('strong', null, bundle.title), h('small', null, L('已连接 · ') + (includesLocal ? '1' + L(' 个可授权组件') : L('服务集成'))),
-              includesLocal && permissions && h('small', null, enabled === permissions.length ? L('已授权 1 个组件') : enabled ? L('部分授权') : L('未授权'))),
-            h('p', null, bundle.description),
-            bundle.components.map((component) => h('section', { key: component.id, className: 'chatds-component' },
-              h(Row, { label: component.title, description: component.description, children: component.kind === 'local'
-                ? Switch({ label: L('允许 WebChat 使用 {name}', { name: component.title }), enabled: Boolean(enabled), disabled: !permissions?.length || pending, busy,
-                    onToggle: () => void grant(permissions.map((tool) => tool.name), !enabled) })
-                : null }),
-              component.kind === 'local' && (!permissions
-                ? h('p', null, sessionId ? L('正在读取会话权限…') : L('打开一条 WebChat 会话后可授权。'))
-                : h('details', { className: 'chatds-details' }, h('summary', null, L('查看详细工具')),
-                  permissions.map((tool) => {
-                    const name = tool.name === 'chatds_search_files' ? L('搜索授权文件夹') : L('读取授权文件片段')
-                    return h(Row, { key: tool.name, label: name, description: h('code', null, tool.name),
-                      children: Switch({ label: name, enabled: tool.enabled, disabled: pending, busy: pending,
-                        onToggle: () => void grant([tool.name], !tool.enabled) }) })
-                  })))))
-          )
-        }),
+        catalog?.managementAvailable && !bundles.length && h('p', { key: 'empty' }, L('当前没有可用的 WebChat 插件集成。')),
+        invalidBundles > 0 && h('p', { key: 'invalid', role: 'status' }, L('已跳过 {count} 个无法解析的插件条目。', { count: invalidBundles })),
+        ...validBundles.map((bundle) => h(SettingsBoundary, {
+          key: bundle.name, label: bundle.name,
+        }, h(BundleCard, { bundle, permissions, sessionId, pending, grant }))),
         h('p', { key: 'approval' }, L('需要审批的工具可在 DSH Agent 中使用。')),
       ]
+    }
+
+    /** 单个插件集成卡片:在独立错误边界内渲染,一个条目异常不影响其他条目。 */
+    function BundleCard({ bundle, permissions, sessionId, pending, grant }) {
+      const includesLocal = bundle.components.some((component) => component && component.kind === 'local')
+      const enabled = permissions?.filter((tool) => tool && tool.enabled).length ?? 0
+      return h('details', { className: 'chatds-bundle' },
+        h('summary', null,
+          bundle.icon && h('img', { src: bundle.icon, width: 18, height: 18, alt: '' }),
+          h('strong', null, bundle.title), h('small', null, L('已连接 · ') + (includesLocal ? '1' + L(' 个可授权组件') : L('服务集成'))),
+          includesLocal && permissions && h('small', null, enabled === permissions.length ? L('已授权 1 个组件') : enabled ? L('部分授权') : L('未授权'))),
+        h('p', null, bundle.description),
+        bundle.components.map((component) => h('section', { key: component.id, className: 'chatds-component' },
+          h(Row, { label: component.title, description: component.description, children: component.kind === 'local'
+            ? Switch({ label: L('允许 WebChat 使用 {name}', { name: component.title }), enabled: Boolean(enabled), disabled: !permissions?.length || pending, busy: pending,
+                onToggle: () => void grant(permissions.map((tool) => tool.name), !enabled) })
+            : null }),
+          component.kind === 'local' && (!permissions
+            ? h('p', null, sessionId ? L('正在读取会话权限…') : L('打开一条 WebChat 会话后可授权。'))
+            : h('details', { className: 'chatds-details' }, h('summary', null, L('查看详细工具')),
+              permissions.map((tool) => {
+                const name = tool.name === 'chatds_search_files' ? L('搜索授权文件夹') : L('读取授权文件片段')
+                return h(Row, { key: tool.name, label: name, description: h('code', null, tool.name),
+                  children: Switch({ label: name, enabled: tool.enabled, disabled: pending, busy: pending,
+                    onToggle: () => void grant([tool.name], !tool.enabled) }) })
+              })))))
+      )
     }
 
     // ────────────────────────── R8.5(F09):Side Chat 右栏 tab ──────────────────────────
@@ -1145,10 +1263,16 @@ window.__ModuleLoader__.load({
         const theme = { getTheme: () => ctx.theme.getTheme(), subscribe: (listener) => ctx.on('theme/change', listener) }
         ctx.effect(() => {
           const onMessage = (event) => {
-            if (event.origin !== location.origin || event.data?.type !== 'chatds:open-work-branch') return
+            if (event.origin !== location.origin) return
             const frame = document.querySelector('iframe[data-chatds-main]')
-            if (event.source !== frame?.contentWindow || !/^session-[a-f0-9-]{36}$/.test(event.data.sessionId)) return
-            ctx.get('uiWorkspace')?.openSession(event.data.sessionId)
+            if (event.source !== frame?.contentWindow) return
+            if (event.data?.type === 'chatds:open-work-branch' && /^session-[a-f0-9-]{36}$/.test(event.data.sessionId)) {
+              ctx.get('uiWorkspace')?.openSession(event.data.sessionId)
+            }
+            // R8.6(5.3A):上下文详情 → dsh-context 原生面板(官方 sidebar.panellist id = 'dsh-context')。
+            if (event.data?.type === 'chatds:open-context') {
+              try { ctx.layout?.selectPanel('dsh-context') } catch { /* 面板不存在时忽略,详情弹窗仍在 */ }
+            }
           }
           window.addEventListener('message', onMessage)
           return () => window.removeEventListener('message', onMessage)
@@ -1162,15 +1286,16 @@ window.__ModuleLoader__.load({
         }
         ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section', id: 'chatds', order: 60, label: () => L('ChatDS 设置'),
-        }, ({ close }) => h(ChatDSSettings, { theme, pickDirectory, openCostMeter: () => ctx.layout.selectPanel('settings'), openData(action) {
-          const frame = document.querySelector('iframe[data-chatds-main]')
-          if (frame?.contentWindow) frame.contentWindow.postMessage({ type: 'chatds:data', action }, location.origin)
-          else {
-            pendingDataAction = action
-            ctx.layout.selectPanel(PANEL_ID)
-          }
-          close?.()
-        }, openPlugins: () => { close?.(); ctx.layout.selectPanel('plugins') } })))
+        }, ({ close }) => h(SettingsBoundary, { label: 'ChatDS 设置', fallbackText: L('设置区暂时无法渲染，可以重试。') },
+          h(ChatDSSettings, { theme, pickDirectory, openCostMeter: () => ctx.layout.selectPanel('settings'), openData(action) {
+            const frame = document.querySelector('iframe[data-chatds-main]')
+            if (frame?.contentWindow) frame.contentWindow.postMessage({ type: 'chatds:data', action }, location.origin)
+            else {
+              pendingDataAction = action
+              ctx.layout.selectPanel(PANEL_ID)
+            }
+            close?.()
+          }, openPlugins: () => { close?.(); ctx.layout.selectPanel('plugins') } }))))
         ctx.slots.inject('settings.launcher', () => ctx.slots.register({ name: 'settings.launcher' }, SettingsLauncher))
         // 全局主面板:key 与导航行 id 相同,侧栏选择后由 layout 渲染本组件。
         ctx.slots.inject('main', () =>

@@ -51,7 +51,7 @@
   height: 40px;
   padding: 0 10px;
   border-radius: 12px;
-  border: 1px solid var(--dsw-alias-brand-primary);
+  border: 1px solid var(--chat-accent, var(--dsw-alias-brand-primary));
   background-color: var(--dsw-specific-input-major);
   color: var(--dsw-alias-label-primary);
   font: inherit;

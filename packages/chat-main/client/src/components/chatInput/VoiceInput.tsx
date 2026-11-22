@@ -5,7 +5,7 @@ import { Modal } from '../base/Modal.js'
 import { Button } from '../base/Button.js'
 import { useTranslate } from '../../i18n/index.js'
 
-export function VoiceInput({ onText, onClose }: { onText: (text: string) => void; onClose: () => void }) {
+export function VoiceInput({ localEngine, onText, onClose }: { localEngine?: boolean; onText: (text: string) => void; onClose: () => void }) {
   const t = useTranslate()
   const [stage, setStage] = useState<'idle' | 'starting' | 'recording' | 'ready' | 'sending'>('idle')
   const [error, setError] = useState('')
@@ -49,9 +49,14 @@ export function VoiceInput({ onText, onClose }: { onText: (text: string) => void
       if (!mounted.current) { value.cancel(); return }
       recording.current = value
       setStage('recording')
-    } catch {
+    } catch (reason) {
       if (mounted.current) {
-        setError(t('voiceMicError'))
+        // R8.6(4.3/4.5):按 getUserMedia 错误类型给出准确提示,不循环弹窗、不自动重试。
+        const name = reason instanceof DOMException ? reason.name : reason instanceof Error && 'name' in reason ? (reason as { name?: string }).name : ''
+        if (name === 'NotAllowedError' || name === 'SecurityError') setError(t('voiceMicDenied'))
+        else if (name === 'NotFoundError' || name === 'OverconstrainedError') setError(t('voiceMicNotFound'))
+        else if (name === 'NotReadableError') setError(t('voiceMicBusy'))
+        else setError(t('voiceMicError'))
         setStage('idle')
       }
     }
@@ -84,7 +89,8 @@ export function VoiceInput({ onText, onClose }: { onText: (text: string) => void
       {stage === 'ready' && <Button onClick={() => void transcribe()}>{t('voiceTranscribe')}</Button>}
     </>
   }>
-    <p>{t('voicePrivacy')}</p>
+    {/* R8.6(4.6):费用说明按实际转写引擎区分——DSH 本地/已配置引擎不描述为 DeepSeek 云转写。 */}
+    <p>{localEngine ? t('voicePrivacyLocal') : t('voicePrivacy')}</p>
     {stage === 'recording' && <p role="status">{t('voiceRecording')}</p>}
     {stage === 'starting' && <p role="status">{t('voiceOpening')}</p>}
     {stage === 'sending' && <p role="status">{t('voiceSending')}</p>}

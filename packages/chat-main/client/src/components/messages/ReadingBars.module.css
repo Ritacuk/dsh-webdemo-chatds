@@ -309,7 +309,7 @@
 }
 
 .playing .bar {
-  fill: var(--dsw-alias-brand-primary);
+  fill: var(--chat-accent, var(--dsw-alias-brand-primary));
 }
 
 @keyframes tts-settle {

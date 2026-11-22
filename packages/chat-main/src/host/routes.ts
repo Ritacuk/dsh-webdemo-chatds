@@ -123,8 +123,11 @@ async function settingsView(ctx: Context, settings: WorkspaceSettings): Promise<
   const speech = dshSpeech(ctx)
   return {
     ...settings,
+    // R8.6(九/4.7)状态所有权:dshSpeechAvailable = DSH 语音服务事实(只影响引擎与费用说明);
+    // voiceAvailable = 用户偏好(enableVoiceInput)——唯一决定麦克风入口显示。
+    // 旧实现把服务可用性混入 voiceAvailable,导致关闭语音后 Composer 按钮仍然显示。
     dshSpeechAvailable: speech !== undefined,
-    voiceAvailable: settings.enableVoiceInput === true || speech !== undefined,
+    voiceAvailable: settings.enableVoiceInput === true,
   }
 }
 
@@ -1073,7 +1076,7 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
           sendError(res, 400, 'sessionId is required')
           return
         }
-        sendJson(res, 200, await costSession(ctx, sessionId))
+        sendJson(res, 200, await costSession(ctx, sessionId, deps.ledger))
         return
       }
       if (req.method === 'GET' && rest === 'prices') {

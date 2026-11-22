@@ -67,6 +67,15 @@ const SettingsPatchSchema = z.object({
   appearanceGlass: z.enum(['off', 'light', 'strong']).optional(),
   readingFontSize: z.number().int().min(14).max(20).optional(),
   readingWidth: z.enum(['preset', 'narrow', 'wide']).optional(),
+  // R8.6(七):自由外观系统(全部可选;null = 恢复默认;缺省 = 官方 demo 默认观感)。
+  appearanceAccent: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullish(),
+  appearanceBgAlpha: z.number().min(0.4).max(1).nullish(),
+  appearancePanelAlpha: z.number().min(0.4).max(1).nullish(),
+  appearanceComposerAlpha: z.number().min(0.4).max(1).nullish(),
+  appearanceLineHeight: z.number().min(1.4).max(1.9).nullish(),
+  appearanceRadius: z.number().int().min(0).max(30).nullish(),
+  appearanceDensity: z.enum(['compact', 'standard', 'relaxed']).nullish(),
+  appearanceComposerWidth: z.number().int().min(480).max(1040).nullish(),
   defaultMode: z.enum(['chat', 'plan']).optional(),
   defaultThinking: z.enum(['off', 'enabled', 'low', 'high', 'max']).optional(),
   defaultSearch: z.boolean().optional(),
@@ -98,6 +107,12 @@ const SettingsPatchSchema = z.object({
 type SettingsPatch = z.infer<typeof SettingsPatchSchema>
 
 const KEY_DEFAULTS = 'defaults'
+
+/** R8.6(七):外观字段支持 null(= 恢复默认);读取时剥离,使缺省观感生效。 */
+const appearanceNullableKeys = [
+  'appearanceAccent', 'appearanceBgAlpha', 'appearancePanelAlpha', 'appearanceComposerAlpha',
+  'appearanceLineHeight', 'appearanceRadius', 'appearanceDensity', 'appearanceComposerWidth',
+] as const
 
 const SESSION_PREFS_SCHEMA = z.object({
   // 键本身编码会话 id(sess-<sessionId>),记录内不再重复。
@@ -223,10 +238,46 @@ export class WorkspaceStore {
 
   // ── 运行时设置 ──
 
+  /**
+   * R8.6(7.5):旧多品牌风格(appearanceStyle)一次性迁移到自由外观字段。
+   * 只补齐用户未自定义的字段,尽量保留既有颜色与阅读偏好;迁移后写回,appearanceStyle 归位 default。
+   */
+  private migrateAppearance(stored: SettingsPatch): SettingsPatch {
+    if (stored.appearanceStyle === undefined || stored.appearanceStyle === 'default') return stored
+    const legacy: SettingsPatch = { ...stored }
+    const style = stored.appearanceStyle
+    if (style === 'gpt') {
+      legacy.appearanceAccent ??= '#488374'
+      legacy.appearanceDensity ??= 'compact'
+      legacy.appearanceRadius ??= 18
+    } else if (style === 'gemini') {
+      legacy.appearanceAccent ??= '#6467bd'
+      legacy.appearanceDensity ??= 'standard'
+      legacy.appearanceRadius ??= 30
+    } else if (style === 'claude') {
+      legacy.appearanceAccent ??= '#a9624b'
+      legacy.appearanceDensity ??= 'relaxed'
+      legacy.appearanceLineHeight ??= 1.75
+    }
+    legacy.appearanceStyle = 'default'
+    return legacy
+  }
+
   async getSettings(rowDefaults: Partial<WorkspaceSettings>): Promise<WorkspaceSettings> {
     const domain = await this.ensure()
     const stored = this.storedDefaults(domain)
-    return { ...DEFAULT_SETTINGS, ...rowDefaults, ...stored }
+    const migrated = this.migrateAppearance(stored)
+    // R8.6(七):null = 恢复默认——读取时剥离,null 不外发(字段缺省即默认观感)。
+    const cleaned: SettingsPatch = { ...migrated }
+    for (const key of appearanceNullableKeys) {
+      if (cleaned[key] === null) delete cleaned[key]
+    }
+    if (cleaned !== stored) {
+      // 迁移结果持久化,避免每次读取重复映射(幂等;失败时下次重试)。
+      void this.editSettings(() => cleaned).catch(() => {})
+    }
+    // 上一循环已在运行时剥离所有 null;TS 无法据此收窄 SettingsPatch 的可空字段,这里显式断言。
+    return { ...DEFAULT_SETTINGS, ...rowDefaults, ...cleaned } as WorkspaceSettings
   }
 
   private settingsWrite: Promise<unknown> = Promise.resolve()
@@ -244,10 +295,15 @@ export class WorkspaceStore {
   private async writeSettings(edit: (current: WorkspaceSettings) => SettingsPatch | Promise<SettingsPatch>): Promise<WorkspaceSettings> {
     const domain = await this.ensure()
     const current = this.storedDefaults(domain)
-    const patch = await edit({ ...DEFAULT_SETTINGS, ...current })
+    const patch = await edit({ ...DEFAULT_SETTINGS, ...current } as WorkspaceSettings)
     const next = { ...current, ...patch }
     await domain.table('prefs').put(this.defaultsKey, { key: this.defaultsKey, defaults: next })
-    return { ...DEFAULT_SETTINGS, ...next }
+    // R8.6(七):响应与 GET 同口径——剥离 null(null 仅作为「恢复默认」的存储语义)。
+    const resolved: SettingsPatch = { ...next }
+    for (const key of appearanceNullableKeys) {
+      if (resolved[key] === null) delete resolved[key]
+    }
+    return { ...DEFAULT_SETTINGS, ...resolved } as WorkspaceSettings
   }
 
   async lastModel(): Promise<WorkspaceSettings['lastModel']> {

@@ -33,7 +33,7 @@
   font-weight: 600;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--dsw-alias-brand-primary);
+  color: var(--chat-accent, var(--dsw-alias-brand-primary));
 }
 
 .newChat {
