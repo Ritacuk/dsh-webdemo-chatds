@@ -132,6 +132,8 @@ window.__ModuleLoader__.load({
         '行距': 'Line height', '圆角': 'Corner radius', '输入框宽度': 'Composer width',
         '恢复 WebChat 默认外观': 'Reset WebChat appearance', '只重置外观设置；聊天历史、模型与提示词不受影响。': 'Only appearance settings are reset; history, models and prompts are not affected.',
         '恢复默认': 'Reset', '默认': 'Default',
+        'WebChat 已就绪。若左侧未出现入口，点击刷新界面载入。': 'WebChat is ready. If the entry is missing on the left, refresh the interface to load it.',
+        '刷新界面': 'Refresh',
         '当前 DSH Desktop 无法打开文件夹选择器。': 'This DSH Desktop cannot open a folder picker.',
         '无法打开文件夹选择器。': 'Unable to open the folder picker.', 'DSH 文件保存服务不可用。': 'The DSH file-save service is unavailable.', '无法在 DSH Desktop 保存文件。': 'Unable to save the file in DSH Desktop.',
         '请求失败(': 'Request failed (', '会话标题须为 1 至 200 个字符': 'Chat titles need 1–200 characters',
@@ -240,6 +242,8 @@ window.__ModuleLoader__.load({
         '行距': '行間', '圆角': '角丸', '输入框宽度': '入力欄の幅',
         '恢复 WebChat 默认外观': 'WebChat の外観をリセット', '只重置外观设置；聊天历史、模型与提示词不受影响。': '外観設定のみリセットします。履歴・モデル・プロンプトには影響しません。',
         '恢复默认': 'リセット', '默认': '既定',
+        'WebChat 已就绪。若左侧未出现入口，点击刷新界面载入。': 'WebChat は準備できました。左側に入口が表示されない場合は「表示更新」で読み込んでください。',
+        '刷新界面': '表示更新',
         '当前 DSH Desktop 无法打开文件夹选择器。': 'この DSH Desktop はフォルダ選択子を開けません。',
         '无法打开文件夹选择器。': 'フォルダ選択子を開けません。', 'DSH 文件保存服务不可用。': 'DSH のファイル保存サービスを利用できません。', '无法在 DSH Desktop 保存文件。': 'DSH Desktop でファイルを保存できません。',
         '请求失败(': 'リクエスト失敗(', '会话标题须为 1 至 200 个字符': 'チャットタイトルは 1〜200 文字で入力してください',
@@ -521,6 +525,168 @@ window.__ModuleLoader__.load({
 
     let pendingSave = null
     let failedSave = null
+
+    // ── R8.6(修2):顶层语音采集桥 ──
+    // 现象:DSH 原生语音在顶层页面录音正常,但 WebChat iframe 内 getUserMedia 得到 NotAllowedError
+    // (Desktop 的权限处理只放行顶层媒体请求)。桥接方案(任务 4.3/4.4 的正式路径):iframe 请求 →
+    // 顶层(与 DSH 原生语音同权限)录音 → WAV Blob 经 postMessage 结构化克隆回传 iframe → 走原转写链路。
+    // 安全边界:只接受主聊天 iframe 的同源消息;同一时间只有一个录音任务;音量每 150ms 回传;
+    // 120s 自动停止;停止/取消/卸载都立即释放设备;不绕过任何权限——复用的正是 DSH 原生语音已获授权的顶层环境。
+    function createVoiceBridge() {
+      const SAMPLE_RATE = 16000
+      const MAX_MS = 120000
+      const LEVEL_INTERVAL_MS = 150
+      let active = null
+
+      function frameWindow() {
+        return document.querySelector('iframe[data-chatds-main]')?.contentWindow ?? null
+      }
+      function send(message) {
+        const win = frameWindow()
+        if (win) win.postMessage(message, location.origin)
+      }
+      function release(task) {
+        if (!task) return
+        if (task.timer) clearTimeout(task.timer)
+        if (task.levelTimer) clearInterval(task.levelTimer)
+        try { if (task.processor) task.processor.onaudioprocess = null } catch { /* 继续释放其余资源 */ }
+        for (const node of [task.processor, task.analyser, task.source]) {
+          try { node?.disconnect() } catch { /* 逐个释放 */ }
+        }
+        for (const track of task.stream?.getTracks() ?? []) {
+          try { track.stop() } catch { /* 逐个释放 */ }
+        }
+        try { task.context?.close().catch(() => {}) } catch { /* 释放音频上下文 */ }
+        if (active === task) active = null
+      }
+      function encodeWav(chunks, totalLength) {
+        const buffer = new ArrayBuffer(44 + totalLength * 2)
+        const view = new DataView(buffer)
+        const writeString = (offset, text) => { for (let i = 0; i < text.length; i += 1) view.setUint8(offset + i, text.charCodeAt(i)) }
+        writeString(0, 'RIFF')
+        view.setUint32(4, 36 + totalLength * 2, true)
+        writeString(8, 'WAVE')
+        writeString(12, 'fmt ')
+        view.setUint32(16, 16, true)
+        view.setUint16(20, 1, true)
+        view.setUint16(22, 1, true)
+        view.setUint32(24, SAMPLE_RATE, true)
+        view.setUint32(28, SAMPLE_RATE * 2, true)
+        view.setUint16(32, 2, true)
+        view.setUint16(34, 16, true)
+        writeString(36, 'data')
+        view.setUint32(40, totalLength * 2, true)
+        let offset = 44
+        for (const chunk of chunks) {
+          for (let i = 0; i < chunk.length; i += 1) {
+            const sample = Math.max(-1, Math.min(1, chunk[i]))
+            view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true)
+            offset += 2
+          }
+        }
+        return new Blob([view], { type: 'audio/wav' })
+      }
+      async function start(requestId) {
+        if (!requestId) return
+        if (active) {
+          send({ type: 'chatds:voice-capture-result', requestId, ok: false, name: 'BusyError' })
+          return
+        }
+        if (typeof navigator.mediaDevices?.getUserMedia !== 'function') {
+          send({ type: 'chatds:voice-capture-result', requestId, ok: false, name: 'NotFoundError' })
+          return
+        }
+        let task
+        try {
+          // 权限应答超时保护:某些环境(无权限 UI 的嵌入视图)getUserMedia 永不落定,
+          // 8s 无响应按 TimeoutError 上报,弹窗不无限停在"正在打开";迟到的流在落定后立即释放。
+          let settled = false
+          const stream = await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => {
+              settled = true
+              const error = new Error('getUserMedia timeout')
+              error.name = 'TimeoutError'
+              reject(error)
+            }, 8000)
+            navigator.mediaDevices.getUserMedia({
+              audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+            }).then((value) => {
+              clearTimeout(timeout)
+              if (settled) {
+                for (const track of value.getTracks()) track.stop()
+                return
+              }
+              settled = true
+              resolve(value)
+            }, (error) => {
+              clearTimeout(timeout)
+              settled = true
+              reject(error)
+            })
+          })
+          task = { requestId, stream, chunks: [], length: 0 }
+          active = task
+          const AudioContextCtor = window.AudioContext ?? window.webkitAudioContext
+          const context = new AudioContextCtor({ sampleRate: SAMPLE_RATE })
+          task.context = context
+          task.source = context.createMediaStreamSource(stream)
+          task.processor = context.createScriptProcessor(4096, 1, 1)
+          task.analyser = context.createAnalyser()
+          task.processor.onaudioprocess = (event) => {
+            if (active !== task) return
+            const input = event.inputChannelData ?? event.inputBuffer.getChannelData(0)
+            task.chunks.push(new Float32Array(input))
+            task.length += input.length
+          }
+          task.source.connect(task.processor)
+          task.processor.connect(task.analyser)
+          // 音量反馈:按固定节奏取 analyser 的时域 RMS 回传(不回传音频本身)。
+          const analyserBuffer = new Float32Array(task.analyser.fftSize)
+          task.levelTimer = setInterval(() => {
+            if (active !== task) return
+            try {
+              task.analyser.getFloatTimeDomainData(analyserBuffer)
+              let sum = 0
+              for (let i = 0; i < analyserBuffer.length; i += 1) sum += analyserBuffer[i] * analyserBuffer[i]
+              send({ type: 'chatds:voice-level', requestId, level: Math.min(1, Math.sqrt(sum / analyserBuffer.length) * 4) })
+            } catch { /* 单次电平失败不影响录音 */ }
+          }, LEVEL_INTERVAL_MS)
+          task.timer = setTimeout(() => stop(task.requestId), MAX_MS)
+        } catch (error) {
+          release(task)
+          const name = error instanceof DOMException ? error.name : error?.name ?? 'UnknownError'
+          send({ type: 'chatds:voice-capture-result', requestId, ok: false, name })
+        }
+      }
+      function stop(requestId) {
+        const task = active
+        if (!task || task.requestId !== requestId) return
+        const blob = task.length > 0 ? encodeWav(task.chunks, task.length) : null
+        const stream = task.stream
+        release(task)
+        if (blob) send({ type: 'chatds:voice-capture-result', requestId, ok: true, blob })
+        else send({ type: 'chatds:voice-capture-result', requestId, ok: false, name: 'NoAudioError' })
+        void stream
+      }
+      function cancel(requestId) {
+        const task = active
+        if (!task || task.requestId !== requestId) return
+        release(task)
+        send({ type: 'chatds:voice-capture-cancelled', requestId })
+      }
+      function handle(event) {
+        const data = event.data
+        if (!data || typeof data.type !== 'string' || !data.type.startsWith('chatds:voice-')) return
+        if (data.type === 'chatds:voice-bridge-query') {
+          send({ type: 'chatds:voice-bridge-ready', available: typeof navigator.mediaDevices?.getUserMedia === 'function' })
+          return
+        }
+        if (data.type === 'chatds:voice-capture-start') void start(String(data.requestId ?? ''))
+        else if (data.type === 'chatds:voice-capture-stop') stop(String(data.requestId ?? ''))
+        else if (data.type === 'chatds:voice-capture-cancel') cancel(String(data.requestId ?? ''))
+      }
+      return { handle }
+    }
 
     /** 设置窗口关闭后，在途保存继续。重新打开可重试上次失败的修改。 */
     function ChatDSSettings({ theme, openData, openPlugins, pickDirectory, openCostMeter }) {
@@ -1015,7 +1181,6 @@ window.__ModuleLoader__.load({
       const thresholdPercent = Math.round(stored * 100)
       const noBudget = today !== null && today !== false && today.available === true
         && today.budgetMerged?.cap === undefined && today.budget?.cap === undefined
-      const quickValues = [50, 80, 100]
       return [
         today === null ? h('p', { key: 'loading', role: 'status' }, L('正在读取费用数据…')) : null,
         today === false ? h('p', { key: 'fail', role: 'alert' }, L('费用数据读取失败(dsh-cost-meter 未安装或未运行)。')) : null,
@@ -1057,10 +1222,7 @@ window.__ModuleLoader__.load({
                 }
                 if (value !== thresholdPercent) void transact(() => ({ budgetWarnThresholds: [value / 100] }))
               } }),
-            h('span', { 'aria-hidden': true }, '%'),
-            quickValues.map((value) => h('button', { key: value, type: 'button', className: 'chatds-mini',
-              'aria-pressed': thresholdPercent === value, disabled: busy,
-              onClick: () => void transact(() => ({ budgetWarnThresholds: [value / 100] })) }, value + '%'))) }),
+            h('span', { 'aria-hidden': true }, '%')) }),
         noBudget && h(Row, { keyId: 'noBudget', label: L('每日预算'), description: L('尚未设置每日预算。打开 dsh-cost-meter 原生设置配置预算上限后,提醒才会生效。'),
           children: h('button', { type: 'button', disabled: busy, onClick: () => openCostMeter?.() }, L('打开 dsh-cost-meter 设置')) }),
         h('p', { key: 'prices' }, h('small', null, L('模型价格、历史账单与完整仪表盘以 dsh-cost-meter 为唯一来源,可在其原生设置中查看与配置。DeepSeek Rich 用量已按官方 external_usage 协议计入其外部账本(来源 chatds-rich),今日合计与预算合并口径包含 Rich。'))),
@@ -1239,7 +1401,15 @@ window.__ModuleLoader__.load({
 
     // ────────────────────────── 设置入口 / 面板注册 ──────────────────────────
 
+    // R8.6(11.3):暂存 DSH 注入的 openSettings(接受 section id),供状态条费用段直达
+    // cost-meter 的「费用」设置区;launcher 常驻,引用始终可用。
+    const openSettingsRef = { current: null }
+
     function SettingsLauncher({ wide, settingsOpen, settingsShortcut, openSettings }) {
+      React.useEffect(() => {
+        openSettingsRef.current = typeof openSettings === 'function' ? openSettings : null
+        return () => { openSettingsRef.current = null }
+      }, [openSettings])
       React.useEffect(() => {
         const onMessage = (event) => {
           if (event.origin !== location.origin || event.data?.type !== 'chatds:open-settings') return
@@ -1261,17 +1431,30 @@ window.__ModuleLoader__.load({
       inject: ['slots', 'theme', 'layout'],
       apply(ctx) {
         const theme = { getTheme: () => ctx.theme.getTheme(), subscribe: (listener) => ctx.on('theme/change', listener) }
+        // R8.6(修2):顶层语音采集桥(单实例;消息处理在下方统一监听里)。
+        const voiceBridge = createVoiceBridge()
         ctx.effect(() => {
           const onMessage = (event) => {
             if (event.origin !== location.origin) return
             const frame = document.querySelector('iframe[data-chatds-main]')
             if (event.source !== frame?.contentWindow) return
+            // 语音桥消息优先(采集中事件频繁,不落后面的面板分支)。
+            if (typeof event.data?.type === 'string' && event.data.type.startsWith('chatds:voice-')) {
+              voiceBridge.handle(event)
+              return
+            }
             if (event.data?.type === 'chatds:open-work-branch' && /^session-[a-f0-9-]{36}$/.test(event.data.sessionId)) {
               ctx.get('uiWorkspace')?.openSession(event.data.sessionId)
             }
             // R8.6(5.3A):上下文详情 → dsh-context 原生面板(官方 sidebar.panellist id = 'dsh-context')。
             if (event.data?.type === 'chatds:open-context') {
-              try { ctx.layout?.selectPanel('dsh-context') } catch { /* 面板不存在时忽略,详情弹窗仍在 */ }
+              try { ctx.layout?.selectPanel('dsh-context') } catch { /* 面板不存在时忽略 */ }
+            }
+            // R8.6(11.3):费用/预算段 → dsh-cost-meter 的「费用」设置区(openSettings 支持 section id)。
+            if (event.data?.type === 'chatds:open-cost') {
+              const open = openSettingsRef.current
+              if (open) open('cost-meter')
+              else ctx.layout?.selectPanel('settings')
             }
           }
           window.addEventListener('message', onMessage)
@@ -1346,6 +1529,54 @@ window.__ModuleLoader__.load({
               },
             }),
           }, SideChatHeaderAction))
+        // R8.6(修1):安装/更新后客户端模块图可能要等下一次界面状态变化才应用导航,
+        // 用户此前只能"关了再开"。现在模块应用后自检导航是否出现,最多等 12s,
+        // 仍未出现就挂出非阻塞提示条,一键刷新界面(location.reload);导航出现即自动撤条。
+        ctx.effect(() => {
+          let checks = 0
+          let banner = null
+          const findNav = () => {
+            if (document.querySelector('img[src*="webchat-icon"]')) return true
+            const navList = document.querySelector('[data-slot="sidebar.panellist"]') ?? document.querySelector('nav[aria-label]')
+            if (!navList) return false
+            return Array.from(navList.querySelectorAll('button')).some((node) => (node.textContent ?? '').includes('WebChat'))
+          }
+          const removeBanner = () => {
+            if (banner) { banner.remove(); banner = null }
+          }
+          const timer = setInterval(() => {
+            checks += 1
+            try {
+              if (findNav()) {
+                removeBanner()
+                clearInterval(timer)
+                return
+              }
+              if (checks > 12 || !document.body) {
+                clearInterval(timer)
+                removeBanner()
+                return
+              }
+              if (checks < 2 || banner) return
+              banner = document.createElement('div')
+              banner.setAttribute('data-chatds-refresh-banner', '')
+              banner.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147483000;display:flex;gap:10px;align-items:center;padding:10px 14px;border-radius:12px;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,#111);box-shadow:0 8px 24px rgba(0,0,0,.25);font:13px/1.4 var(--dsw-font-family,sans-serif);max-width:min(430px,80vw)'
+              const text = document.createElement('span')
+              text.textContent = L('WebChat 已就绪。若左侧未出现入口，点击刷新界面载入。')
+              const button = document.createElement('button')
+              button.type = 'button'
+              button.textContent = L('刷新界面')
+              button.style.cssText = 'border:0;border-radius:8px;padding:6px 12px;cursor:pointer;color:#fff;background:var(--chat-accent,var(--dsw-alias-brand-primary,#3b64ed));font:inherit;flex:none'
+              button.addEventListener('click', () => location.reload())
+              banner.append(text, button)
+              document.body.append(banner)
+            } catch {
+              clearInterval(timer)
+              removeBanner()
+            }
+          }, 1000)
+          return () => { clearInterval(timer); removeBanner() }
+        })
       },
     }
   },

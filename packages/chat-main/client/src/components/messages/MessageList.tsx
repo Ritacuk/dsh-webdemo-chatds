@@ -24,15 +24,21 @@ export const MessageList = ({
   session,
   streaming,
   footer,
+  navigationOpen,
+  onNavigationOpenChange,
+  registerOpenNavigation,
 }: {
   session: Session
   streaming: boolean
   footer: React.ReactNode
+  /** R8.6(11.2):定位入口移到 Composer 图标;弹层开合状态由 SessionView 提升。 */
+  navigationOpen?: boolean
+  onNavigationOpenChange?: (open: boolean) => void
+  registerOpenNavigation?: (open: () => void) => void
 }) => {
   const t = useTranslate()
   const [navigation, setNavigation] = useState<{ id: string; label: string; element: HTMLElement; level: number }[] | null>(null)
   const [messageQuery, setMessageQuery] = useState('')
-  const navigationButton = useRef<HTMLButtonElement>(null)
   const isMobile = useIsMobile()
   const scrollRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -114,8 +120,15 @@ export const MessageList = ({
 
   function closeNavigation() {
     setNavigation(null)
-    navigationButton.current?.focus({ preventScroll: true })
+    onNavigationOpenChange?.(false)
   }
+
+  // R8.6(11.2):把「定位消息」入口交给 Composer 图标;每次渲染后重新登记最新闭包。
+  const openNavigationRef = useRef<() => void>(() => {})
+  openNavigationRef.current = openNavigation
+  useEffect(() => {
+    registerOpenNavigation?.(() => openNavigationRef.current())
+  })
 
   function revealMessage(element: HTMLElement) {
     closeNavigation()
@@ -172,11 +185,8 @@ export const MessageList = ({
             })}
           </div>
         </div>
-        {messages.length > 0 && <div className={styles.navigationBar}>
-          <button type="button" ref={navigationButton} onClick={openNavigation}>{t('messageNavigation')}</button>
-        </div>}
         {footer}
-        {navigation && <Modal title={t('messageNavigation')} closable onClose={closeNavigation}>
+        {(navigation !== null && navigationOpen !== false) && <Modal title={t('messageNavigation')} closable onClose={closeNavigation}>
           <input autoFocus type="search" className={styles.navigationSearch} aria-label={t('searchMessageNavigation')}
             placeholder={t('searchMessageNavigation')} value={messageQuery} onChange={(event) => setMessageQuery(event.target.value)} />
           {navigationMatches?.length ? <ul className={styles.navigationList}>

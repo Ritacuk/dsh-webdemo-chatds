@@ -12,6 +12,7 @@ import { ImportModal } from '../session/ImportModal.js'
 import {
   IconChevronDownOutline14,
   IconMicOutline16,
+  IconSearchOutline16,
   IconSendOutline16,
   IconStopFill16,
 } from '../base/icons.js'
@@ -40,12 +41,22 @@ import styles from './ChatInput.module.css'
 const EMPTY_ATTACHMENTS: never[] = []
 
 /** 输入框(P2-A):输入 + 附件预览;左下角模式/思考/搜索/本地检索;右下角模型选择与发送/停止 */
-export const ChatInput = memo(function ChatInput({ sessionId }: { sessionId: string | null }) {
+export const ChatInput = memo(function ChatInput({ sessionId, navigationAvailable, onOpenNavigation }: {
+  sessionId: string | null
+  /** R8.6(11.2):「定位消息」入口移入 Composer 左侧图标区(原悬浮胶囊违和)。 */
+  navigationAvailable?: boolean
+  onOpenNavigation?: () => void
+}) {
   // 切换目标时重建输入状态(会话偏好由 store 恢复)
-  return <Input key={sessionId === null ? 'new' : `session:${sessionId}`} sessionId={sessionId} />
+  return <Input key={sessionId === null ? 'new' : `session:${sessionId}`} sessionId={sessionId}
+    navigationAvailable={navigationAvailable} onOpenNavigation={onOpenNavigation} />
 })
 
-const Input = ({ sessionId }: { sessionId: string | null }) => {
+const Input = ({ sessionId, navigationAvailable, onOpenNavigation }: {
+  sessionId: string | null
+  navigationAvailable?: boolean
+  onOpenNavigation?: () => void
+}) => {
   const t = useTranslate()
   // R8.5:草稿文本持久在 store(键 = sessionId 或 'new');发送成功后由 setText('') 归零。
   const draftKey = sessionId ?? 'new'
@@ -250,6 +261,13 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               setText((current) => (current.trim().length === 0 ? resolved : `${current}\n\n${resolved}`))
               autoSendRef.current = true
             }} />
+          {onOpenNavigation && (
+            <button type="button" className={styles.locateButton} aria-label={t('messageNavigation')} title={t('messageNavigation')}
+              disabled={navigationAvailable === false}
+              onClick={() => onOpenNavigation()}>
+              <IconSearchOutline16 />
+            </button>
+          )}
           <ComposerMenu label={t('composerChatSettings')} caption="⚙" triggerClass={styles.gearTrigger}>
             {(close) => <>
               <h3>{t('menuWorkMode')}</h3>

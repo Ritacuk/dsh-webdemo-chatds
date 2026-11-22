@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.2 (2026-11-22)
+
+R8.6 follow-up from real Windows Desktop feedback: navigation after install, working microphone inside the WebChat iframe, a DSH-native status bar with direct navigation into the native plugins, and smaller UX cleanups. Verified live on the isolated Linux DSH profile.
+
+### Fixed
+
+- **[P1] Microphone now works inside the WebChat iframe (top-frame capture bridge)**: DSH Desktop's permission handler grants media only to the top frame, so the iframe's own `getUserMedia` was denied (`NotAllowedError`) even though DSH's native voice worked. WebChat now records through the top frame (the same authorized context as DSH's native voice) and hands the WAV blob to the transcription path over same-origin postMessage — no permission prompts, no repeated popups. Live level meter + elapsed timer in the record dialog; single capture task; stop/cancel/unmount release the device immediately; a hung permission request is reported honestly after 8s (`TimeoutError`).
+- **[P1] WebChat entry after install/update**: the client module graph can apply late after installing or updating, leaving the sidebar without the WebChat entry until some UI state changed (users had to close and reopen things). The plugin now self-checks after applying and shows a non-blocking banner with a one-click "refresh interface" action if the entry has not appeared within a few seconds; the banner clears itself once the entry renders.
+- **[P1] Status bar is DSH-native now**: turns, input / cache / output tokens, cache-hit %, this-session cost (native or — with an explicit "WebChat external ledger" note), context usage, and the merged budget ratio (Rich included; <10% shows one decimal, matching the native footer). Clicking a segment opens the corresponding native plugin directly: cost/usage/budget → dsh-cost-meter's 费用 settings section (`openSettings('cost-meter')`); context → the dsh-context panel. The home-made detail modal is removed.
+- **[P2] The floating "定位消息" pill is gone**: a locate icon now lives in the composer's icon cluster (disabled when the session has no messages).
+- **[P2] Budget threshold quick chips (50%/80%/100%) removed**: the numeric input stays.
+
+### Notes
+
+- Work-branch sessions: DSH's native footer reports "没有完整用量记录" for inherited history because branches inherit context as seeds — that is DSH/cost-meter accounting, not something the plugin fakes. New messages in a branch are ordinary native turns and are accounted normally; WebChat's own status bar now shows the branch's real usage once it exists.
+
+### Verified platforms
+
+| Platform | Status |
+| --- | --- |
+| Linux DSH Web (isolated profile) | full smoke: nav self-check silent on healthy loads, composer locate icon, native-form status bar (merged budget verified with real numbers), chip removal, voice bridge handshake + honest timeout without a device |
+| Windows Desktop | updates via plugin manager from 0.11.1 |
+
 ## 0.11.1 (2026-11-22)
 
 R8.6 — systemic quality round: settings crash root cause, state ownership, voice entry sync, dsh-context native entry, and a free-form appearance system replacing the four brand layouts. Verified live on the isolated Linux DSH profile (incl. 32x settings stress and voice toggle sync); released at the user's explicit instruction. Windows Desktop update: install 0.11.1 via the plugin manager (the crashing 0.11.0 is replaced by this version).

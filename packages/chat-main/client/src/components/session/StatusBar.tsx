@@ -1,14 +1,16 @@
 import { memo, useCallback, useEffect, useState } from 'react'
-import { Modal } from '../base/Modal.js'
 import { api } from '../../services/api.js'
 import { setRichLedgerOk, useChatStore } from '../../store/workspace.js'
 import { useTranslate } from '../../i18n/index.js'
 import styles from './StatusBar.module.css'
 
 /**
- * R8 会话状态条:上下文用量(dsh-context 官方投影)+ 会话/今日费用(dsh-cost-meter)。
- * 数据不可用时按官方事实显示「暂无数据」,不伪造。点击打开详情(含 dsh-context 联动入口)。
- * R8.5:今日费用与预算比例使用合并口径(原生账本 + Rich 外部账本),并显示外部账本状态。
+ * R8.6(11.3):会话状态条——DSH 原生底栏同款信息形态(轮数/输入/缓存/输出/缓存命中/本会话费用/预算),
+ * 数字全部来自真实数据(cost-meter 会话账本 / dsh-context 投影 / 合并预算),不伪造。
+ * 分段可点击,直达对应原生插件页(自制详情弹窗按用户要求移除,不再维护第二份统计 UI):
+ * - 费用/用量/预算段 → dsh-cost-meter 的「费用」设置区(shell openSettings('cost-meter'))
+ * - 上下文段 → dsh-context 原生面板(selectPanel('dsh-context'))
+ * 预算为合并口径(原生账本 + Rich 外部账本),Rich 会话在费用段标注来源。
  */
 
 interface ContextView {
@@ -18,13 +20,12 @@ interface ContextView {
   contextWindow?: number
   ratio?: number
   nearLimit?: boolean
-  requests?: readonly Record<string, unknown>[]
 }
 
 interface SessionCostView {
   available: boolean
   reason?: string
-  /** R8.6(6.3):数据来源——native=dsh-cost-meter 原生会话账本;rich=WebChat Rich 外部记录。 */
+  /** 数据来源——native=dsh-cost-meter 原生会话账本;rich=WebChat Rich 外部记录。 */
   source?: 'native' | 'rich'
   cost?: { own?: { cost?: number; input?: number; output?: number; cacheRead?: number; cacheWrite?: number; calls?: number }; found?: boolean }
 }
@@ -32,15 +33,8 @@ interface SessionCostView {
 interface TodayCostView {
   available: boolean
   reason?: string
-  cost?: number
-  input?: number
-  output?: number
-  calls?: number
   budget?: { period?: string; cap?: number; used?: number; ratio?: number }
-  /** R8.5:外部用量(Rich 直连,经官方 external_usage.json 注入 cost-meter)。 */
-  external?: { input?: number; output?: number; cached?: number; cacheWrite?: number; calls?: number; cost?: number }
-  externalStale?: boolean
-  /** R8.5:合并预算视图(native + external)。 */
+  /** 合并预算视图(native + external)。 */
   budgetMerged?: { period?: string; cap?: number; used?: number; ratio?: number }
   richLedger?: { available: boolean; reason?: string; records24h: number }
 }
@@ -55,23 +49,15 @@ const formatCost = (value: number | undefined): string | null => {
   return value >= 1 ? `$${value.toFixed(2)}` : `$${value.toFixed(4)}`
 }
 
-interface EstimateView {
-  available: boolean
-  reason?: string
-  inputTokens?: number
-  outputTokens?: [number, number]
-  inputCost?: number
-  currency?: string
-  cacheHitAssumption?: number
-}
+/** 预算/占比:<10% 显示一位小数(与 DSH 原生底栏一致,0.9% 不被吞成 0%)。 */
+const formatPercent = (ratio: number): string =>
+  ratio < 0.1 ? `${(ratio * 100).toFixed(1)}%` : `${Math.round(ratio * 100)}%`
 
 export const StatusBar = memo(function StatusBar({ sessionId }: { sessionId: string | null }) {
   const t = useTranslate()
   const [context, setContext] = useState<ContextView | null>(null)
   const [sessionCost, setSessionCost] = useState<SessionCostView | null>(null)
   const [today, setToday] = useState<TodayCostView | null>(null)
-  const [estimate, setEstimate] = useState<EstimateView | null>(null)
-  const [detail, setDetail] = useState(false)
   const settledTick = useChatStore((state) => state.settledTick)
 
   const refresh = useCallback(() => {
@@ -99,133 +85,64 @@ export const StatusBar = memo(function StatusBar({ sessionId }: { sessionId: str
     return () => window.clearInterval(timer)
   }, [sessionId])
 
+  // 费用段数据(会话级,轮数/输入/缓存/输出/命中/金额)
+  const own = sessionCost?.cost?.own
+  const calls = typeof own?.calls === 'number' && own.calls > 0 ? own.calls : null
+  const input = compact(own?.input)
+  const cached = compact(own?.cacheRead)
+  const output = compact(own?.output)
+  const cacheHit = own && typeof own.cacheRead === 'number' && typeof own.input === 'number' && own.cacheRead + own.input > 0
+    ? Math.round((own.cacheRead / (own.cacheRead + own.input)) * 100) + '%'
+    : null
+  const sessionCostValue = formatCost(own?.cost)
+  const hasCost = own !== undefined && (calls !== null || input !== null || output !== null || sessionCostValue !== null || sessionCost?.source === 'rich')
+
   const contextTotal = compact(context?.usage?.total)
   const contextWindow = compact(context?.contextWindow)
   const ratio = context?.ratio
-  const sessionCostValue = sessionCost?.cost?.own?.cost
-  const sessionTokens = compact(sessionCost?.cost?.own?.input)
-  // R8.5:今日展示合并口径(原生 + Rich 外部);两者都无金额时保持原展示。
-  const externalCostValue = (today?.cost ?? 0) + (today?.external?.cost ?? 0)
-  const todayCost = formatCost(externalCostValue)
-  const todayCalls = (today?.calls ?? 0) + (today?.external?.calls ?? 0)
+
   const merged = today?.budgetMerged ?? today?.budget
-  const budgetRatio = merged?.ratio
+  const budgetRatio = merged?.ratio ?? (merged && typeof merged.cap === 'number' && merged.cap > 0 && typeof merged.used === 'number'
+    ? merged.used / merged.cap
+    : undefined)
 
-  const hasAnything = contextTotal !== null || sessionCostValue !== undefined || todayCost !== null
-  if (!hasAnything && context === null && today === null) return null
+  const openCost = () => {
+    if (window.parent !== window) window.parent.postMessage({ type: 'chatds:open-cost' }, location.origin)
+  }
+  const openContext = () => {
+    if (window.parent !== window) window.parent.postMessage({ type: 'chatds:open-context' }, location.origin)
+  }
 
-  return <>
-    <button type="button" className={styles.bar} data-webchat-statusbar="" onClick={() => {
-      refresh()
-      if (sessionId !== null) {
-        void api.costEstimate(sessionId, 0).then(setEstimate).catch(() => setEstimate({ available: false, reason: '读取失败' }))
-      }
-      setDetail(true)
-    }}
-      aria-label={t('statusDetailAria')}>
-      {!hasAnything && <span className={styles.muted}>{t('statusNoData')}</span>}
+  if (!hasCost && context === null && today === null) return null
+
+  return (
+    <div className={styles.bar} data-webchat-statusbar="">
+      {!hasCost && <span className={styles.muted}>{t('statusNoData')}</span>}
+      {hasCost && (
+        <button type="button" className={styles.segment} onClick={openCost}
+          title={sessionCost?.source === 'rich' ? t('statusSessionRichNote') : t('statusOpenCostMeter')}>
+          {calls !== null && <span>{calls} {t('statusTurnsUnit')}</span>}
+          {input !== null && <span>{t('statusInput')} {input}</span>}
+          {cached !== null && <span>{t('statusCacheLabel')} {cached}</span>}
+          {output !== null && <span>{t('statusOutput')} {output}</span>}
+          {cacheHit !== null && <span>{t('statusCacheHit')} {cacheHit}</span>}
+          {(sessionCostValue !== null || sessionCost?.source === 'rich') && (
+            <span>{t('statusSession')} {sessionCostValue ?? t('statusNoAmount')}{sessionCost?.source === 'rich' ? ` · ${t('statusSourceRich')}` : ''}</span>
+          )}
+        </button>
+      )}
       {contextTotal !== null && (
-        <span className={ratio !== undefined && ratio >= 0.85 ? styles.nearLimit : styles.item}>
-          {t('statusContext')} {contextTotal}{contextWindow !== null ? `/${contextWindow}` : ''}{ratio !== undefined ? ` (${Math.round(ratio * 100)}%)` : ''}
-        </span>
+        <button type="button" className={styles.segment} onClick={openContext} title={t('statusOpenDshContext')}>
+          <span className={ratio !== undefined && ratio >= 0.85 ? styles.nearLimit : styles.item}>
+            {t('statusContext')} {contextTotal}{contextWindow !== null ? `/${contextWindow}` : ''}{ratio !== undefined ? ` (${formatPercent(ratio)})` : ''}
+          </span>
+        </button>
       )}
-      {sessionCostValue !== undefined && sessionCostValue > 0 && (
-        <span className={styles.item}>{t('statusSession')} {formatCost(sessionCostValue)}{sessionTokens !== null ? ` · ${sessionTokens} tok` : ''}</span>
-      )}
-      {todayCost !== null && <span className={styles.item}>{t('statusToday')} {todayCost}{todayCalls > 0 ? ` · ${todayCalls} ${t('statusCallsUnit')}` : ''}</span>}
       {budgetRatio !== undefined && merged?.cap !== undefined && (
-        <span className={budgetRatio >= 0.8 ? styles.nearLimit : styles.item}>{t('statusBudget')} {Math.round(budgetRatio * 100)}%</span>
+        <button type="button" className={styles.segment} onClick={openCost} title={t('statusOpenCostMeter')}>
+          <span className={budgetRatio >= 0.8 ? styles.nearLimit : styles.item}>{t('statusBudget')} {formatPercent(budgetRatio)}</span>
+        </button>
       )}
-    </button>
-    {detail && (
-      <Modal title={t('statusDetailTitle')} onClose={() => setDetail(false)}>
-        <div className={styles.detail}>
-          {/* R8.5:Rich 用量已经官方 external_usage 协议入账;仅在账本不可用时给出原因。 */}
-          {today?.richLedger?.available === false && today.richLedger.reason !== undefined
-            ? <p>{t('statusRichLedgerUnavailable').replace('{reason}', today.richLedger.reason)}</p>
-            : <p>{t('statusRichLedgerOk')}</p>}
-          <section>
-            <h3>{t('statusDetailContextSection')}</h3>
-            {context?.available === true && context.usage !== undefined ? (
-              <>
-                <table>
-                  <tbody>
-                    {Object.entries({ system: t('statusUsageSystem'), tools: t('statusUsageTools'), user: t('statusUsageUser'), inject: t('statusUsageInject'), skill: t('statusUsageSkill'), assistant: t('statusUsageAssistant'), tool: t('statusUsageTool') })
-                      .filter(([key]) => typeof context.usage![key as keyof typeof context.usage] === 'number')
-                      .map(([key, label]) => (
-                        <tr key={key}><td>{label}</td><td>{compact(context.usage![key as keyof typeof context.usage] as number) ?? '0'} tok</td></tr>
-                      ))}
-                    <tr><td>{t('statusUsageTotal')}</td><td>{contextTotal ?? t('statusNoDataShort')} tok</td></tr>
-                    <tr><td>{t('statusContextWindow')}</td><td>{contextWindow ?? t('statusNoDataShort')}</td></tr>
-                  </tbody>
-                </table>
-                {/* R8.6(5.3A):上下文投影可用说明 dsh-context 已安装且启用 → 提供其原生页面入口。
-                    会话由原生面板自行投影,不在 WebChat 侧伪造会话映射(5.5)。 */}
-                {window.parent !== window && (
-                  <button type="button" className={styles.linkButton}
-                    onClick={() => window.parent.postMessage({ type: 'chatds:open-context' }, location.origin)}>
-                    {t('statusOpenDshContext')}
-                  </button>
-                )}
-              </>
-            ) : (
-              <p className={styles.muted}>{context?.reason ?? t('statusNoDataShort')}</p>
-            )}
-          </section>
-          <section>
-            <h3>{t('statusDetailSessionSection')}</h3>
-            {sessionCost?.available === true && sessionCost.cost?.own !== undefined ? (
-              <>
-                <p>
-                  {t('statusCostLabel')} {formatCost(sessionCost.cost.own.cost) ?? t('statusNoAmount')} · {t('statusInput')} {compact(sessionCost.cost.own.input) ?? '—'} tok ·
-                  {t('statusOutput')} {compact(sessionCost.cost.own.output) ?? '—'} tok · {t('statusRequests')} {sessionCost.cost.own.calls ?? '—'}
-                </p>
-                {sessionCost.source === 'rich' && <p className={styles.muted}>{t('statusSessionRichNote')}</p>}
-              </>
-            ) : (
-              <p className={styles.muted}>{sessionCost?.reason ?? t('statusNoDataShort')}</p>
-            )}
-          </section>
-          <section>
-            <h3>{t('statusDetailEstimateSection')}</h3>
-            {estimate?.available === true ? (
-              <p className={styles.muted}>
-                {t('statusEstimateInput').replace('{input}', String(estimate.inputTokens ?? '—')).replace('{cache}', String(Math.round((estimate.cacheHitAssumption ?? 0) * 100)))} ·
-                {t('statusEstimateOutput').replace('{low}', String(estimate.outputTokens?.[0] ?? '—')).replace('{high}', String(estimate.outputTokens?.[1] ?? '—'))}
-                {t('statusEstimateBillNote')}
-                {estimate.inputCost !== undefined && ` ${t('statusEstimateInputCost').replace('{cost}', estimate.inputCost.toFixed(4))}`}
-              </p>
-            ) : (
-              <p className={styles.muted}>{estimate?.reason ?? t('statusEstimateUnavailable')}</p>
-            )}
-          </section>
-          <section>
-            <h3>{t('statusDetailTodaySection')}</h3>
-            {today?.available === true ? (
-              <>
-                <p>{t('statusCostLabel')} {formatCost(externalCostValue) ?? t('statusNoAmount')} · {t('statusInput')} {compact(today.input) ?? 0}+{compact(today.external?.input) ?? 0} tok · {t('statusOutput')} {compact(today.output) ?? 0}+{compact(today.external?.output) ?? 0} tok · {t('statusRequests')} {today.calls ?? 0}+{today.external?.calls ?? 0}</p>
-                {today.external?.cost !== undefined && today.external.cost > 0 && (
-                  <p className={styles.muted}>{t('statusExternalBreakdown')
-                    .replace('{native}', formatCost(today.cost) ?? '$0')
-                    .replace('{rich}', formatCost(today.external.cost) ?? '$0')
-                    .replace('{cached}', compact(today.external.cached) ?? '0')}</p>
-                )}
-                {today.externalStale === true && <p className={styles.muted}>{t('statusExternalStale')}</p>}
-                {merged?.cap !== undefined
-                  ? <p>{t('statusBudgetLine')
-                      .replace('{period}', merged.period === 'day' ? t('statusPeriodDay') : merged.period === 'month' ? t('statusPeriodMonth') : merged.period ?? t('statusPeriodGeneric'))
-                      .replace('{used}', formatCost(merged.used) ?? t('statusNoAmount'))
-                      .replace('{cap}', `$${merged.cap}`)
-                      .replace('{ratio}', budgetRatio !== undefined ? `(${Math.round(budgetRatio * 100)}%)` : '')}</p>
-                  : <p className={styles.muted}>{t('statusBudgetNotSet')}</p>}
-                <p className={styles.muted}>{t('statusCostMeterNote')}</p>
-              </>
-            ) : (
-              <p className={styles.muted}>{today?.reason ?? t('statusNoDataShort')}</p>
-            )}
-          </section>
-        </div>
-      </Modal>
-    )}
-  </>
+    </div>
+  )
 })
