@@ -20,12 +20,12 @@ DeepSeek's official adapter (`dsh-llm-deepseek`) intentionally "circuit-breaks" 
 - **Demo-style chat**: new/multi-turn conversations, streaming output, stop, edit & resend, regenerate, reply branching.
 - **Thinking & search**: deep-thinking blocks (with signature chain), web-search steps, fetched page results, citation linking — all rendered structurally.
 - **DSH model catalog**: DSH model list, provider grouping, model whitelist, favorites, thinking levels, default model.
-- **Files & attachments**: chat attachments (cloud Files API parsing or direct send by model capability); local directory authorization + read-only retrieval (TXT/Markdown/CSV/DOCX/XLSX/PPTX content, PDF/image by filename).
+- **Files & attachments**: chat attachments (DOCX/PPTX/XLSX text extraction locally, cloud Files API parsing for PDF/images, direct send by model capability); local directory authorization + read-only retrieval (TXT/Markdown/CSV/DOCX/XLSX/PPTX content, PDF/image by filename).
 - **Prompt templates**: global prompts, template variables, draft insertion.
-- **Context & cost**: integrates `dsh-context` / `dsh-cost-meter` (optional plugins) for context usage and spend display.
+- **Context & cost**: integrates `dsh-context` / `dsh-cost-meter` (optional plugins). The bottom status bar follows DSH's native footer style — turns, tokens (tok), cache hit, session cost and merged budget — and clicking a segment opens the dsh-context panel or the dsh-cost-meter cost section directly. Rich-turn amounts are computed from dsh-cost-meter's own price catalog with the DeepSeek peak/off-peak rule.
 - **Plugin permissions**: shows running DSH bundles/components; read-only local capabilities require explicit grants.
 - **Session import/export**: compatible with official Demo v3, DeepChat v3, and WebChat ZIP; per-session Markdown/JSON/ZIP export, batch ZIP import with preview and dedup.
-- **UI styles**: WebChat default / GPT / Gemini / Claude, light/dark/follow-DSH, in-window glass, font size and reading width.
+- **Free appearance**: DeepSeek Demo default layout plus accent color, background/panel/composer opacity, layout density, line height, corner radius, composer width, font size, reading width, light/dark/follow-DSH, and in-window glass where supported. The legacy GPT / Gemini / Claude imitations are retired; updating migrates them into equivalent free-appearance settings automatically.
 - **Agent Side Chat** (Desktop): side chats beside DSH Agent work branches with checkpoint sync.
 
 ## Compatibility
@@ -108,7 +108,7 @@ WebChat does not make the DeepSeek API free: model requests, web search, file pa
 ## Known limitations (truthful)
 
 - **Real web search**: protocol and UI implemented; real search billing must be confirmed by the user (not acceptance-tested this round).
-- **Voice**: transcription prefers the DSH voice-input component when installed (local SenseVoice or the provider you configured); otherwise it falls back to DeepSeek ASR, and only when voice input is explicitly enabled in ChatDS settings (charges may apply).
+- **Voice**: transcription prefers the DSH voice-input component when installed (local SenseVoice or the provider you configured); otherwise it falls back to DeepSeek ASR, and only when voice input is explicitly enabled in ChatDS settings (charges may apply). DSH Desktop grants microphone access only to the main frame — WebChat records through a top-frame capture bridge (the same authorized context as DSH native voice) with a live level meter and timer.
 - **Agent work-branch workspace picking**: the branch dialog lists your registered DSH workspaces (parent chat's workspace preselected); the native directory picker appears only when you create a brand-new workspace, through DSH's official flow.
 - **Rich usage ledger**: Rich usage is recorded into the `dsh-cost-meter` unified ledger via its official `external_usage.json` protocol (source `chatds-rich`); the meter's native budget widget still counts the DSH ledger only — WebChat's own budget view merges both, and cost-meter's Settings → Cost shows combined totals.
 - **Linux directory picker**: on servers without a portal, DSH's official picker service may be unavailable — use the manual path grant.

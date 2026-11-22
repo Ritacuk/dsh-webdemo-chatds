@@ -18,12 +18,12 @@ DeepSeek 官方适配器（`dsh-llm-deepseek`）对 Rich 专属块（思考签�
 - **DeepSeek Demo 风格聊天**：新建/多轮对话、流式生成、停止、编辑重发、重新生成、回复分支。
 - **思考与搜索**：深度思考块（含签名校验链）、联网搜索步骤、网页读取结果、引用关联——全部结构化渲染。
 - **DSH 模型目录**：读取 DSH 模型列表、Provider 分组、模型白名单、收藏、思考等级、默认模型。
-- **文件与附件**：聊天附件（云端 Files API 解析或按模型能力直发）；本地目录授权 + 只读检索（TXT/Markdown/CSV/DOCX/XLSX/PPTX 正文与 PDF/图片文件名）。
+- **文件与附件**：聊天附件（DOCX/PPTX/XLSX 本地提取文本、PDF/图片云端 Files API 解析、按模型能力直发）；本地目录授权 + 只读检索（TXT/Markdown/CSV/DOCX/XLSX/PPTX 正文与 PDF/图片文件名）。
 - **提示词模板**：全局提示词、模板变量、草稿插入。
-- **上下文与费用**：接入 `dsh-context` / `dsh-cost-meter`（可选插件）显示上下文占用与用量。
+- **上下文与费用**：接入 `dsh-context` / `dsh-cost-meter`（可选插件）。状态条按 DSH 原生底栏风格显示轮数/Token（tok）/缓存命中/金额/合并预算，点击分段直达 dsh-context 面板与 dsh-cost-meter 费用页；Rich 轮金额按其价表与峰谷规则计算。
 - **插件权限**：显示 DSH 运行中的 Bundle/组件；只读本地能力显式授权。
 - **会话导入导出**：兼容官方 Demo v3、DeepChat v3、WebChat ZIP；单会话导出 Markdown/JSON/ZIP，批量 ZIP 勾选导入，导入预览与去重。
-- **多种 UI 风格**：WebChat 默认 / GPT / Gemini / Claude 四种风格，浅色/深色/跟随 DSH，窗口内磨砂、字号与阅读宽度。
+- **自由外观系统**：强调色、背景/面板/输入框透明度、密度、行距、圆角、输入框宽度、磨砂、字号与阅读宽度；旧 GPT/Gemini/Claude 风格自动迁移为等效配置。
 - **Agent Side Chat**（桌面端）：在 DSH Agent 工作分支旁开旁聊，检查点同步、父会话关联。
 
 ## 支持平台
