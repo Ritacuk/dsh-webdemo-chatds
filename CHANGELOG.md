@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.7 (2026-11-23)
+
+Two display fixes from desktop feedback.
+
+### Fixed
+
+- **[P2] Budget threshold input fully visible**: the description is shortened (merged sentences separated by a space, "失焦保存" removed) and the number input is 120px with flex-shrink disabled, so "100" is never clipped.
+- **[P2] Context segment carries the tok unit**: the status-bar context readout is now "上下文 113 tok" (window suffix unchanged), matching the other token segments.
+
+### Verified
+
+172 automated tests green; isolated instance smoke: threshold row shows the reworded description and a full-width input, status-bar context displays "上下文 56 tok".
 ## 0.11.6 (2026-11-23)
 
 Four desktop-feedback fixes: attachment types, model-whitelist refresh, budget input, and per-message amounts.

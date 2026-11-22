@@ -137,7 +137,7 @@ export const StatusBar = memo(function StatusBar({ sessionId }: { sessionId: str
       {contextTotal !== null && (
         <button type="button" className={styles.segment} onClick={openContext} title={t('statusOpenDshContext')}>
           <span className={ratio !== undefined && ratio >= 0.85 ? styles.nearLimit : styles.item}>
-            {t('statusContext')} {contextTotal}{contextWindow !== null ? `/${contextWindow}` : ''}{ratio !== undefined ? ` (${formatPercent(ratio)})` : ''}
+            {t('statusContext')} {contextTotal}{contextWindow !== null ? `/${contextWindow}` : ''} tok{ratio !== undefined ? ` (${formatPercent(ratio)})` : ''}
           </span>
         </button>
       )}

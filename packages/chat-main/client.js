@@ -91,7 +91,7 @@ window.__ModuleLoader__.load({
         '预算提醒': 'Budget reminders', '基于 dsh-cost-meter 预算账目,达到阈值时在聊天页轻提示,不打断输入。': 'Based on the dsh-cost-meter budget; shows a gentle toast in the chat at thresholds without interrupting typing.',
         '提醒阈值': 'Reminder threshold', '预算提醒阈值(%)': 'Budget reminder threshold (%)',
         '达到比例时提醒一次(按今日已用/预算上限)。': 'Remind once per day when the ratio is reached (today\'s spend / budget cap).',
-        '输入 1–100 的整数百分比,失焦保存。': 'Enter 1–100 (%); saved on blur.',
+        '输入 1–100 的整数百分比。': 'Enter 1–100 (%).',
         '尚未设置每日预算。打开 dsh-cost-meter 原生设置配置预算上限后,提醒才会生效。': 'No budget is set yet. Open dsh-cost-meter\'s native settings to configure a cap; reminders only work after that.',
         '打开 dsh-cost-meter 设置': 'Open dsh-cost-meter settings',
         '模型价格、历史账单与完整仪表盘以 dsh-cost-meter 为唯一来源,可在其原生设置中查看与配置。DeepSeek Rich 用量已按官方 external_usage 协议计入其外部账本(来源 chatds-rich),今日合计与预算合并口径包含 Rich。': 'Model prices, history and the full dashboard live only in dsh-cost-meter; configure them in its native settings. DeepSeek Rich usage is recorded into its external ledger via the official external_usage protocol (source: chatds-rich), and today totals plus the merged budget view include Rich.',
@@ -201,7 +201,7 @@ window.__ModuleLoader__.load({
         '预算提醒': '予算リマインダー', '基于 dsh-cost-meter 预算账目,达到阈值时在聊天页轻提示,不打断输入。': 'dsh-cost-meter の予算に基づき、しきい値に達したらチャット画面で控えめにお知らせします。入力は妨げません。',
         '提醒阈值': 'リマインダーしきい値', '预算提醒阈值(%)': '予算リマインダーしきい値(%)',
         '达到比例时提醒一次(按今日已用/预算上限)。': '比率に達したら 1 日 1 回お知らせします(今日の使用量/予算上限)。',
-        '输入 1–100 的整数百分比,失焦保存。': '1–100 の整数(%)を入力。フォーカスを外すと保存します。',
+        '输入 1–100 的整数百分比。': '1–100 の整数(%)を入力。',
         '尚未设置每日预算。打开 dsh-cost-meter 原生设置配置预算上限后,提醒才会生效。': '1 日の予算が未設定です。dsh-cost-meter のネイティブ設定で上限を設定すると、リマインダーが機能します。',
         '打开 dsh-cost-meter 设置': 'dsh-cost-meter の設定を開く',
         '模型价格、历史账单与完整仪表盘以 dsh-cost-meter 为唯一来源,可在其原生设置中查看与配置。DeepSeek Rich 用量已按官方 external_usage 协议计入其外部账本(来源 chatds-rich),今日合计与预算合并口径包含 Rich。': 'モデル価格・履歴・完全なダッシュボードは dsh-cost-meter が唯一の情報源で、そのネイティブ設定で確認/設定できます。DeepSeek Rich の使用量は公式 external_usage プロトコルで外部台帳(ソース: chatds-rich)に計上され、今日の合計と統合予算ビューに含まれます。',
@@ -1211,11 +1211,11 @@ window.__ModuleLoader__.load({
         h(Row, { keyId: 'reminders', label: L('预算提醒'), description: L('基于 dsh-cost-meter 预算账目,达到阈值时在聊天页轻提示,不打断输入。'),
           children: Switch({ label: L('预算提醒'), enabled: settings.budgetRemindersEnabled === true, disabled: busy, busy,
             onToggle: () => void transact(() => ({ budgetRemindersEnabled: !settings.budgetRemindersEnabled })) }) }),
-        h(Row, { keyId: 'thresholds', label: L('预算提醒阈值(%)'), description: L('达到比例时提醒一次(按今日已用/预算上限)。') + ' ' + L('输入 1–100 的整数百分比,失焦保存。'),
+        h(Row, { keyId: 'thresholds', label: L('预算提醒阈值(%)'), description: L('达到比例时提醒一次(按今日已用/预算上限)。') + ' ' + L('输入 1–100 的整数百分比。'),
           children: h('div', { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
             h('input', { type: 'number', 'aria-label': L('预算提醒阈值(%)'), min: 1, max: 100, step: 1,
               key: 'threshold-' + thresholdPercent, defaultValue: thresholdPercent, disabled: busy,
-              style: { width: 110 }, 'aria-describedby': undefined,
+              style: { width: 120, flexShrink: 0 }, 'aria-describedby': undefined,
               onBlur: (event) => {
                 const value = Math.round(event.target.valueAsNumber)
                 if (!Number.isInteger(value) || value < 1 || value > 100) {
