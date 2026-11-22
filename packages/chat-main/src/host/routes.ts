@@ -397,8 +397,9 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
           })
         } else if (req.method === 'PUT') {
           const body = await readJsonBody(req, 4096).catch(() => undefined) as { grants?: unknown } | undefined
-          if (!Array.isArray(body?.grants) || !body.grants.every((key) => typeof key === 'string' && key.length > 0 && key.length <= 200)) {
-            sendError(res, 400, 'grants must be an array of tool names')
+          const planNames = planTools.map(({ name }) => name)
+          if (!Array.isArray(body?.grants) || !body.grants.every((key) => typeof key === 'string' && key.length > 0 && key.length <= 200 && planNames.includes(key))) {
+            sendError(res, 400, `grants must be an array of Plan tool names (${planNames.join(', ')})`)
             return
           }
           await deps.store.setPlanGrants(id, body.grants)

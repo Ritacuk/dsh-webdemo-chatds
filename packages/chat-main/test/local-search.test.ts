@@ -4,7 +4,7 @@
  * 未授权目录、文件读取不变性、只读 API 面。
  */
 
-import { mkdtempSync, mkdirSync, rmSync, rmdirSync, symlinkSync, writeFileSync, readFileSync, statSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, realpathSync, rmSync, rmdirSync, symlinkSync, writeFileSync, readFileSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -136,7 +136,10 @@ it('检索并读取中文工作表、幻灯片、UTF-16 和明确指定的 GB180
   writeFileSync(join(dir, '传统.txt'), Buffer.from([0xd6, 0xd0, 0xce, 0xc4]))
   const result = await engine.search({ query: '紫水晶' })
   expect(result.hits.map(({ relativePath }) => relativePath)).toEqual(expect.arrayContaining(['数据.xlsx', '幻灯.pptx', '编码.txt']))
-  expect(await engine.readSnippet({ dirId: dirIdOf(dir), relativePath: '传统.txt', encoding: 'gb18030' })).toMatchObject({ content: '中文' })
+  // macOS 的 TMPDIR(/var/folders/…)位于符号链接之下,引擎按 realpath 归一授权根
+  // (local-search.ts 授权根归一注释);dirId 必须用同一 realpath 计算,否则 macOS 上
+  // 会被判「directory not authorized」。Linux/Windows 字面路径与 realpath 相同,不受影响。
+  expect(await engine.readSnippet({ dirId: dirIdOf(realpathSync(dir)), relativePath: '传统.txt', encoding: 'gb18030' })).toMatchObject({ content: '中文' })
   expect(await engine.search({ query: '紫水晶', signal: AbortSignal.abort() })).toMatchObject({ truncated: true, truncationReasons: ['cancelled'] })
 })
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { useAnchoredPosition, useDismiss, VIEWPORT_PADDING } from '../base/anchored.js'
+import { useAnchoredPosition, useDismiss } from '../base/anchored.js'
 import { Modal } from '../base/Modal.js'
 import { showToast } from '../base/toastState.js'
 import { api } from '../../services/api.js'
@@ -12,10 +12,10 @@ import managerStyles from './TemplateManager.module.css'
 
 /**
  * R8 模板入口:输入框左下角的紧凑图标按钮(不破坏输入框简洁性)。
- * 菜单向下展开(与齿轮菜单同一浮层机制),支持预览/插入到草稿/插入并发送/管理。
+ * 菜单默认向下展开(与齿轮菜单同一浮层机制,composer 贴底时自动向上翻面),
+ * 支持预览/插入到草稿/插入并发送/管理。
  */
 
-const MENU_OFFSET = 4
 const MENU_MAX_HEIGHT = 340
 
 /** 模板变量在页面侧的真实取值(取不到的变量由 Host 端标记为未解析)。 */
@@ -36,51 +36,28 @@ export function templateVariables(sessionId: string | null, composer?: HTMLTextA
   }
 }
 
-export function TemplateMenu({ sessionId, onInsert, onInsertAndSend, reserveSpace }: {
+export function TemplateMenu({ sessionId, onInsert, onInsertAndSend }: {
   sessionId: string | null
   /** 插入到草稿(保留原有内容,自动补空行;不自动发送)。 */
   onInsert: (text: string) => void
   /** 解析后直接发送。 */
   onInsertAndSend: (text: string) => void
-  reserveSpace?: (px: number) => void
 }) {
   const [open, setOpen] = useState(false)
   const [templates, setTemplates] = useState<(PromptTemplate & { builtin?: boolean })[] | null>(null)
   const [query, setQuery] = useState('')
   const [preview, setPreview] = useState<{ template: PromptTemplate; resolved: string; unresolved: string[] } | null>(null)
   const [managing, setManaging] = useState(false)
-  const [epoch, setEpoch] = useState(0)
-  const applied = useRef(0)
   const variables = useRef<ReturnType<typeof templateVariables>>({})
   const { anchorRef, floatingRef, position } = useAnchoredPosition<HTMLButtonElement, HTMLDivElement>(
-    open, { side: 'bottom', align: 'start', maxHeight: MENU_MAX_HEIGHT, lockSide: true, measureKey: epoch },
+    open, { side: 'bottom', align: 'start', maxHeight: MENU_MAX_HEIGHT },
   )
-  const applyReserve = (px: number) => {
-    if (applied.current === px) return
-    applied.current = px
-    reserveSpace?.(px)
-  }
-  useEffect(() => {
-    if (!open || position === null) return
-    const anchor = anchorRef.current
-    const floating = floatingRef.current
-    if (anchor === null || floating === null) return
-    const spaceBelow = window.innerHeight - anchor.getBoundingClientRect().bottom - MENU_OFFSET - VIEWPORT_PADDING
-    const availableWithoutReserve = spaceBelow - applied.current
-    const needed = Math.min(MENU_MAX_HEIGHT, floating.scrollHeight)
-    const desiredReserve = Math.max(0, needed - availableWithoutReserve)
-    if (desiredReserve !== applied.current) {
-      applyReserve(desiredReserve)
-      setEpoch((value) => value + 1)
-    }
-  }, [open, position, anchorRef, floatingRef])
   useEffect(() => {
     if (!open) return
     void api.listPrompts().then((value) => setTemplates(value.templates), (reason: Error) => showToast(reason.message))
   }, [open])
   const close = () => {
     setOpen(false)
-    applyReserve(0)
     anchorRef.current?.focus()
   }
   useDismiss(open, [anchorRef, floatingRef], close)

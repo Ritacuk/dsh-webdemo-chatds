@@ -32,7 +32,8 @@ DeepSeek 官方适配器（`dsh-llm-deepseek`）对 Rich 专属块（思考签�
 | --- | --- |
 | Linux DSH Web（DSH 0.2.2-rc.3，Node 22） | ✅ 本轮完整实测（安装、真实模型聊天、持久化、重启恢复、卸载重装） |
 | Windows Desktop（DSH 桌面版 44.7.0，内嵌 runtime 0.2.2-rc.5，Node 24） | ✅ R8.2 轮完整实测（125 项 Host 单测 + 原生 UI 回归） |
-| 其它 DSH 版本 / macOS | ⚠️ 未实测。peer 兼容区间声明为 `>=0.2.2-rc.3 <0.2.3-0`，不保证更高大版本 |
+| macOS（Apple Silicon）DSH Web | ✅ 已实测（macOS 26.6.2 + Apple M4，DSH Web 轨道；Desktop/Intel 未宣称） |
+| 其它 DSH 版本 | ⚠️ peer 兼容区间声明为 `>=0.2.2-rc.3 <0.2.3-0`，不保证更高大版本 |
 
 ## 安装
 
@@ -53,7 +54,7 @@ dsh plugin --profile web add dsh-webdemo-chatds@next
 从 [Releases](../../releases) 下载 `dsh-webdemo-chatds-<版本>.tgz`：
 
 ```bash
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.13.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.10.0.tgz
 ```
 
 ### 方式三：从源码构建
@@ -70,11 +71,11 @@ cd packages/chat-main && pnpm pack --pack-destination ../../dist-packages
 dsh plugin --profile web add ../../dist-packages/dsh-webdemo-chatds-<版本>.tgz
 ```
 
-安装后**重启 DSH Web 服务**（或在 DSH 插件管理器中启用组件），侧栏出现「WebChat Web」入口。
+安装后**重启 DSH Web 服务**（或在 DSH 插件管理器中启用组件），侧栏出现「WebChat」入口。
 
 ## 快速上手
 
-1. 打开侧栏「WebChat Web」进入聊天面板。
+1. 打开侧栏「WebChat」进入聊天面板。
 2. 底部模型菜单选择模型（列表来自 DSH 模型目录）。
 3. 需要深度思考/联网搜索时，在输入区开启对应开关（仅 DeepSeek 官方模型支持）。
 4. 本地文件检索：DSH 设置 → ChatDS 设置 → 文件，授权目录后开启「本地检索」。

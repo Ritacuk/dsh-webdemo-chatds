@@ -8,7 +8,7 @@
         search: false
         title: true
     - id: chatds-sidecar
-      name: ./sidecar/index.js
+      name: dsh-webdemo-chatds/sidecar
       disabled: true
       config:
         pagePath: /chat-workspace-sidecar

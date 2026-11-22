@@ -1,14 +1,32 @@
 # Changelog
 
-All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and are published under the `next` npm dist-tag.
+All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
-## 0.9.0-rc.9 – 0.9.0-rc.11 (2026-11-21)
+## 0.10.0 (2026-11-22)
 
-Publishing-mechanics corrections only; package code is identical to 0.9.0-rc.8.
+First cross-platform-verified release: Linux DSH Web (R8.4) and macOS Apple Silicon DSH Web (M01–M05) both acceptance-tested on real hosts; Windows Desktop verified in R8.2.
 
-- **rc.9**: repository/homepage/bugs/author metadata pointing at this repository; package README added.
-- **rc.10**: published from the package directory — tarball-based publish does not populate registry metadata.
-- **rc.11**: published with the official npm CLI — neither tarball publish nor `pnpm publish` populates the registry's README metadata, which the npm package page renders.
+### Fixed
+
+- **[P1] Search-body relative links were rewritten into fake URLs**: a model-emitted relative link such as `[MIT](LICENSE)` rendered as `https://license/`. Markdown link sanitization now only completes `https://` for host-like specifiers (dot-separated, not a document extension); relative paths render as plain text. Verified against the real search session re-render. (Linux R8.4)
+- **[P2] Plan-tool grant API accepted names outside the whitelist**: `PUT .../tools` now rejects non-Plan tool names with a 400 naming the allowed tools. (Linux R8.4)
+- **[macOS] Send-shortcut label**: the option shows `⌘ + Enter` on macOS (implementation always accepted ⌘; label only). (macOS acceptance R1)
+- **[macOS] Root-level React error boundary**: a once-observed unreproducible blank panel (React production unmount on an uncaught render error) now degrades to an in-panel reload card; session data lives in DSH storage and is unaffected. (macOS acceptance R2)
+- **[test] macOS TMPDIR realpath**: the gb18030 snippet test computes the authorized-root id via `realpathSync` — the engine normalizes roots by realpath by design; macOS `/var/folders` symlink made the literal-path id mismatch. Test-side only. (macOS acceptance R3)
+- **Sidecar component naming**: the second component row now resolves through the package subpath (`dsh-webdemo-chatds/sidecar`) instead of a raw relative file path in the plugin surfaces.
+- **Docs**: install examples updated; platform compatibility matrix updated (macOS Web verified, Desktop/Intel not claimed).
+
+### Verified platforms
+
+| Platform | Status |
+| --- | --- |
+| Linux DSH Web (DSH 0.2.2-rc.3 → rc.5, Node 22) | ✅ R8.4 real-model acceptance on the upgraded host |
+| Windows Desktop (DSH Desktop 44.7.0, runtime 0.2.2-rc.5) | ✅ R8.2 acceptance |
+| macOS (Apple Silicon M4, macOS 26.6.2, DSH Web track) | ✅ M01–M05 acceptance (Desktop/Intel not claimed) |
+
+## 0.9.0-rc.9 – 0.9.0-rc.14 (2026-11-21)
+
+Publishing-mechanics corrections (rc.9–rc.12: registry metadata, directory publish, npm CLI), the R8.4 Linux acceptance fixes (rc.14: search-link sanitization + grant validation), and packaging rebuilds so the Health endpoint self-reports the tagged commit (rc.13). Package code identical to rc.8 otherwise.
 
 ## 0.9.0-rc.8 (2026-11-21)
 

@@ -34,7 +34,8 @@ DeepSeek's official adapter (`dsh-llm-deepseek`) intentionally "circuit-breaks" 
 | --- | --- |
 | Linux DSH Web (DSH 0.2.2-rc.3, Node 22) | ✅ fully verified this round (install, real-model chat, persistence, restart recovery, uninstall/reinstall) |
 | Windows Desktop (DSH Desktop 44.7.0, bundled runtime 0.2.2-rc.5, Node 24) | ✅ fully verified in the R8.2 round (125 host unit tests + native UI regression) |
-| Other DSH versions / macOS | ⚠️ not verified. Peer range is declared as `>=0.2.2-rc.3 <0.2.3-0`; higher major versions are not guaranteed |
+| macOS (Apple Silicon) DSH Web | ✅ acceptance-tested (macOS 26.6.2, Apple M4, DSH Web track; Desktop/Intel not claimed) |
+| Other DSH versions | ⚠️ peer range declared as `>=0.2.2-rc.3 <0.2.3-0`; higher major versions are not guaranteed |
 
 ## Installation
 
@@ -55,7 +56,7 @@ If your DSH version falls outside the peer range, DSH's version gate will reject
 Download `dsh-webdemo-chatds-<version>.tgz` from [Releases](../../releases):
 
 ```bash
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.13.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.10.0.tgz
 ```
 
 ### Option 3: build from source
@@ -72,11 +73,11 @@ cd packages/chat-main && pnpm pack --pack-destination ../../dist-packages
 dsh plugin --profile web add ../../dist-packages/dsh-webdemo-chatds-<version>.tgz
 ```
 
-After installing, **restart the DSH web service** (or enable the components in DSH's plugin manager); a "WebChat Web" entry appears in the sidebar.
+After installing, **restart the DSH web service** (or enable the components in DSH's plugin manager); a "WebChat" entry appears in the sidebar.
 
 ## Quick start
 
-1. Open "WebChat Web" from the sidebar.
+1. Open "WebChat" from the sidebar.
 2. Pick a model from the picker at the bottom (the list comes from DSH's model catalog).
 3. Toggle deep thinking / web search in the input area (official DeepSeek models only).
 4. Local file retrieval: DSH settings → ChatDS settings → Files; authorize directories, then enable local retrieval.

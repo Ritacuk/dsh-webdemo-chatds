@@ -22,6 +22,9 @@ window.__ModuleLoader__.load({
     const PAGE_PATH = '/chat-workspace'
     let pendingDataAction = null
 
+    /** macOS 键位标注:实现侧(Ctrl 或 ⌘)两者都接受,标签按平台显示(macOS 验收 R1)。 */
+    const IS_MAC_LIKE = /Mac|iPhone|iPad/i.test(`${typeof navigator !== 'undefined' ? navigator.platform : ''} ${typeof navigator !== 'undefined' ? navigator.userAgent : ''}`)
+
     /** 主面板:同源 iframe 撑满主区,保留聊天 SPA 的完整能力与样式隔离。 */
     function ChatWorkspacePanel({ theme }) {
       const frame = React.useRef(null)
@@ -302,7 +305,7 @@ window.__ModuleLoader__.load({
           h(Row, { keyId: 'keys', label: '发送快捷键',
             children: h('select', { 'aria-label': '发送快捷键', value: settings.sendShortcut, disabled: busy,
               onChange: (event) => { const value = event.target.value; void transact(() => ({ sendShortcut: value })) } },
-              h('option', { value: 'enter' }, 'Enter'), h('option', { value: 'ctrl-enter' }, 'Ctrl + Enter')) }),
+              h('option', { value: 'enter' }, 'Enter'), h('option', { value: 'ctrl-enter' }, IS_MAC_LIKE ? '⌘ + Enter' : 'Ctrl + Enter')) }),
           h(Row, { keyId: 'voice', label: '语音输入', description: '点击录音并确认转写后，音频会发送到已配置的 DeepSeek 接口，可能产生费用。',
             children: Switch({ label: '语音输入', enabled: settings.enableVoiceInput, disabled: busy,
               onToggle: () => void transact(() => ({ enableVoiceInput: !settings.enableVoiceInput })) }) }),
@@ -861,7 +864,7 @@ window.__ModuleLoader__.load({
               name: 'sidebar.panellist',
               id: PANEL_ID,
               order: 10,
-              label: () => 'WebChat Web',
+              label: () => 'WebChat',
             },
             ChatWorkspaceIcon,
           ))

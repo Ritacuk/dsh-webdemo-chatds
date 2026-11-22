@@ -22,7 +22,7 @@ All commands below were executed on real DSH installations. Linux commands verif
 # 1. Install into the running profile (official plugin manager):
 dsh plugin --profile web add dsh-webdemo-chatds@next      # from npm
 # or, from a downloaded release tarball:
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.9.0-rc.13.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.10.0.tgz
 
 # 2. Restart the DSH web service so the new plugin is loaded.
 #    If you run DSH under systemd (user service), the usual way:
@@ -31,9 +31,9 @@ systemctl --user restart <your-dsh-service>.service
 #    Verify afterwards:
 curl -s http://127.0.0.1:3080/ -o /dev/null -w '%{http_code}\n'   # 401 (token-gated) = alive
 
-# 3. In the web UI: the sidebar now has a "WebChat Web" entry.
+# 3. In the web UI: the sidebar now has a "WebChat" entry.
 #    Health check (cookie-authenticated): /chat-workspace/api/health
-#    → {"ok":true,"plugin":"dsh-webdemo-ChatDS","version":"0.9.0-rc.13","commit":"..."}
+#    → {"ok":true,"plugin":"dsh-webdemo-ChatDS","version":"0.10.0","commit":"..."}
 ```
 
 Notes for headless servers: the settings page's file-access section always offers a **manual absolute-path grant** (Host-validated) — use it when DSH's directory picker cannot open a GUI dialog.
@@ -48,11 +48,11 @@ Notes for headless servers: the settings page's file-access section always offer
    "%DSH%" plugin --profile <profile> add dsh-webdemo-chatds@next
    ```
 
-3. Restart DSH Desktop. The sidebar shows "WebChat Web".
+3. Restart DSH Desktop. The sidebar shows "WebChat".
 
 ## Verify the install
 
-1. Sidebar shows the **WebChat Web** panel and the ⚙ settings launcher.
+1. Sidebar shows the **WebChat** panel and the ⚙ settings launcher.
 2. DSH settings → ChatDS settings: eight sub-pages (常规/模型/提示词/用量与费用/插件与工具/文件/数据管理/外观) render.
 3. Open the panel; the model picker lists your DSH models.
 4. Send one short message; a reply (or an explicit credential/setup error) appears, and a session entry persists in the sidebar after restart.

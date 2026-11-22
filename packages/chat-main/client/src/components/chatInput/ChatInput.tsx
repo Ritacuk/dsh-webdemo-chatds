@@ -1,7 +1,7 @@
 import clsx from 'clsx'
-import { memo, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { useAnchoredPosition, useDismiss, VIEWPORT_PADDING } from '../base/anchored.js'
+import { useAnchoredPosition, useDismiss } from '../base/anchored.js'
 import { DragMask, useFileDrop } from './DragMask.js'
 import { Modal } from '../base/Modal.js'
 import { FileCard } from '../files/FileCard.js'
@@ -66,16 +66,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const [uploading, setUploading] = useState(false)
   const [uploadQueue, setUploadQueue] = useState<{ file: File; error?: string }[]>([])
   const [permissionsOpen, setPermissionsOpen] = useState(false)
-  /** 菜单向下展开时在 composer 底部预留的安全空间(px);关闭即归零。 */
-  const [menuReserve, setMenuReserve] = useState(0)
   /** R8 模板「插入并发送」:先写入草稿再在下一帧自动发送。 */
   const autoSendRef = useRef(false)
   const [importOpen, setImportOpen] = useState(false)
   const [voiceOpen, setVoiceOpen] = useState(false)
   const voiceEnabled = useChatStore((state) => state.settings?.enableVoiceInput === true)
   const sendShortcut = useChatStore((state) => state.settings?.sendShortcut ?? 'enter')
-
-  const reserveSpace = (px: number) => setMenuReserve((previous) => (previous === px ? previous : px))
 
   // 模板「插入并发送」:文本就绪且无上传占用时自动触发一次发送
   useEffect(() => {
@@ -144,11 +140,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const dragging = useFileDrop((files) => { void handleFiles(files) })
 
   return (
-    // 外层仅承载菜单向下展开时的底部安全空间;composer 视觉盒子由内层 .wrapper 承担
-    <div
-      className={styles.safeSpaceHost}
-      style={menuReserve > 0 ? { paddingBottom: menuReserve } : undefined}
-    >
+    // 外层仅承载布局;composer 视觉盒子由内层 .wrapper 承担。
+    // 菜单展开方向由 ComposerMenu/TemplateMenu 按视口空间自适应(向下放不下即向上翻)。
+    <div className={styles.safeSpaceHost}>
     <div
       className={clsx(styles.wrapper, sessionId === null ? styles.home : styles.session)}
       data-webchat-composer=""
@@ -231,7 +225,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             if (event.target.files) void handleFiles(event.target.files)
             event.target.value = ''
           }} />
-          <TemplateMenu sessionId={sessionId} reserveSpace={reserveSpace}
+          <TemplateMenu sessionId={sessionId}
             onInsert={(inserted) => {
               setText((current) => (current.trim().length === 0 ? inserted : `${current}\n\n${inserted}`))
               textareaRef.current?.focus({ preventScroll: true })
@@ -240,7 +234,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               setText((current) => (current.trim().length === 0 ? resolved : `${current}\n\n${resolved}`))
               autoSendRef.current = true
             }} />
-          <ComposerMenu label="聊天设置" caption="⚙" triggerClass={styles.gearTrigger} reserveSpace={reserveSpace}>
+          <ComposerMenu label="聊天设置" caption="⚙" triggerClass={styles.gearTrigger}>
             {(close) => <>
               <h3>工作模式</h3>
               <button type="button" aria-pressed={input.mode === 'chat'} onClick={() => updateInputState(sessionId, { mode: 'chat' })}>Chat</button>
@@ -267,7 +261,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
           </ComposerMenu>
         </div>
         <div className={styles.right}>
-          <ComposerMenu label="选择模型" reserveSpace={reserveSpace} align="end" triggerClass={styles.modelTrigger}
+          <ComposerMenu label="选择模型" align="end" triggerClass={styles.modelTrigger}
             caption={<>
               <span className={styles.modelTriggerName}>{currentModel?.name ?? input.model}</span>
               {efforts.length > 0 && <span className={styles.modelTriggerEffort}>
@@ -438,55 +432,27 @@ function ToolPermissions({ sessionId }: { sessionId: string | null }) {
   </div>
 }
 
-/** 菜单浮层与触发元素之间的间距(与 useAnchoredPosition 默认 offset 一致) */
-const MENU_OFFSET = 4
 /** 菜单浮层纵向高度上限 */
 const MENU_MAX_HEIGHT = 380
 
 /**
- * Composer 浮层菜单。R8 约束:从触发区域向下展开(side 锁定 bottom,不自动翻面);
- * 下方空间不足时在 composer 底部预留安全空间(把 composer 临时推起),保持向下展开,
- * 不遮挡欢迎标题/消息,也不遮挡发送按钮与模型入口;菜单自身独立滚动。
+ * Composer 浮层菜单(R8.4 用户反馈修订):默认向下展开;composer 贴近视口底部
+ * (有聊天记录的会话、Side Chat 侧栏)下方放不下时自动向上翻面,由定位钩子
+ * 按空间收口高度;菜单自身独立滚动。
  */
-function ComposerMenu({ label, caption, triggerClass, align = 'start', reserveSpace, children }: {
+function ComposerMenu({ label, caption, triggerClass, align = 'start', children }: {
   label: string
   caption: ReactNode
   triggerClass?: string
   align?: 'start' | 'end'
-  reserveSpace?: (px: number) => void
   children: (close: () => void) => ReactNode
 }) {
   const [open, setOpen] = useState(false)
-  /** 安全空间代际:预留生效后触发重新测量,避免按旧位置定位 */
-  const [epoch, setEpoch] = useState(0)
-  const applied = useRef(0)
   const { anchorRef, floatingRef, position } = useAnchoredPosition<HTMLButtonElement, HTMLDivElement>(
-    open, { side: 'bottom', align, maxHeight: MENU_MAX_HEIGHT, lockSide: true, measureKey: epoch },
+    open, { side: 'bottom', align, maxHeight: MENU_MAX_HEIGHT },
   )
-  const applyReserve = (px: number) => {
-    if (applied.current === px) return
-    applied.current = px
-    reserveSpace?.(px)
-  }
-  // 定位测量完成后,检查下方空间:不足则预留 composer 底部安全空间并重新测量
-  useLayoutEffect(() => {
-    if (!open || position === null) return
-    const anchor = anchorRef.current
-    const floating = floatingRef.current
-    if (anchor === null || floating === null) return
-    const spaceBelow = window.innerHeight - anchor.getBoundingClientRect().bottom - MENU_OFFSET - VIEWPORT_PADDING
-    // 扣除已预留部分得到「未预留时」的空间,避免「预留→测量→清零」循环
-    const availableWithoutReserve = spaceBelow - applied.current
-    const needed = Math.min(MENU_MAX_HEIGHT, floating.scrollHeight)
-    const desiredReserve = Math.max(0, needed - availableWithoutReserve)
-    if (desiredReserve !== applied.current) {
-      applyReserve(desiredReserve)
-      setEpoch((value) => value + 1)
-    }
-  }, [open, position, anchorRef, floatingRef])
   const close = () => {
     setOpen(false)
-    applyReserve(0)
     anchorRef.current?.focus()
   }
   useDismiss(open, [anchorRef, floatingRef], close)
