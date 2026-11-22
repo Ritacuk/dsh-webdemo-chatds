@@ -1467,7 +1467,18 @@ window.__ModuleLoader__.load({
           if (typeof workspace?.pickDirectory !== 'function') throw new Error('DSH 目录选择服务不可用。')
           return await workspace.pickDirectory()
         }
-        ctx.slots.inject('settings.section', () => ctx.slots.register({
+        // R8.6(0.11.3):注册模式重构(对齐 dsh-plugin-magi 等实测可靠的官方社区插件)——
+        // 所有槽位注册一律包进 ctx.effect(声明式、可随效果图重放),外层 safeRegister 失败隔离:
+        // 单条注册失败只警告自身,不再让整个插件 fiber 失败并把已注册的入口一起回滚
+        // (这正是"安装/更新后 WebChat 入口不出现、要关了再开"而 MAGI 不受影响的根因)。
+        const safeRegister = (label, fn) => {
+          try {
+            ctx.effect(fn, 'chatds slot ' + label)
+          } catch (error) {
+            try { console.warn('[chatds] 槽位注册失败(' + label + '):', error) } catch { /* console 不可用时忽略 */ }
+          }
+        }
+        safeRegister('settings.section', () => ctx.slots.inject('settings.section', () => ctx.slots.register({
           name: 'settings.section', id: 'chatds', order: 60, label: () => L('ChatDS 设置'),
         }, ({ close }) => h(SettingsBoundary, { label: 'ChatDS 设置', fallbackText: L('设置区暂时无法渲染，可以重试。') },
           h(ChatDSSettings, { theme, pickDirectory, openCostMeter: () => ctx.layout.selectPanel('settings'), openData(action) {
@@ -1478,13 +1489,13 @@ window.__ModuleLoader__.load({
               ctx.layout.selectPanel(PANEL_ID)
             }
             close?.()
-          }, openPlugins: () => { close?.(); ctx.layout.selectPanel('plugins') } }))))
-        ctx.slots.inject('settings.launcher', () => ctx.slots.register({ name: 'settings.launcher' }, SettingsLauncher))
+          }, openPlugins: () => { close?.(); ctx.layout.selectPanel('plugins') } })))))
+        safeRegister('settings.launcher', () => ctx.slots.inject('settings.launcher', () => ctx.slots.register({ name: 'settings.launcher' }, SettingsLauncher)))
         // 全局主面板:key 与导航行 id 相同,侧栏选择后由 layout 渲染本组件。
-        ctx.slots.inject('main', () =>
-          ctx.slots.register({ name: 'main', key: PANEL_ID }, Panel))
+        safeRegister('main', () => ctx.slots.inject('main', () =>
+          ctx.slots.register({ name: 'main', key: PANEL_ID }, Panel)))
         // 左侧导航行(图标 + 名称)。选中后 layout.selectPanel(PANEL_ID) 切到上面的主面板。
-        ctx.slots.inject('sidebar.panellist', () =>
+        safeRegister('sidebar.panellist', () => ctx.slots.inject('sidebar.panellist', () =>
           ctx.slots.register(
             {
               name: 'sidebar.panellist',
@@ -1493,11 +1504,11 @@ window.__ModuleLoader__.load({
               label: () => 'WebChat',
             },
             ChatWorkspaceIcon,
-          ))
+          )))
         // ── R8.5(F09):Side Chat —— 右栏 tab(kind 全局唯一,与 dsh-better-sidebar 的 sidechat 不冲突)──
         // tab 类型注册经 ctx.inject 等待 sidebarRightTabs 服务就绪(官方 ui-subagent 同款模式);
-        // guide 入口出现在右栏"+"页面。
-        ctx.inject(['sidebarRightTabs'], (scope) => {
+        // guide 入口出现在右栏"+"页面。整条依赖同样失败隔离。
+        safeRegister('sidebarRightTabs', () => ctx.inject(['sidebarRightTabs'], (scope) => {
           scope.effect(() => scope.sidebarRightTabs.register({
             id: SIDECHAT_ID,
             kind: SIDECHAT_KIND,
@@ -1509,12 +1520,12 @@ window.__ModuleLoader__.load({
               description: () => L('在右侧栏与当前 Agent 会话并行讨论'),
             }],
           }), 'chatds: side chat tab type')
-        })
+        }))
         // tab 体(keyed 槽,key = definition.id)。
-        ctx.slots.inject('sidebar.right.pane.tab', () =>
-          ctx.slots.register({ name: 'sidebar.right.pane.tab', key: SIDECHAT_ID }, SideChatTab))
+        safeRegister('sidebar.right.pane.tab', () => ctx.slots.inject('sidebar.right.pane.tab', () =>
+          ctx.slots.register({ name: 'sidebar.right.pane.tab', key: SIDECHAT_ID }, SideChatTab)))
         // 会话标题栏入口(kind=list, scope=session;inject 提供 sessionId 与 open 动作)。
-        ctx.slots.inject('conversation.session.header.actions', () =>
+        safeRegister('conversation.session.header.actions', () => ctx.slots.inject('conversation.session.header.actions', () =>
           ctx.slots.register({
             name: 'conversation.session.header.actions',
             id: 'chatds-side-chat',
@@ -1528,11 +1539,10 @@ window.__ModuleLoader__.load({
                 }
               },
             }),
-          }, SideChatHeaderAction))
-        // R8.6(修1):安装/更新后客户端模块图可能要等下一次界面状态变化才应用导航,
-        // 用户此前只能"关了再开"。现在模块应用后自检导航是否出现,最多等 12s,
+          }, SideChatHeaderAction)))
+        // R8.6(修1):安装/更新后导航自检兜底(注册模式修复后的最后保险)——最多等 12s,
         // 仍未出现就挂出非阻塞提示条,一键刷新界面(location.reload);导航出现即自动撤条。
-        ctx.effect(() => {
+        safeRegister('nav self-check', () => {
           let checks = 0
           let banner = null
           const findNav = () => {

@@ -82,7 +82,8 @@ async function makeHarness(): Promise<Harness> {
     },
     theme: { getTheme: () => ({ active: { colorScheme: 'dark' } }) },
     on: () => () => {},
-    effect: () => {},
+    // DSH 运行时语义:ctx.effect(fn, label) 立即执行 fn(注册行为发生在回调里)。
+    effect: (fn?: () => unknown) => (typeof fn === 'function' ? fn() : undefined),
     inject: () => {},
     get: () => undefined,
     layout: { selectPanel: () => {} },

@@ -1,6 +1,6 @@
 {
   "name": "dsh-webdemo-chatds",
-  "version": "0.11.2",
+  "version": "0.11.3",
   "description": "dsh-webdemo-ChatDS — ChatDS Main 与 Agent Side Chat",
   "type": "module",
   "license": "MIT",

@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.3 (2026-11-22)
+
+Hotfix for the 0.11.2 desktop feedback: the WebChat sidebar entry still did not appear right after installing/updating the plugin, while plugins like dsh-plugin-magi recovered instantly. Root cause found by reading the DSH client-modules runtime and comparing registration patterns.
+
+### Fixed
+
+- **[P1] Slot registrations are now declarative effects with failure isolation (MAGI pattern)**: every slot registration (sidebar entry, main panel, settings section/launcher, right-tab, session header action) is wrapped in ctx.effect so it replays with the effect graph on fiber rebuild, and a safeRegister wrapper isolates failures — one broken registration no longer fails the whole plugin fiber and rolls back the already-registered entries (including the sidebar entry). The sidebarRightTabs service dependency is likewise isolated. This is the structural difference that made MAGI recover instantly while WebChat needed a close-and-reopen.
+- The 0.11.2 refresh banner stays as a last-resort backstop: if the entry still has not appeared after 12s, a non-blocking banner offers a one-click interface reload and clears itself once the entry renders.
+
+### Verified
+
+172 automated tests green (L3 suite mock updated for the runtime ctx.effect semantics: the callback runs immediately); isolated Linux instance healthy boot with silent self-check.
 ## 0.11.2 (2026-11-22)
 
 R8.6 follow-up from real Windows Desktop feedback: navigation after install, working microphone inside the WebChat iframe, a DSH-native status bar with direct navigation into the native plugins, and smaller UX cleanups. Verified live on the isolated Linux DSH profile.
