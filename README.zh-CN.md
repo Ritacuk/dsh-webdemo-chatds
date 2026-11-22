@@ -1,120 +1,209 @@
 # WebChat for DeepSeek Harness
 
-**WebChat** 是一个面向 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）的独立社区聊天插件：以 DeepSeek 官方 [chat-demo](https://github.com/deepseek-ai/chat-demo)（固定上游提交 `5d5dd754ebc1948e977ddb880a9eb5aa25f37b4c`，v0.1.1）为界面蓝本，在 DSH 的插件体系内真实运行。
+**把 DeepSeek 风格的日常聊天，带进 DeepSeek Harness。**
 
-> **WebChat 是基于 DeepSeek Harness 开发的独立社区项目，并非 DeepSeek 官方产品。**
-> **WebChat is an independent community project for DeepSeek Harness. It is not an official DeepSeek product.**
+[English](https://github.com/Ritacuk/dsh-webdemo-chatds/blob/main/README.md) · [GitHub](https://github.com/Ritacuk/dsh-webdemo-chatds) · [下载与更新](https://github.com/Ritacuk/dsh-webdemo-chatds/releases/latest) · [问题反馈](https://github.com/Ritacuk/dsh-webdemo-chatds/issues) · [更新日志](https://github.com/Ritacuk/dsh-webdemo-chatds/blob/main/CHANGELOG.md)
 
-```
-用户输入 → DSH Host → DeepSeek Rich API → SSE → 结构化回复 → DSH Session 持久化 → UI 恢复
-```
+> WebChat 是一个运行在 **DeepSeek Harness（DSH）** 中的独立社区聊天插件。它以 DeepSeek 官方开源的 [chat-demo](https://github.com/deepseek-ai/chat-demo) 为基础，保留熟悉的聊天体验，再按需接入 DSH 的模型、文件、插件与 Agent 能力。
+>
+> **这是社区项目，不是 DeepSeek 官方产品，也不是将 `chat.deepseek.com` 网页直接嵌入 DSH。**
 
-## 它解决什么问题
+## 为什么做 WebChat？
 
-DeepSeek 官方适配器（`dsh-llm-deepseek`）对 Rich 专属块（思考签名、搜索步骤、网页读取、引用、拒绝回复）按协议是"熔断"处理——Rich 内容无法经由 DSH 通用 LLM 通路完整呈现。WebChat 为这些块实现了专用直连通路与完整 UI，同时把历史与设置全部交给 DSH 官方持久化层：DSH 是唯一权威数据源，WebChat 页面自身零本地持久化。
+DSH 擅长使用工具、处理文件和执行复杂任务，但很多时候，我们只想问一个简单问题、推导一道公式、翻译一段文字，或者上传一份讲义接着聊天。
 
-## 核心功能
+对于这些事情，每次都启动完整 Agent、携带大量工具定义和工作上下文，往往没有必要：**可能更慢，消耗更多 Token，也让纯聊天变得复杂。**
 
-- **DeepSeek Demo 风格聊天**：新建/多轮对话、流式生成、停止、编辑重发、重新生成、回复分支。
-- **思考与搜索**：深度思考块（含签名校验链）、联网搜索步骤、网页读取结果、引用关联——全部结构化渲染。
-- **DSH 模型目录**：读取 DSH 模型列表、Provider 分组、模型白名单、收藏、思考等级、默认模型。
-- **文件与附件**：聊天附件（DOCX/PPTX/XLSX 本地提取文本、PDF/图片云端 Files API 解析、按模型能力直发）；本地目录授权 + 只读检索（TXT/Markdown/CSV/DOCX/XLSX/PPTX 正文与 PDF/图片文件名）。
-- **提示词模板**：全局提示词、模板变量、草稿插入。
-- **上下文与费用**：接入 `dsh-context` / `dsh-cost-meter`（可选插件）。状态条按 DSH 原生底栏风格显示轮数/Token（tok）/缓存命中/金额/合并预算，点击分段直达 dsh-context 面板与 dsh-cost-meter 费用页；Rich 轮金额按其价表与峰谷规则计算。
-- **插件权限**：显示 DSH 运行中的 Bundle/组件；只读本地能力显式授权。
-- **会话导入导出**：兼容官方 Demo v3、DeepChat v3、WebChat ZIP；单会话导出 Markdown/JSON/ZIP，批量 ZIP 勾选导入，导入预览与去重。
-- **自由外观系统**：强调色、背景/面板/输入框透明度、密度、行距、圆角、输入框宽度、磨砂、字号与阅读宽度；旧 GPT/Gemini/Claude 风格自动迁移为等效配置。
-- **Agent Side Chat**（桌面端）：在 DSH Agent 工作分支旁开旁聊，检查点同步、父会话关联。
+WebChat 希望解决的正是这个问题：
 
-## 支持平台
+- **平常像 DeepSeek 网页版一样聊天。** 打开就能问，不需要先建立代码工作区或启动 Agent。
+- **简单问题尽量简单处理。** 默认不向模型开放额外工具；思考、联网搜索、本地检索按需开启。
+- **需要能力时再用 DSH。** 选择 DSH 已配置的模型，读取自己上传的文件，授权只读目录，或从聊天创建正式 Agent 工作分支。
+- **聊天记录可靠保存。** 历史交给 DSH 的会话系统管理，而不是只保存在浏览器的临时数据库里。
 
-| 平台 | 状态 |
-| --- | --- |
-| Linux DSH Web（DSH 0.2.2-rc.3，Node 22） | ✅ 本轮完整实测（安装、真实模型聊天、持久化、重启恢复、卸载重装） |
-| Windows Desktop（DSH 桌面版 44.7.0，内嵌 runtime 0.2.2-rc.5，Node 24） | ✅ R8.2 轮完整实测（125 项 Host 单测 + 原生 UI 回归） |
-| macOS（Apple Silicon）DSH Web | ✅ 已实测（macOS 26.6.2 + Apple M4，DSH Web 轨道；Desktop/Intel 未宣称） |
-| 其它 DSH 版本 | ⚠️ peer 兼容区间声明为 `>=0.2.2-rc.3 <0.2.3-0`，不保证更高大版本 |
+一句话：**默认是聊天，需要时才使用工具。**
+
+WebChat 的目标是减少不必要的开销，而不是承诺某个固定的 Token 节省比例。实际费用仍取决于模型、上下文、缓存、思考和工具使用情况。
+
+## 可以做什么？
+
+### 1. 熟悉的 DeepSeek 聊天体验
+
+- 多轮聊天、流式回复、停止生成、编辑与重新生成。
+- 深度思考、兼容模型的联网搜索、网页来源及引用展示。
+- Markdown、代码块、表格、数学公式（KaTeX）及 Mermaid 图表渲染；支持复制公式的 LaTeX 源码。
+- 会话重命名、置顶、搜索、归档、回复版本切换与历史恢复。
+- 会话导入导出：支持当前实现可识别的官方 Demo、DeepChat v3 和 WebChat 归档；可导出 Markdown、JSON 或 ZIP，导入前可预览和去重。
+
+**说明：** 本项目基于官方 *开源 chat-demo*，并不意味着拥有 DeepSeek 官网所有未公开的服务端能力；搜索和特殊响应由实际选用的模型及接口决定。
+
+### 2. 使用 DSH 里的模型，但不强制运行 Agent
+
+WebChat 直接读取 DSH 的模型目录，不需要再维护第二套模型 API Key。你可以：
+
+- 选择当前 DSH 已配置的模型，设置默认模型、收藏及白名单。
+- 调整模型支持的思考等级。
+- 在 **Chat** 和 **Plan（只读）** 之间切换。
+- 在需要实际执行任务时，从聊天创建 **DSH 原生 Agent 工作分支**，选择已注册的 DSH 工作区。
+
+| 工作方式 | 适合做什么 | 主要区别 |
+| --- | --- | --- |
+| **Chat** | 普通问答、学习、翻译、解释、阅读上传的资料 | 默认不调用额外的模型工具 |
+| **Plan（只读）** | 在明确授权的范围内分步检索、阅读、分析 | 可以使用有限的只读能力，不执行写入任务 |
+| **Agent 工作分支** | 编程、修改文件、运行命令、完成复杂任务 | 交给 DSH 原生 Agent，继续遵守工作区、沙箱和审批规则 |
+
+思考、联网搜索、文件上传和语音并不等同于工作模式；它们是各自独立的能力。
+
+### 3. 文件：上传即聊，本地检索需授权
+
+- **上传附件：** 选择、粘贴或拖入文件，按格式与模型能力进行文本提取或服务端解析。
+- **Office 文档：** 可提取 DOCX、XLSX、PPTX 中可解析的文本内容；不等于完整理解版式、嵌入图片或公式对象。
+- **本地检索：** 只搜索用户明确授权的目录；支持常见文本和 Office 文档的正文检索。PDF、图片在本地检索中不应被理解为默认具备完整 OCR——其本地文件名发现与附件云端处理是不同功能。
+- **撤销权限：** 撤销目录授权后，后续检索不得继续访问该目录。
+
+> **文件在哪里很重要。** 如果通过另一台电脑的浏览器访问 Linux DSH，授权目录指的是 **Linux DSH 主机上的文件夹**；浏览器电脑上的文件请使用附件上传。
+
+### 4. 用 DSH 的能力，而不是重造一套 DSH
+
+- **插件与工具：** 查看可用的插件、组件和能力；额外模型工具默认不授权，允许使用哪些只读能力由用户决定。
+- **上下文与费用：** 可接入 `dsh-context` 和 `dsh-cost-meter`。聊天底部的状态条按 DSH 原生底栏风格显示轮数、Token（tok）、缓存命中、本会话金额与合并预算，点击对应分段直接打开 dsh-context 面板或 dsh-cost-meter 费用页；Rich 轮的金额由 dsh-cost-meter 价表与峰谷规则计算。
+- **提示词：** 全局附加提示词、模板库、变量替换和草稿插入。
+- **Agent Side Chat：** 在 DSH Agent 任务的右侧进行独立旁聊，按已提交检查点继承相关上下文；不会擅自修改主任务。
+- **语音输入：** 在环境允许时通过 DSH 语音能力或明确配置的转写服务，把录音转成输入草稿；不会默认自动发送。桌面端 DSH 只向主框架授予麦克风权限，WebChat 通过顶层采集桥接完成录音（与 DSH 原生语音同一授权环境），录音界面实时显示音量与计时。
+
+**一个安装包、两个主要组件：**
+
+| 组件 | 默认状态 | 作用 |
+| --- | --- | --- |
+| **WebChat Main** | 开启 | 主聊天页面和基础功能 |
+| **Agent Side Chat** | 关闭 | DSH Agent 任务旁的独立讨论面板 |
+
+上下文、费用和语音属于**可选集成能力**，不是使用主聊天的必装条件。全局停用某个 DSH 插件与允许模型调用它提供的工具，是两件不同的事。
+
+### 5. 自己调节阅读与输入界面
+
+保留以 DeepSeek Demo 为基础的默认界面，并提供**自由外观设置**：强调色、背景/面板/输入框透明度、布局密度、行距、圆角、输入框宽度、字体大小、阅读宽度、浅色/深色/跟随 DSH，以及适用环境下的窗口内磨砂。旧版的 GPT、Gemini、Claude 模仿布局已退役，安装更新时会自动迁移为等效的自由外观配置（保留颜色与阅读偏好）。
+
+界面提供中文、英文和日语选项；切换界面语言不会翻译已有聊天记录。
 
 ## 安装
 
-前提：已安装 DeepSeek Harness 并能启动 `dsh` 命令行。
+### 需要什么？
 
-### 方式一：npm 包（推荐）
+- 已安装 **[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)**，并能够进入其插件管理器。
+- 配置了至少一个 DSH 可用的聊天模型；特殊 DeepSeek Rich 功能需要对应的兼容模型和凭证。
+- 插件当前声明的 DSH 运行时兼容区间为 `>=0.2.2-rc.3 <0.2.3-0`。从源码构建需要 Node.js **22 或更高版本**及 pnpm。
 
-```bash
-# 在目标 Profile 安装(例如默认 web Profile)
-dsh plugin --profile web add dsh-webdemo-chatds@next
-# 稳定标签发布后去掉 @next
+### 推荐：通过 DSH 插件管理器安装
+
+打开 **DSH → 插件 → 添加插件**，输入：
+
+```text
+ dsh-webdemo-chatds
 ```
 
-如你的 DSH 版本与 peer 区间不符，安装会被版本门禁拒绝——这是 DSH 的保护机制；请按提示升级插件版本。
+安装后启用 **WebChat Main**，左侧出现 **WebChat** 入口。如果需要 Agent 旁聊，再单独启用 **Agent Side Chat**。
 
-### 方式二：GitHub Release
-
-从 [Releases](../../releases) 下载 `dsh-webdemo-chatds-<版本>.tgz`：
+### 命令行安装（以 Web Profile 为例）
 
 ```bash
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.10.0.tgz
+dsh plugin --profile web add dsh-webdemo-chatds@0.11.7
 ```
 
-### 方式三：从源码构建
+如果你的 DSH 使用其他 Profile（例如 Windows Desktop 的 `desktop`），应在对应 Profile 的插件管理器中操作；不要把 `web` 直接当作所有平台的 Profile 名称。
 
-```bash
-git clone <本仓库>
-cd <仓库目录>
-pnpm install            # Node >= 22,Corepack 提供 pnpm
-pnpm --filter @dsh-chat/shared run build     # 先构建协议核心(client 类型检查依赖其产物)
-pnpm -r run typecheck   # 全部包类型检查
-pnpm -r run test        # shared 21 + main 126 + sidecar 3 项测试
-pnpm --filter dsh-webdemo-chatds run build   # host bundle + client 页面
-cd packages/chat-main && pnpm pack --pack-destination ../../dist-packages
-dsh plugin --profile web add ../../dist-packages/dsh-webdemo-chatds-<版本>.tgz
-```
+也可从 [GitHub Releases](https://github.com/Ritacuk/dsh-webdemo-chatds/releases) 下载版本对应的 `.tgz`，再经 DSH 官方插件管理器安装。**README 中的版本是撰写时的基线；安装前请查看实际最新 Release 和兼容要求。**
 
-安装后**重启 DSH Web 服务**（或在 DSH 插件管理器中启用组件），侧栏出现「WebChat」入口。
+## 30 秒上手
 
-## 快速上手
+1. 在 DSH 左侧点击 **WebChat**，进入欢迎页面。
+2. 在输入框右侧选择已配置的模型，直接发送一条消息。
+3. 点击输入框的设置入口，按需开启**深度思考**、**智能搜索**或**本地检索**。
+4. 需要阅读文件时直接添加附件；要在主机目录里检索，先到 **DSH 设置 → ChatDS 设置 → 文件** 给予只读授权。
+5. 复杂任务需要实际修改工作区时，从对应消息创建 DSH **Agent 工作分支**；普通问答不需要这样做。
 
-1. 打开侧栏「WebChat」进入聊天面板。
-2. 底部模型菜单选择模型（列表来自 DSH 模型目录）。
-3. 需要深度思考/联网搜索时，在输入区开启对应开关（仅 DeepSeek 官方模型支持）。
-4. 本地文件检索：DSH 设置 → ChatDS 设置 → 文件，授权目录后开启「本地检索」。
+**推荐的日常配置：** Chat + 低成本 Flash 模型 + 思考关闭 + 联网搜索关闭 + 额外模型工具不授权。需要更深入的分析再主动开启对应能力。
 
-## 认证与计费
+## 和其他方案有什么不同？
 
-WebChat 复用 DSH 的正式凭证体系，按优先级：
+| 方案 | 更适合的场景 |
+| --- | --- |
+| **DeepSeek 官方网页** | 使用官方在线产品，不依赖 DSH |
+| **DSH 原生 Agent** | 编程、工具执行、工作区操作、复杂自动化 |
+| **WebChat** | 在 DSH 内低负担地日常聊天，同时保留按需使用 DSH 能力的入口 |
+| **直接嵌入 DeepSeek 官网的插件** | 更接近使用原网站；但会话与工具能力取决于网页及容器的实际集成方式 |
 
-1. DeepSeek **API Key**（DSH Models 页或 `$DSH_HOME/.credentials.yaml` 中的 `DEEPSEEK_API_KEY`）；
-2. DSH **已登录的 DeepSeek 账号 token**（官方 account 服务按目的地放行）。
+WebChat **不是另一个独立的 DeepSeek 账号网站**，也不打算取代 DSH Agent。它连接这两种使用方式。
 
-WebChat 不会让 DeepSeek API 变成免费服务：模型请求、联网搜索、文件解析与第三方模型服务可能产生费用。Rich 通路的用量由模型服务如实返回并在消息内标注；它已按 `dsh-cost-meter` 官方 external_usage 协议计入统一账本（见已知限制）。
+## 可选插件与来源项目
 
-## 权限与安全
+### 运行基础与直接改编
 
-- **本地目录授权**：只读；授权经 Host 校验（绝对路径、realpath、存在且可读），软链接逃逸与路径穿越在引擎层拒绝（有专项测试覆盖）。
-- **无目录选择器的环境**（如无图形界面的 Linux 服务器）：设置页提供手动输入绝对路径的授权通道，Host 端做同等校验。
-- **凭证**：浏览器永不接触 key/token；Rich 请求由 Host 每次实时解析凭证。
-- **会话数据**：全部存于 DSH 官方 Session 存储（`$DSH_HOME/sessions`），WebChat 不另建副本。
+| 项目 | 在 WebChat 中的作用 |
+| --- | --- |
+| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) | **必须安装的运行平台**：模型目录、凭证、Session、工作区、插件与桌面/Web UI |
+| [DeepSeek 官方 chat-demo](https://github.com/deepseek-ai/chat-demo) | **主要源码基础**：聊天界面、Markdown/公式、部分前端模块与 Rich 流协议；本项目基于其 v0.1.1 固定提交改编 |
 
-## 可选依赖
+### 可选集成（不安装也能普通聊天）
 
-| 插件 | 作用 | 未安装时 |
+| 插件 | 提供什么 | 没安装时 |
 | --- | --- | --- |
-| `dsh-cost-meter` | 费用/用量展示 | 费用区提示未连接，主聊天不受影响 |
-| `dsh-context` | 上下文占用展示 | 同上 |
+| [dsh-context](https://github.com/bowenliang123/dsh-context) | 上下文组成和使用情况 | 相关详细视图不可用或显示有限信息 |
+| [dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) | 用量、价格、预算和费用视图 | 不显示其官方账本；不能把缺失记录解释为零费用 |
+| DSH 已安装的语音输入组件 | 录音与语音转写能力 | 按实际可用服务降级；云转写需明确启用，可能收费 |
 
-## 已知限制（如实）
+### 设计参考（不代表复制了其源码）
 
-- **真实联网搜索**：协议与 UI 已实现；真实搜索计费需用户自行确认预算（本轮未做真实搜索验收）。
-- **语音**：安装 DSH 语音输入组件时优先使用其转写服务（本地 SenseVoice 或已配置引擎）；否则回退 DeepSeek ASR，且仅在 ChatDS 设置中显式开启语音输入时使用（可能产生费用）。
-- **Agent 工作分支工作区选择**：分支对话框列出已注册的 DSH 工作区（默认选中父会话所在工作区）；仅创建全新工作区时才经 DSH 官方流程弹出目录选择器。
-- **Rich 用量账本**：Rich 用量已按 `dsh-cost-meter` 官方 `external_usage.json` 协议计入统一账本（来源 `chatds-rich`）；cost-meter 原生预算图框仍只统计 DSH 账本——WebChat 自己的预算视图做合并，cost-meter 的「设置→费用」也有 DSH+外部合计。
-- **Linux 目录选择器**：无 portal 的服务器上 DSH 官方目录选择服务可能不可用——请使用手动路径授权。
-- 中文文件名附件落盘时按白名单转写为安全文件名（内容不受影响）。
+- [YanJiuWeiYuanHui/DeepChat](https://github.com/YanJiuWeiYuanHui/DeepChat)：多模型、提示词、文件与日常聊天体验的设计参考。
+- [YinkaiYu/chat-in-dsh](https://github.com/yinkaiyu/chat-in-dsh)：在 DSH 中提供自然聊天入口的社区思路。
+- [jaychang1989/dsh-webchat](https://github.com/jaychang1989/dsh-webchat)：将官方聊天网站嵌入 DSH 的另一种路线，用于比较产品边界。
+- [Aixineiar/dsh-side-chat](https://github.com/Aixineiar/dsh-side-chat) 与 [Better Sidebar](https://github.com/omdsh-dev/dsh-better-sidebar)：旁聊、右侧栏和任务上下文交互的参考。
+- [Cherry Studio](https://github.com/CherryHQ/cherry-studio)、[LobeHub](https://github.com/lobehub/lobehub)、[LibreChat](https://github.com/danny-avila/LibreChat)：外观、设置、会话与文件管理的设计参考。
+
+**代码来源和版权归属以仓库中的 [NOTICE](packages/chat-main/NOTICE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) 为准。** 参考某项目的交互设计，不意味着本项目直接包含它的源码。
+
+## 费用、隐私与限制
+
+**费用。** WebChat 不提供免费的模型额度，也不承诺一定比其他客户端便宜。它减少不必要的工具和请求负担，但实际费用由所选模型及其服务决定。DeepSeek Rich 通路可通过 `dsh-cost-meter` 的外部用量协议合并统计；**外部合计与原生 Agent 账本/预算组件并非在所有视图中完全相同**，请留意来源说明。Rich 轮的每条消息与状态条会显示金额——由 dsh-cost-meter 价表与峰谷规则计算；0.11.2 之前的 Rich 记录不带会话归属，显示 Token 而无金额，合计仍以外部用量区为准。金额显示也可能受到价格表匹配、时段定价和历史记录完整性的影响。
+
+**文件与凭证。** 模型凭证由 DSH Host 管理，不要求把 API Key 填进 WebChat 页面。本地目录检索只读且需显式授权。主动上传到云端处理的文件则遵循对应模型服务的文件与隐私规则；撤销本地目录权限不等于自动删除此前上传到云端的附件。
+
+**兼容性。** 已有 Windows Desktop、Linux DSH Web 和 Apple Silicon macOS DSH Web 的不同阶段验收记录，但**不能把某平台旧版本的通过结果直接当作最新版本全功能通过**。macOS Desktop、Intel Mac 和未来 DSH 大版本应另行测试。
+
+**当前局限。** 某些联网搜索/网页抓取能力取决于服务端；无桌面文件选择器的 Linux Host 可能需要手动授权路径；Office 文档主要提取文本而不是完整视觉排版；长时稳定性、语音设备和第三方插件的实际兼容性仍需结合安装环境验证。WebChat 也不内置独立的完整长期记忆系统。
+
+发现问题请在 [Issues](https://github.com/Ritacuk/dsh-webdemo-chatds/issues) 反馈，并附上 **DSH 版本、WebChat 版本、运行平台、复现步骤和脱敏日志**。不要上传 API Key、Cookie 或私人会话内容。
+
+## 开发
+
+```bash
+git clone https://github.com/Ritacuk/dsh-webdemo-chatds.git
+cd dsh-webdemo-chatds
+corepack enable
+pnpm install
+pnpm --filter @dsh-chat/shared run build
+pnpm -r run typecheck
+pnpm -r run test
+pnpm --filter dsh-webdemo-chatds run build
+```
+
+仓库主要分为：
+
+```text
+packages/
+├── chat-shared/   # 官方 Demo Rich / SSE 协议与会话数据转换
+├── chat-main/     # WebChat Host、React 客户端、发布包与 DSH 接口
+└── chat-sidecar/  # Agent Side Chat 相关模块
+```
+
+开发、打包和真实 DSH Profile 安装的更多细节请查看仓库源码与 [更新日志](CHANGELOG.md)。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)；安全问题请参阅 [SECURITY.md](SECURITY.md)。
 
 ## 开源协议与致谢
 
-- 本项目代码以 [MIT](LICENSE) 发布。
-- 客户端界面与协议核心大规模改编自 [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo)（MIT，Copyright (c) 2026 DeepSeek）——完整的衍生范围声明见 [NOTICE](packages/chat-main/NOTICE) 与 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
-- 运行于 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（MIT）。
-- 本项目不使用 DeepSeek 品牌资产；随附图标为本项目原创。
+WebChat 以 [MIT License](LICENSE) 发布。项目客户端及 Rich 协议核心大量改编自 DeepSeek 的开源 [chat-demo](https://github.com/deepseek-ai/chat-demo)，保留相应版权和许可声明。
+
+感谢 DeepSeek Harness、chat-demo 及所有被参考和集成的开源项目作者。本项目为独立社区项目，与 DeepSeek 官方不存在产品隶属或背书关系。
+
+---
+
+**WebChat：先好好聊天；需要做事时，再交给 DSH。**

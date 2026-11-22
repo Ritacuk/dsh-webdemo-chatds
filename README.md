@@ -1,134 +1,209 @@
 # WebChat for DeepSeek Harness
 
-**WebChat** is an independent community chat plugin for the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH): it brings the look and behavior of DeepSeek's official [chat-demo](https://github.com/deepseek-ai/chat-demo) (pinned upstream commit `5d5dd754ebc1948e977ddb880a9eb5aa25f37b4c`, v0.1.1) into the DSH plugin system, running for real.
+**Bringing DeepSeek-style everyday chat into DeepSeek Harness.**
 
-> **WebChat is an independent community project for DeepSeek Harness. It is not an official DeepSeek product.**
-> **WebChat 是基于 DeepSeek Harness 开发的独立社区项目，并非 DeepSeek 官方产品。**
+[中文](https://github.com/Ritacuk/dsh-webdemo-chatds/blob/main/README.zh-CN.md) · [GitHub](https://github.com/Ritacuk/dsh-webdemo-chatds) · [Releases](https://github.com/Ritacuk/dsh-webdemo-chatds/releases/latest) · [Issues](https://github.com/Ritacuk/dsh-webdemo-chatds/issues) · [Changelog](https://github.com/Ritacuk/dsh-webdemo-chatds/blob/main/CHANGELOG.md)
 
-中文说明：[README.zh-CN.md](README.zh-CN.md)
+> WebChat is an independent community chat plugin running inside **DeepSeek Harness (DSH)**. Built on DeepSeek's official open-source [chat-demo](https://github.com/deepseek-ai/chat-demo), it keeps the familiar chat experience and taps into DSH's models, files, plugins, and Agent capabilities as needed.
+>
+> **This is a community project — not an official DeepSeek product, and not a direct embedding of the `chat.deepseek.com` website into DSH.**
 
-```
-user input → DSH host → DeepSeek Rich API → SSE → structured reply → DSH session persistence → UI restore
-```
+## Why WebChat?
 
-## Why WebChat exists
+DSH is great at using tools, handling files, and running complex tasks — but a lot of the time we just want to ask a quick question, work through a formula, translate a paragraph, or upload a handout and keep chatting.
 
-DeepSeek's official adapter (`dsh-llm-deepseek`) intentionally "circuit-breaks" on Rich-only blocks — thinking signatures, search steps, fetched web pages, citations, refusals — so this content cannot survive the generic DSH LLM pipeline. WebChat implements a dedicated direct channel for these blocks with full UI rendering, while handing all history and settings to DSH's official persistence layer: DSH remains the single source of truth; the WebChat page keeps zero local state.
+For those things, spinning up a full Agent with large tool definitions and workspace context every time is often unnecessary: **it can be slower, consume more tokens, and complicate plain chatting.**
 
-## Features
+WebChat targets exactly this:
 
-- **Demo-style chat**: new/multi-turn conversations, streaming output, stop, edit & resend, regenerate, reply branching.
-- **Thinking & search**: deep-thinking blocks (with signature chain), web-search steps, fetched page results, citation linking — all rendered structurally.
-- **DSH model catalog**: DSH model list, provider grouping, model whitelist, favorites, thinking levels, default model.
-- **Files & attachments**: chat attachments (DOCX/PPTX/XLSX text extraction locally, cloud Files API parsing for PDF/images, direct send by model capability); local directory authorization + read-only retrieval (TXT/Markdown/CSV/DOCX/XLSX/PPTX content, PDF/image by filename).
-- **Prompt templates**: global prompts, template variables, draft insertion.
-- **Context & cost**: integrates `dsh-context` / `dsh-cost-meter` (optional plugins). The bottom status bar follows DSH's native footer style — turns, tokens (tok), cache hit, session cost and merged budget — and clicking a segment opens the dsh-context panel or the dsh-cost-meter cost section directly. Rich-turn amounts are computed from dsh-cost-meter's own price catalog with the DeepSeek peak/off-peak rule.
-- **Plugin permissions**: shows running DSH bundles/components; read-only local capabilities require explicit grants.
-- **Session import/export**: compatible with official Demo v3, DeepChat v3, and WebChat ZIP; per-session Markdown/JSON/ZIP export, batch ZIP import with preview and dedup.
-- **Free appearance**: DeepSeek Demo default layout plus accent color, background/panel/composer opacity, layout density, line height, corner radius, composer width, font size, reading width, light/dark/follow-DSH, and in-window glass where supported. The legacy GPT / Gemini / Claude imitations are retired; updating migrates them into equivalent free-appearance settings automatically.
-- **Agent Side Chat** (Desktop): side chats beside DSH Agent work branches with checkpoint sync.
+- **Chat like the DeepSeek web app in everyday use.** Open and ask — no code workspace or Agent setup required first.
+- **Keep simple questions simple.** No extra tools are exposed to the model by default; thinking, web search, and local retrieval are opt-in.
+- **Use DSH when you need it.** Pick models configured in DSH, read files you uploaded, authorize read-only directories, or create a formal Agent work branch from chat.
+- **Chat history is stored reliably.** History is managed by DSH's session system instead of a temporary browser database.
 
-## Compatibility
+In one sentence: **chat by default; use tools when needed.**
 
-| Platform | Status |
-| --- | --- |
-| Linux DSH Web (DSH 0.2.2-rc.5, Node 22) | ✅ R8.5 real-model acceptance (isolated profile): all ten feedback fixes verified live; production web profile upgraded |
-| Windows Desktop (DSH Desktop 44.7.0, bundled runtime 0.2.2-rc.5, Node 24) | ✅ verified in R8.2 (0.10.0); 0.11.0 shares the same code paths — desktop acceptance in progress |
-| macOS (Apple Silicon) DSH Web | ✅ acceptance-tested (macOS 26.6.2, Apple M4, DSH Web track; Desktop/Intel not claimed) |
-| Other DSH versions | ⚠️ peer range declared as `>=0.2.2-rc.3 <0.2.3-0`; higher major versions are not guaranteed |
+WebChat aims to reduce unnecessary overhead — it does not promise a fixed token-saving ratio. Actual cost still depends on the model, context, cache, thinking, and tool usage.
 
-## Installation
+## What can it do?
 
-Prerequisite: DeepSeek Harness installed and the `dsh` CLI available.
+### 1. The familiar DeepSeek chat experience
 
-### Option 1: npm package (recommended)
+- Multi-turn chat, streaming replies, stop generation, edit & resend.
+- Deep thinking, web search for compatible models, web sources and citation display.
+- Markdown, code blocks, tables, math formulas (KaTeX), and Mermaid diagram rendering; copy the LaTeX source of formulas.
+- Session rename, pin, search, archive, reply version switching, and history restore.
+- Session import/export: recognizes official Demo, DeepChat v3, and WebChat archives; export as Markdown, JSON, or ZIP, with preview and deduplication before import.
 
-```bash
-# install into a target profile (e.g. the default web profile)
-dsh plugin --profile web add dsh-webdemo-chatds@next
-# drop @next once a stable tag is published
-```
+**Note:** this project is based on the official *open-source chat-demo* — it does not own all of DeepSeek's undisclosed server-side capabilities from the official website; search and special responses depend on the actually selected model and API.
 
-If your DSH version falls outside the peer range, DSH's version gate will reject the install — that is a protection mechanism; follow its guidance to update the plugin.
+### 2. Use the models in DSH without forcing an Agent
 
-### Option 2: GitHub Release
+WebChat reads DSH's model catalog directly — no second set of model API keys to maintain. You can:
 
-Download `dsh-webdemo-chatds-<version>.tgz` from [Releases](../../releases):
+- Pick models already configured in DSH; set the default model, favorites, and the whitelist.
+- Adjust the thinking levels a model supports.
+- Switch between **Chat** and **Plan (read-only)**.
+- When real execution is needed, create a **DSH-native Agent work branch** from chat and pick a registered DSH workspace.
 
-```bash
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.10.0.tgz
-```
-
-### Option 3: build from source
-
-```bash
-git clone <this repository>
-cd <repository>
-pnpm install            # Node >= 22, pnpm via Corepack
-pnpm --filter @dsh-chat/shared run build     # build the protocol core first (client typecheck depends on its output)
-pnpm -r run typecheck
-pnpm -r run test        # shared 21 + main 126 + sidecar 3 tests
-pnpm --filter dsh-webdemo-chatds run build   # host bundle + client page
-cd packages/chat-main && pnpm pack --pack-destination ../../dist-packages
-dsh plugin --profile web add ../../dist-packages/dsh-webdemo-chatds-<version>.tgz
-```
-
-After installing, **restart the DSH web service** (or enable the components in DSH's plugin manager); a "WebChat" entry appears in the sidebar.
-
-## Quick start
-
-1. Open "WebChat" from the sidebar.
-2. Pick a model from the picker at the bottom (the list comes from DSH's model catalog).
-3. Toggle deep thinking / web search in the input area (official DeepSeek models only).
-4. Local file retrieval: DSH settings → ChatDS settings → Files; authorize directories, then enable local retrieval.
-
-## Authentication & costs
-
-WebChat reuses DSH's official credential system, in priority order:
-
-1. DeepSeek **API key** (configured on DSH's Models page or as `DEEPSEEK_API_KEY` in `$DSH_HOME/.credentials.yaml`);
-2. DSH's **signed-in DeepSeek account token** (the official account service decides per destination).
-
-WebChat does not make the DeepSeek API free: model requests, web search, file parsing, and third-party model services may incur costs. Rich-channel usage is reported truthfully by the model service and labeled on each message; whether it reaches the `dsh-cost-meter` unified ledger depends on that plugin's Rich coverage (see known limitations).
-
-## Security & privacy
-
-- **Local directory grants**: read-only; every grant is Host-validated (absolute path, realpath, existing and readable). Path traversal and symlink escapes are rejected at the engine level (covered by dedicated tests).
-- **Environments without a directory picker** (e.g. headless Linux servers): the settings page offers a manual absolute-path grant with the same Host-side validation.
-- **Credentials**: the browser never sees keys/tokens; the Host resolves credentials per request.
-- **Session data**: stored entirely in DSH's official session storage (`$DSH_HOME/sessions`); WebChat keeps no copies.
-
-## Optional integrations
-
-| Plugin | Purpose | When missing |
+| Mode | Best for | Key difference |
 | --- | --- | --- |
-| `dsh-cost-meter` | cost/usage display | cost area shows "not connected"; main chat unaffected |
-| `dsh-context` | context usage display | same |
+| **Chat** | Everyday Q&A, learning, translation, explanation, reading uploaded material | No extra model tools called by default |
+| **Plan (read-only)** | Step-by-step search, reading, and analysis within an explicitly authorized scope | Limited read-only capabilities; no write tasks |
+| **Agent work branch** | Coding, file edits, running commands, complex tasks | Handed to the DSH-native Agent, still following workspace, sandbox, and approval rules |
 
-## Known limitations (truthful)
+Thinking, web search, file upload, and voice are not work modes; they are independent capabilities.
 
-- **Real web search**: protocol and UI implemented; real search billing must be confirmed by the user (not acceptance-tested this round).
-- **Voice**: transcription prefers the DSH voice-input component when installed (local SenseVoice or the provider you configured); otherwise it falls back to DeepSeek ASR, and only when voice input is explicitly enabled in ChatDS settings (charges may apply). DSH Desktop grants microphone access only to the main frame — WebChat records through a top-frame capture bridge (the same authorized context as DSH native voice) with a live level meter and timer.
-- **Agent work-branch workspace picking**: the branch dialog lists your registered DSH workspaces (parent chat's workspace preselected); the native directory picker appears only when you create a brand-new workspace, through DSH's official flow.
-- **Rich usage ledger**: Rich usage is recorded into the `dsh-cost-meter` unified ledger via its official `external_usage.json` protocol (source `chatds-rich`); the meter's native budget widget still counts the DSH ledger only — WebChat's own budget view merges both, and cost-meter's Settings → Cost shows combined totals.
-- **Linux directory picker**: on servers without a portal, DSH's official picker service may be unavailable — use the manual path grant.
-- Non-ASCII attachment filenames are rewritten to a safe whitelist on disk (content is unaffected).
+### 3. Files: upload to chat; local retrieval needs authorization
+
+- **Attachments:** pick, paste, or drag files in; text extraction or server-side parsing depends on the format and model capability.
+- **Office documents:** extractable text from DOCX, XLSX, and PPTX; not equivalent to fully understanding layout, embedded images, or formula objects.
+- **Local retrieval:** only searches directories you explicitly authorized; supports content retrieval for common text and Office documents. PDF and images in local retrieval should not be assumed to include full OCR — local filename discovery is a different feature from cloud attachment processing.
+- **Revocation:** after revoking a directory grant, later retrieval cannot access that directory.
+
+> **Where the files live matters.** If you access a Linux DSH from a browser on another computer, authorized directories are folders **on the Linux DSH host**; files on the browser computer should use attachment upload.
+
+### 4. Use DSH's capabilities instead of rebuilding DSH
+
+- **Plugins & tools:** view available plugins, components, and capabilities; extra model tools are not authorized by default — which read-only capabilities are allowed is up to you.
+- **Context & cost:** integrates `dsh-context` and `dsh-cost-meter`. The bottom status bar follows DSH's native footer style — turns, tokens (tok), cache hit, session cost, and the merged budget — and clicking a segment opens the dsh-context panel or the dsh-cost-meter cost page directly. Rich-turn amounts are computed from dsh-cost-meter's price catalog with its peak/off-peak rule.
+- **Prompts:** global extra prompts, template library, variable substitution, and draft insertion.
+- **Agent Side Chat:** an independent side chat beside a DSH Agent task, inheriting relevant context from committed checkpoints; it never modifies the main task on its own.
+- **Voice input:** where the environment allows, uses DSH voice capability or an explicitly configured transcription service to turn recordings into input drafts; never sent automatically by default. On desktop, DSH grants microphone access only to the main frame — WebChat records through a top-frame capture bridge (the same authorized context as DSH native voice), with a live level meter and timer in the recording dialog.
+
+**One package, two main components:**
+
+| Component | Default | Purpose |
+| --- | --- | --- |
+| **WebChat Main** | On | The main chat page and core features |
+| **Agent Side Chat** | Off | An independent discussion panel beside DSH Agent tasks |
+
+Context, cost, and voice are **optional integration capabilities** — not required for the main chat. Globally disabling a DSH plugin and allowing a model to call its tools are two different things.
+
+### 5. Adjust the reading and input interface yourself
+
+The DeepSeek Demo-based default interface is kept, plus **free appearance settings**: accent color, background/panel/composer opacity, layout density, line height, corner radius, composer width, font size, reading width, light/dark/follow-DSH, and in-window frosted glass where the environment supports it. The legacy GPT, Gemini, and Claude imitation layouts are retired; updating migrates them automatically into equivalent free-appearance settings (colors and reading preferences are kept).
+
+The interface offers Chinese, English, and Japanese; switching the UI language does not translate existing chats.
+
+## Install
+
+### What you need
+
+- **[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)** installed, with access to its plugin manager.
+- At least one chat model configured in DSH; special DeepSeek Rich features need the compatible model and credentials.
+- The plugin declares DSH runtime compatibility `>=0.2.2-rc.3 <0.2.3-0`. Building from source needs Node.js **22+** and pnpm.
+
+### Recommended: install through the DSH plugin manager
+
+Open **DSH → Plugins → Add plugin** and enter:
+
+```text
+ dsh-webdemo-chatds
+```
+
+After installing, enable **WebChat Main** — the **WebChat** entry appears on the left. For Agent side chat, enable **Agent Side Chat** separately.
+
+### Command-line install (web profile example)
+
+```bash
+dsh plugin --profile web add dsh-webdemo-chatds@0.11.7
+```
+
+If your DSH uses a different profile (for example `desktop` on Windows Desktop), operate in that profile's plugin manager; do not treat `web` as the profile name for every platform.
+
+You can also download the matching `.tgz` from [GitHub Releases](https://github.com/Ritacuk/dsh-webdemo-chatds/releases) and install it through the official DSH plugin manager. **The version in this README is the baseline at writing time; check the actual latest release and compatibility requirements before installing.**
+
+## 30-second quick start
+
+1. Click **WebChat** on the left to enter the welcome page.
+2. Pick a configured model on the right of the composer and send a message directly.
+3. Use the composer's settings entry to enable **deep thinking**, **web search**, or **local retrieval** as needed.
+4. Add attachments when you need to read files; to search host directories, first grant read-only access under **DSH Settings → ChatDS Settings → Files**.
+5. For complex tasks that actually modify a workspace, create a DSH **Agent work branch** from the corresponding message; plain Q&A does not need that.
+
+**Recommended everyday setup:** Chat + a low-cost Flash model + thinking off + web search off + no extra model tool grants. Turn on the corresponding capability when you need deeper analysis.
+
+## How is it different from other options?
+
+| Option | Better suited for |
+| --- | --- |
+| **DeepSeek official website** | Using the official online product without DSH |
+| **DSH native Agent** | Coding, tool execution, workspace operations, complex automation |
+| **WebChat** | Low-overhead everyday chatting inside DSH, with an on-ramp to DSH capabilities when needed |
+| **Plugins that embed the DeepSeek website** | Closer to using the original site; sessions and tool capabilities depend on how the site and container are integrated |
+
+WebChat is **not another standalone DeepSeek account website**, and it does not aim to replace the DSH Agent. It bridges the two ways of working.
+
+## Optional plugins & source projects
+
+### Foundation & direct adaptation
+
+| Project | Role in WebChat |
+| --- | --- |
+| [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) | **The required runtime platform**: model catalog, credentials, sessions, workspaces, plugins, and desktop/web UI |
+| [DeepSeek official chat-demo](https://github.com/deepseek-ai/chat-demo) | **The main source basis**: chat UI, Markdown/formulas, some front-end modules, and the Rich streaming protocol; adapted from its pinned v0.1.1 commit |
+
+### Optional integrations (plain chat works without them)
+
+| Plugin | What it provides | Without it |
+| --- | --- | --- |
+| [dsh-context](https://github.com/bowenliang123/dsh-context) | Context composition and usage | The detailed views are unavailable or limited |
+| [dsh-cost-meter](https://github.com/Han-1413141/dsh-cost-meter) | Usage, prices, budget, and cost views | Its official ledger is not shown; missing records must not be read as zero cost |
+| The DSH voice input component, if installed | Recording and speech-to-text | Degrades to the actually available services; cloud transcription requires explicit opt-in and may cost money |
+
+### Design references (not copies of their source)
+
+- [YanJiuWeiYuanHui/DeepChat](https://github.com/YanJiuWeiYuanHui/DeepChat): design reference for multi-model, prompts, files, and everyday chat.
+- [YinkaiYu/chat-in-dsh](https://github.com/yinkaiyu/chat-in-dsh): a community idea for a natural chat entry in DSH.
+- [jaychang1989/dsh-webchat](https://github.com/jaychang1989/dsh-webchat): another route that embeds the official chat website in DSH, useful for comparing product boundaries.
+- [Aixineiar/dsh-side-chat](https://github.com/Aixineiar/dsh-side-chat) and [Better Sidebar](https://github.com/omdsh-dev/dsh-better-sidebar): references for side chat, right sidebar, and task-context interactions.
+- [Cherry Studio](https://github.com/CherryHQ/cherry-studio), [LobeHub](https://github.com/lobehub/lobehub), [LibreChat](https://github.com/danny-avila/LibreChat): design references for appearance, settings, sessions, and file management.
+
+**Code provenance and copyright are governed by the [NOTICE](packages/chat-main/NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) in the repository.** Referencing a project's interaction design does not mean this project includes its source code.
+
+## Cost, privacy, and limitations
+
+**Cost.** WebChat does not provide free model quota, nor does it promise to be cheaper than other clients. It reduces unnecessary tool and request overhead, but actual cost is decided by the selected model and its service. The DeepSeek Rich path can be merged into statistics via `dsh-cost-meter`'s external usage protocol; **the external totals and the native Agent ledger/budget widget are not identical in every view** — watch the source notes. Per-message and status-bar amounts for Rich turns are computed from dsh-cost-meter's price catalog with its peak/off-peak rule; Rich records created before 0.11.2 carry no session attribution and show tokens without amounts, while combined totals remain in the external usage area. Amount display can also be affected by price matching, time-of-day pricing, and history completeness.
+
+**Files & credentials.** Model credentials are managed by the DSH Host — WebChat never asks you to put API keys into its page. Local directory retrieval is read-only and requires explicit authorization. Files you upload for cloud processing follow that model service's file and privacy rules; revoking local directory access does not automatically delete attachments previously uploaded to the cloud.
+
+**Compatibility.** There are stage-by-stage acceptance records for Windows Desktop, Linux DSH Web, and Apple Silicon macOS DSH Web — but **a pass on an old version for one platform must not be read as a full pass for the latest version**. macOS Desktop, Intel Macs, and future DSH major versions should be tested separately.
+
+**Current limitations.** Some web search / page fetching capabilities depend on the server; Linux hosts without a desktop file picker may need manual path grants; Office documents are mostly extracted as text rather than full visual layout; long-run stability, voice devices, and real compatibility with third-party plugins still depend on the installation environment. WebChat also does not include its own complete long-term memory system.
+
+If you find a problem, please report it in [Issues](https://github.com/Ritacuk/dsh-webdemo-chatds/issues) with the **DSH version, WebChat version, platform, reproduction steps, and sanitized logs**. Do not upload API keys, cookies, or private session content.
 
 ## Development
 
 ```bash
+git clone https://github.com/Ritacuk/dsh-webdemo-chatds.git
+cd dsh-webdemo-chatds
+corepack enable
 pnpm install
+pnpm --filter @dsh-chat/shared run build
 pnpm -r run typecheck
 pnpm -r run test
-pnpm --filter @dsh-chat/shared run build
 pnpm --filter dsh-webdemo-chatds run build
 ```
 
-Layout: `packages/chat-shared` (wire protocol core) · `packages/chat-main` (host + client page, the published npm package) · `packages/chat-sidecar` (side-chat component scaffold). The host build injects the current git commit into the Health endpoint (`/chat-workspace/api/health`).
+The repository is mainly organized as:
 
-## Credits & license
+```text
+packages/
+├── chat-shared/   # official Demo Rich / SSE protocol and session data conversion
+├── chat-main/     # WebChat Host, React client, published package, and DSH interfaces
+└── chat-sidecar/  # Agent Side Chat modules
+```
 
-- This project's code is released under the [MIT license](LICENSE).
-- The client UI and the wire-protocol core are substantially adapted from [deepseek-ai/chat-demo](https://github.com/deepseek-ai/chat-demo) (MIT, Copyright (c) 2026 DeepSeek) — the full derivation statement ships in [NOTICE](packages/chat-main/NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-- Runs on [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (MIT).
-- This project uses no DeepSeek brand assets; the bundled icon is an original work of this project.
+For more details on development, packaging, and installing into a real DSH profile, see the repository sources and the [Changelog](CHANGELOG.md). Read [CONTRIBUTING.md](CONTRIBUTING.md) before contributing; for security issues see [SECURITY.md](SECURITY.md).
+
+## License & acknowledgments
+
+WebChat is released under the [MIT License](LICENSE). The client and the Rich protocol core are heavily adapted from DeepSeek's open-source [chat-demo](https://github.com/deepseek-ai/chat-demo), with the corresponding copyright and license notices kept in place.
+
+Thanks to DeepSeek Harness, chat-demo, and all the authors of the referenced and integrated open-source projects. This project is an independent community project and has no product affiliation with or endorsement from DeepSeek.
+
+---
+
+**WebChat: chat well first; when there's work to do, hand it to DSH.**
