@@ -24,11 +24,11 @@ export const SessionView = ({
   const isMobile = useIsMobile()
   const title = session.title || t('untitledChat')
   return (
-    <div className={clsx(styles.view, embedded && styles.embedded)}>
+    <div className={clsx(styles.view, embedded && styles.embedded)} data-webchat-session={embedded ? "embedded" : "full"}>
       {embedded ? null : isMobile ? (
         <MobileHeader title={title} />
       ) : (
-        <div className={styles.header}>
+        <div className={styles.header} data-webchat-header="">
           <div className={clsx(styles.title, siderCollapsed && styles.withCollapsedSider)}>
             {title}
           </div>

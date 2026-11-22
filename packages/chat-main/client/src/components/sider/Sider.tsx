@@ -4,7 +4,7 @@ import { useTranslate } from '../../i18n/index.js'
 import { IconPanelLeftOutline16, NewChatIcon, IconEllipsisOutline16, IconDownloadOutline16 } from '../base/icons.js'
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
-import { createSession, deleteSession, useChatStore } from '../../store/workspace.js'
+import { closeSession, deleteSession, useChatStore } from '../../store/workspace.js'
 import type { SessionSummary } from '@dsh-chat/shared'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
@@ -18,7 +18,7 @@ import styles from './Sider.module.css'
 /**
  * 展开的侧边栏：名称与收起按钮、开启新对话、按时间分组的会话列表；移动端放在抽屉里，收起按钮关闭抽屉。
  * P2-I: 底部设置入口打开工作区设置对话框(SettingsDialog)。
- * demo 的 newChat 在 store 里只是清空 activeId;这里按 workspace 契约改为 createSession(新建会话)。
+ * R8.5:与 demo 的 newChat 一致——只清空 activeId 回到欢迎页,首条消息提交才创建会话。
  */
 type DataAction = (action: 'import' | 'export') => void
 
@@ -37,6 +37,25 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
   }, [sessions, now, query, t, archived])
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
+  // R8.5:历史遗留的空白会话(从未发送消息)识别与一次性整理建议。只按真实消息数判断,不按标题。
+  const emptySessions = useMemo(
+    () => sessions.filter((session) => session.messageCount === 0 && !session.archived),
+    [sessions],
+  )
+  const [cleanupPending, setCleanupPending] = useState(false)
+  const hideEmptySessions = async () => {
+    if (emptySessions.length === 0 || cleanupPending) return
+    if (!window.confirm(t('emptyHistoryCleanupConfirm').replace('{count}', String(emptySessions.length)))) return
+    setCleanupPending(true)
+    try {
+      for (const session of emptySessions) {
+        await deleteSession(session.id).catch(() => {})
+      }
+      showToast(t('emptyHistoryCleanupDone'))
+    } finally {
+      setCleanupPending(false)
+    }
+  }
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>
@@ -63,15 +82,15 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
   }, [])
 
   return (
-    <div className={clsx(styles.sider, mobile && styles.mobile)}>
+    <div className={clsx(styles.sider, mobile && styles.mobile)} data-webchat-sider={mobile ? "mobile" : "desktop"}>
       <div className={styles.top}>
-        <div className={styles.appName}>{t('appName')}</div>
+        <div className={styles.appName} data-webchat-appname="">{t('appName')}</div>
         <Menu options={[
           { key: 'archive', label: t(archived ? 'showActiveChats' : 'showArchivedChats'), icon: null, onSelect: () => setArchived(!archived) },
-          { key: 'import', label: '导入聊天记录', icon: null, onSelect: () => { closeMobileSider(); onData('import') } },
-          { key: 'export', label: '导出聊天记录', icon: <IconDownloadOutline16 />, onSelect: () => { closeMobileSider(); onData('export') } },
+          { key: 'import', label: t('historyImport'), icon: null, onSelect: () => { closeMobileSider(); onData('import') } },
+          { key: 'export', label: t('exportChatHistory'), icon: <IconDownloadOutline16 />, onSelect: () => { closeMobileSider(); onData('export') } },
         ]}>
-          {({ toggle }) => <IconButton icon={<IconEllipsisOutline16 />} aria-label="会话列表更多操作" onClick={toggle} />}
+          {({ toggle }) => <IconButton icon={<IconEllipsisOutline16 />} aria-label={t('sessionListMoreActions')} onClick={toggle} />}
         </Menu>
         <IconButton
           size="m"
@@ -84,9 +103,11 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
       <button
         type="button"
         className={styles.newChat}
+        data-webchat-newchat=""
         onClick={() => {
           setArchived(false)
-          void createSession()
+          // R8.5:新对话 = 回到欢迎页(纯本地);首条消息提交才创建会话,不再产生空白历史。
+          closeSession()
           closeMobileSider()
         }}
       >
@@ -95,13 +116,18 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
         </span>
         {t('newChat')}
       </button>
-      <input className={styles.search} type="search" aria-label="搜索会话标题" placeholder="搜索会话"
+      <input className={styles.search} type="search" aria-label={t('searchSessionsAria')} placeholder={t('searchSessionsPlaceholder')} data-webchat-search=""
         value={query} onChange={(event) => setQuery(event.target.value)} />
+      {!archived && emptySessions.length >= 3 && (
+        <button type="button" className={styles.cleanupHint} onClick={() => void hideEmptySessions()} disabled={cleanupPending}>
+          {t('emptyHistoryCleanupHint').replace('{count}', String(emptySessions.length))}
+        </button>
+      )}
       <div className={styles.listWrap}>
         <div className={styles.list}>
           {archived && <button type="button" className={styles.newChat} onClick={() => setArchived(false)}>{t('showActiveChats')}</button>}
           {!groups.length && archived && !query.trim() && <p className={styles.empty}>{t('noArchivedChats')}</p>}
-          {!groups.length && query.trim() && <p className={styles.empty}>没有匹配的会话。</p>}
+          {!groups.length && query.trim() && <p className={styles.empty}>{t('noMatchingSessions')}</p>}
           {groups.map((group) => (
             <div key={group.key} className={styles.section}>
               <div className={styles.sectionHeader}>{group.label}</div>

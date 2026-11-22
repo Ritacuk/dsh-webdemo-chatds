@@ -4,6 +4,7 @@ import { Button } from '../base/Button.js'
 import { showToast } from '../base/toastState.js'
 import { api } from '../../services/api.js'
 import { refreshSessions } from '../../store/workspace.js'
+import { useTranslate } from '../../i18n/index.js'
 import styles from './ImportModal.module.css'
 
 /**
@@ -15,6 +16,7 @@ import styles from './ImportModal.module.css'
 type Preview = Awaited<ReturnType<typeof api.importPreview>>
 
 export function ImportModal({ onClose }: { onClose: () => void }) {
+  const t = useTranslate()
   const fileRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
@@ -48,7 +50,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
       const value = await api.importConfirm(file, [...selected])
       setResult(value)
       await refreshSessions()
-      if (value.imported.length > 0) showToast(`已导入 ${value.imported.length} 个会话`)
+      if (value.imported.length > 0) showToast(value.imported.length === 1 ? t('historyImportedOne') : t('historyImported', { count: value.imported.length }))
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason))
     } finally {
@@ -57,17 +59,17 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <Modal title="导入聊天记录" onClose={() => { if (!busy) onClose() }} closable={!busy} footer={
+    <Modal title={t('importModalTitle')} onClose={() => { if (!busy) onClose() }} closable={!busy} footer={
       result === null ? (
         <>
-          <Button variant="outlined" disabled={busy} onClick={() => fileRef.current?.click()}>选择归档文件…</Button>
+          <Button variant="outlined" disabled={busy} onClick={() => fileRef.current?.click()}>{t('importPickArchiveFile')}</Button>
           <Button variant="outlined" disabled={busy || file === null || preview === null || selected.size === 0} onClick={() => void confirm()}>
-            导入所选({selected.size})
+            {t('importSelectedButton', { count: selected.size })}
           </Button>
-          <Button variant="outlined" disabled={busy} onClick={onClose}>关闭</Button>
+          <Button variant="outlined" disabled={busy} onClick={onClose}>{t('close')}</Button>
         </>
       ) : (
-        <Button variant="outlined" onClick={onClose}>完成</Button>
+        <Button variant="outlined" onClick={onClose}>{t('importDoneButton')}</Button>
       )
     }>
       <div className={styles.body}>
@@ -78,11 +80,16 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
             event.target.value = ''
           }} />
         {error !== '' && <p role="alert">{error}</p>}
-        {busy && <p role="status">处理中…</p>}
+        {busy && <p role="status">{t('importProcessing')}</p>}
         {preview !== null && result === null && (
           <>
-            <p>{preview.format === 'webchat' ? 'WebChat ZIP' : preview.format === 'v3' ? 'DeepSeek / DeepChat v3 ZIP' : '会话 JSON'} · {preview.sessions.length} 个会话 · {preview.sessions.reduce((sum, item) => sum + item.messageCount, 0)} 条消息 · {preview.sessions.reduce((sum, item) => sum + item.attachmentCount, 0)} 个附件</p>
-            <p>归档大小 {Math.ceil(preview.size / 1024).toLocaleString()} KB · {preview.sessions.filter((entry) => entry.duplicate).length} 个重复会话</p>
+            <p>{t('importPreviewSummary', {
+              format: preview.format === 'webchat' ? 'WebChat ZIP' : preview.format === 'v3' ? 'DeepSeek / DeepChat v3 ZIP' : t('formatSessionJson'),
+              count: preview.sessions.length,
+              messages: preview.sessions.reduce((sum, item) => sum + item.messageCount, 0),
+              attachments: preview.sessions.reduce((sum, item) => sum + item.attachmentCount, 0),
+            })}</p>
+            <p>{t('importArchiveSize', { size: Math.ceil(preview.size / 1024).toLocaleString(), count: preview.sessions.filter((entry) => entry.duplicate).length })}</p>
             <div className={styles.list}>
               {preview.sessions.map((entry) => (
                 <label key={entry.index} className={styles.row}>
@@ -95,25 +102,25 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
                         return next
                       })
                     }} />
-                  <span className={styles.title}>{entry.title ?? '(无标题)'}</span>
-                  <small>{entry.duplicate ? '已导入' : `${entry.messageCount} 条消息 · ${entry.attachmentCount} 个附件（${entry.retainedAttachmentCount} 个原件）`}</small>
+                  <span className={styles.title}>{entry.title ?? t('importUntitledEntry')}</span>
+                  <small>{entry.duplicate ? t('importEntryImportedBadge') : t('importEntryStats', { messages: entry.messageCount, attachments: entry.attachmentCount, originals: entry.retainedAttachmentCount })}</small>
                 </label>
               ))}
             </div>
             {preview.skipped.length > 0 && (
-              <details><summary>跳过的条目({preview.skipped.length})</summary>
+              <details><summary>{t('importSkippedSummary', { count: preview.skipped.length })}</summary>
                 <ul>{preview.skipped.map((item, index) => <li key={index}>{item.path}: {item.reason}</li>)}</ul>
               </details>
             )}
-            <p className={styles.note}>导入会创建新会话并跳过重复项。ZIP 有原件时保留本地副本，点击附件卡片可下载。需要向模型引用时，请重新添加附件。部分工具数据和费用明细可能无法恢复。</p>
+            <p className={styles.note}>{t('importNote')}</p>
           </>
         )}
         {result !== null && (
           <>
-            <p>已导入 {result.imported.length} 个会话，跳过 {result.duplicates.length} 个重复项，{result.failures.length} 个失败。</p>
+            <p>{t('importResultSummary', { imported: result.imported.length, duplicates: result.duplicates.length, failed: result.failures.length })}</p>
             <ul>
-              {result.imported.map((entry, index) => <li key={index}>{entry.title ?? entry.id}({entry.messageCount} 条)</li>)}
-              {result.failures.map((failure, index) => <li key={`f${index}`}>失败 #{failure.index}: {failure.reason}</li>)}
+              {result.imported.map((entry, index) => <li key={index}>{entry.title ?? entry.id}{t('importResultEntryMessages', { count: entry.messageCount })}</li>)}
+              {result.failures.map((failure, index) => <li key={`f${index}`}>{t('importFailureEntry', { index: failure.index, reason: failure.reason })}</li>)}
             </ul>
           </>
         )}

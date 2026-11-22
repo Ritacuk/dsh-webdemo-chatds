@@ -59,7 +59,7 @@ const ModelRefSchema = z.object({
 })
 
 const SettingsPatchSchema = z.object({
-  interfaceLanguage: z.enum(['browser', 'zh-CN', 'en-US']).optional(),
+  interfaceLanguage: z.enum(['browser', 'zh-CN', 'en-US', 'ja-JP']).optional(),
   sendShortcut: z.enum(['enter', 'ctrl-enter']).optional(),
   enableVoiceInput: z.boolean().optional(),
   appearanceMode: z.enum(['dsh', 'light', 'dark', 'system']).optional(),
@@ -144,6 +144,8 @@ const workspaceDomainSpec = (name: string) => defineDomain({
       manualTitle: z.string().optional(),
       pinned: z.boolean().optional(),
       archived: z.boolean().optional(),
+      /** R8.5:附件上传/交接单预建的占位会话;首条用户消息落盘前不出现在历史列表。 */
+      draft: z.boolean().optional(),
       createdAt: z.number().int().nonnegative(),
       updatedAt: z.number().int().nonnegative(),
       messageCount: z.number().int().nonnegative(),

@@ -6,6 +6,7 @@ import { showToast } from '../base/toastState.js'
 import { api } from '../../services/api.js'
 import type { PromptTemplate } from '@dsh-chat/shared'
 import { useChatStore } from '../../store/workspace.js'
+import { useTranslate } from '../../i18n/index.js'
 import { IconDataOutline16 } from '../base/icons.js'
 import styles from './ChatInput.module.css'
 import managerStyles from './TemplateManager.module.css'
@@ -48,6 +49,7 @@ export function TemplateMenu({ sessionId, onInsert, onInsertAndSend }: {
   const [query, setQuery] = useState('')
   const [preview, setPreview] = useState<{ template: PromptTemplate; resolved: string; unresolved: string[] } | null>(null)
   const [managing, setManaging] = useState(false)
+  const t = useTranslate()
   const variables = useRef<ReturnType<typeof templateVariables>>({})
   const { anchorRef, floatingRef, position } = useAnchoredPosition<HTMLButtonElement, HTMLDivElement>(
     open, { side: 'bottom', align: 'start', maxHeight: MENU_MAX_HEIGHT },
@@ -85,15 +87,15 @@ export function TemplateMenu({ sessionId, onInsert, onInsertAndSend }: {
   }
   const groups = new Map<string, PromptTemplate[]>()
   for (const template of filtered) {
-    const category = template.category || '未分类'
+    const category = template.category || t('templateCategoryUncategorized')
     const group = groups.get(category) ?? []
     group.push(template)
     groups.set(category, group)
   }
 
   return <>
-    <button type="button" ref={anchorRef} className={styles.gearTrigger} aria-label="提示词模板"
-      aria-haspopup="menu" aria-expanded={open} title="提示词模板"
+    <button type="button" ref={anchorRef} className={styles.gearTrigger} aria-label={t('templateMenuLabel')}
+      aria-haspopup="menu" aria-expanded={open} title={t('templateMenuLabel')}
       onClick={() => {
         if (open) close()
         else {
@@ -102,12 +104,12 @@ export function TemplateMenu({ sessionId, onInsert, onInsertAndSend }: {
         }
       }}><IconDataOutline16 /></button>
     {open && createPortal(
-      <div ref={floatingRef} aria-label="提示词模板" data-composer-menu="" className={styles.composerMenu + ' ' + styles.templateMenu}
+      <div ref={floatingRef} aria-label={t('templateMenuLabel')} data-composer-menu="" className={styles.composerMenu + ' ' + styles.templateMenu}
         style={position ?? { visibility: 'hidden' }}>
-        <input type="search" aria-label="搜索模板" placeholder="搜索模板…" value={query}
+        <input type="search" aria-label={t('templateSearchPlaceholder')} placeholder={t('templateSearchPlaceholder')} value={query}
           onChange={(event) => setQuery(event.target.value)} />
-        {templates === null ? <p role="status">正在读取模板…</p> : null}
-        {templates !== null && filtered.length === 0 ? <p role="status">{templates.length === 0 ? '暂无模板,可在管理中新建。' : '没有匹配的模板。'}</p> : null}
+        {templates === null ? <p role="status">{t('templateLoading')}</p> : null}
+        {templates !== null && filtered.length === 0 ? <p role="status">{templates.length === 0 ? t('templateEmptyNone') : t('templateNoMatch')}</p> : null}
         {[...groups].map(([category, items]) => <section key={category}>
           <h3>{category}</h3>
           {items.map((template) => <div key={template.id} className={styles.templateRow}>
@@ -116,24 +118,24 @@ export function TemplateMenu({ sessionId, onInsert, onInsertAndSend }: {
               <strong>{template.name}</strong>
               {template.summary && <small title={template.summary}>{template.summary}</small>}
             </button>
-            <button type="button" className={styles.templateMore} title="预览模板"
-              aria-label={'预览 ' + template.name} onClick={() => resolve(template, true)}>⋯</button>
+            <button type="button" className={styles.templateMore} title={t('templatePreviewTooltip')}
+              aria-label={t('templatePreviewName', { name: template.name })} onClick={() => resolve(template, true)}>⋯</button>
           </div>)}
         </section>)}
         <div>
-          <button type="button" onClick={() => { close(); setManaging(true) }}>管理模板…</button>
+          <button type="button" onClick={() => { close(); setManaging(true) }}>{t('templateManageOpen')}</button>
         </div>
       </div>, document.body,
     )}
-    {preview !== null && <Modal title={`模板预览 · ${preview.template.name}`} onClose={() => setPreview(null)} closable>
+    {preview !== null && <Modal title={t('templatePreviewTitle', { name: preview.template.name })} onClose={() => setPreview(null)} closable>
       <div className={managerStyles.previewBody}>
         {preview.unresolved.length > 0 && <p role="alert" className={managerStyles.unresolved}>
-          未解析变量:{preview.unresolved.join('、')}(使用时将原样保留,不会静默删除)
+          {t('templateUnresolvedVars', { vars: preview.unresolved.join('、') })}
         </p>}
         <pre>{preview.resolved}</pre>
         <div className={managerStyles.previewActions}>
-          <button type="button" className={managerStyles.primary} onClick={() => insertPreview(false)}>插入到草稿</button>
-          <button type="button" onClick={() => insertPreview(true)}>插入并发送</button>
+          <button type="button" className={managerStyles.primary} onClick={() => insertPreview(false)}>{t('templateInsertDraft')}</button>
+          <button type="button" onClick={() => insertPreview(true)}>{t('templateInsertAndSend')}</button>
         </div>
       </div>
     </Modal>}
@@ -147,6 +149,7 @@ export function TemplateManagerModal({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState('')
   const [editing, setEditing] = useState<Partial<PromptTemplate> & { id?: string } | null>(null)
   const [query, setQuery] = useState('')
+  const t = useTranslate()
   const reload = () => {
     void api.listPrompts().then((value) => setTemplates(value.templates), (reason: Error) => setError(reason.message))
   }
@@ -166,25 +169,25 @@ export function TemplateManagerModal({ onClose }: { onClose: () => void }) {
   const needle = query.trim().toLowerCase()
   const filtered = (templates ?? []).filter((template) =>
     needle.length === 0 || (template.name + ' ' + template.category + ' ' + template.tags.join(' ')).toLowerCase().includes(needle))
-  return <Modal title="提示词模板管理" onClose={onClose} closable>
+  return <Modal title={t('templateManagerTitle')} onClose={onClose} closable>
     <div className={managerStyles.manager}>
       {error !== '' && <p role="alert">{error}</p>}
       <div className={managerStyles.toolbar}>
-        <input type="search" placeholder="搜索模板…" value={query} onChange={(event) => setQuery(event.target.value)} />
-        <button type="button" className={managerStyles.primary} onClick={() => setEditing({ name: '', category: '', summary: '', body: '', tags: [] })}>新建模板</button>
+        <input type="search" placeholder={t('templateSearchPlaceholder')} value={query} onChange={(event) => setQuery(event.target.value)} />
+        <button type="button" className={managerStyles.primary} onClick={() => setEditing({ name: '', category: '', summary: '', body: '', tags: [] })}>{t('templateNew')}</button>
       </div>
-      {templates === null ? <p role="status">正在读取…</p> : null}
+      {templates === null ? <p role="status">{t('templateManagerLoading')}</p> : null}
       {editing !== null ? <div className={managerStyles.editor}>
-        <label>名称<input value={editing.name ?? ''} onChange={(event) => setEditing({ ...editing, name: event.target.value })} /></label>
-        <label>分类<input value={editing.category ?? ''} onChange={(event) => setEditing({ ...editing, category: event.target.value })} /></label>
-        <label>简介<input value={editing.summary ?? ''} onChange={(event) => setEditing({ ...editing, summary: event.target.value })} /></label>
-        <label>标签(逗号分隔)<input value={(editing.tags ?? []).join(', ')} onChange={(event) => setEditing({ ...editing, tags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label>
-        <label>正文<textarea value={editing.body ?? ''} rows={8}
+        <label>{t('templateFieldName')}<input value={editing.name ?? ''} onChange={(event) => setEditing({ ...editing, name: event.target.value })} /></label>
+        <label>{t('templateFieldCategory')}<input value={editing.category ?? ''} onChange={(event) => setEditing({ ...editing, category: event.target.value })} /></label>
+        <label>{t('templateFieldSummary')}<input value={editing.summary ?? ''} onChange={(event) => setEditing({ ...editing, summary: event.target.value })} /></label>
+        <label>{t('templateFieldTags')}<input value={(editing.tags ?? []).join(', ')} onChange={(event) => setEditing({ ...editing, tags: event.target.value.split(',').map((tag) => tag.trim()).filter(Boolean) })} /></label>
+        <label>{t('templateFieldBody')}<textarea value={editing.body ?? ''} rows={8}
           onChange={(event) => setEditing({ ...editing, body: event.target.value })} />
         </label>
         <div className={managerStyles.editorActions}>
-          <button type="button" className={managerStyles.primary} disabled={!editing.name?.trim() || !editing.body?.trim()} onClick={() => void save()}>保存</button>
-          <button type="button" onClick={() => setEditing(null)}>取消</button>
+          <button type="button" className={managerStyles.primary} disabled={!editing.name?.trim() || !editing.body?.trim()} onClick={() => void save()}>{t('templateSave')}</button>
+          <button type="button" onClick={() => setEditing(null)}>{t('cancel')}</button>
         </div>
       </div> : null}
       <div className={managerStyles.list}>
@@ -192,20 +195,20 @@ export function TemplateManagerModal({ onClose }: { onClose: () => void }) {
           <div className={managerStyles.rowMain}>
             <strong>{template.name}</strong>
             {template.category !== '' && <span className={managerStyles.category}>{template.category}</span>}
-            {template.builtin === true && <span className={managerStyles.category}>默认</span>}
+            {template.builtin === true && <span className={managerStyles.category}>{t('templateBuiltinBadge')}</span>}
             <small>{template.summary}</small>
           </div>
-          <button type="button" onClick={() => setEditing({ ...template })}>编辑</button>
+          <button type="button" onClick={() => setEditing({ ...template })}>{t('templateEdit')}</button>
           <button type="button" onClick={() => {
-            void api.createPrompt({ name: template.name + ' (副本)', category: template.category, summary: template.summary, body: template.body, tags: template.tags })
+            void api.createPrompt({ name: t('templateCopyName', { name: template.name }), category: template.category, summary: template.summary, body: template.body, tags: template.tags })
               .then(reload, (reason: Error) => showToast(reason.message))
-          }}>复制</button>
+          }}>{t('copy')}</button>
           <button type="button" onClick={() => {
-            if (!window.confirm(`删除模板「${template.name}」?默认模板删除后不再恢复。`)) return
+            if (!window.confirm(t('templateDeleteConfirm', { name: template.name }))) return
             void api.deletePrompt(template.id).then(reload, (reason: Error) => showToast(reason.message))
-          }}>删除</button>
+          }}>{t('delete')}</button>
         </div>)}
-        {templates !== null && filtered.length === 0 ? <p role="status">没有匹配的模板。</p> : null}
+        {templates !== null && filtered.length === 0 ? <p role="status">{t('templateNoMatch')}</p> : null}
       </div>
     </div>
   </Modal>

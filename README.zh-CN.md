@@ -87,7 +87,7 @@ WebChat 复用 DSH 的正式凭证体系，按优先级：
 1. DeepSeek **API Key**（DSH Models 页或 `$DSH_HOME/.credentials.yaml` 中的 `DEEPSEEK_API_KEY`）；
 2. DSH **已登录的 DeepSeek 账号 token**（官方 account 服务按目的地放行）。
 
-WebChat 不会让 DeepSeek API 变成免费服务：模型请求、联网搜索、文件解析与第三方模型服务可能产生费用。Rich 通路的用量由模型服务如实返回并在消息内标注；它是否进入 `dsh-cost-meter` 统一账本取决于该插件对 Rich 通路的覆盖（见已知限制）。
+WebChat 不会让 DeepSeek API 变成免费服务：模型请求、联网搜索、文件解析与第三方模型服务可能产生费用。Rich 通路的用量由模型服务如实返回并在消息内标注；它已按 `dsh-cost-meter` 官方 external_usage 协议计入统一账本（见已知限制）。
 
 ## 权限与安全
 
@@ -106,9 +106,9 @@ WebChat 不会让 DeepSeek API 变成免费服务：模型请求、联网搜索�
 ## 已知限制（如实）
 
 - **真实联网搜索**：协议与 UI 已实现；真实搜索计费需用户自行确认预算（本轮未做真实搜索验收）。
-- **语音**：录音转写依赖 DeepSeek ASR 接口与凭证；桌面端本地朗读仅支持 Windows 语音。
-- **Agent 工作分支目录选择**：仅 DSH Desktop（`dsh-app:` 协议）提供原生选择器；Linux Web 下创建带工作目录的原生分支会明确提示不可用。
-- **Rich 用量账本**：Rich 通路用量如实标注但未经 `dsh-cost-meter` 计入统一账本（等待上游支持）。
+- **语音**：安装 DSH 语音输入组件时优先使用其转写服务（本地 SenseVoice 或已配置引擎）；否则回退 DeepSeek ASR，且仅在 ChatDS 设置中显式开启语音输入时使用（可能产生费用）。
+- **Agent 工作分支工作区选择**：分支对话框列出已注册的 DSH 工作区（默认选中父会话所在工作区）；仅创建全新工作区时才经 DSH 官方流程弹出目录选择器。
+- **Rich 用量账本**：Rich 用量已按 `dsh-cost-meter` 官方 `external_usage.json` 协议计入统一账本（来源 `chatds-rich`）；cost-meter 原生预算图框仍只统计 DSH 账本——WebChat 自己的预算视图做合并，cost-meter 的「设置→费用」也有 DSH+外部合计。
 - **Linux 目录选择器**：无 portal 的服务器上 DSH 官方目录选择服务可能不可用——请使用手动路径授权。
 - 中文文件名附件落盘时按白名单转写为安全文件名（内容不受影响）。
 

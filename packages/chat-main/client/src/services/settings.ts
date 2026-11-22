@@ -9,7 +9,7 @@
 
 import { create } from 'zustand'
 
-export type Locale = 'zh-CN' | 'en-US'
+export type Locale = 'zh-CN' | 'en-US' | 'ja-JP'
 
 /** 主题偏好;默认跟随系统 */
 export type ThemePreference = 'light' | 'dark' | 'system'
@@ -56,7 +56,7 @@ export const isChineseBrowser = (): boolean =>
 
 const initialLocale = (): Locale => {
   const saved = read(KEYS.locale)
-  if (saved === 'zh-CN' || saved === 'en-US') {
+  if (saved === 'zh-CN' || saved === 'en-US' || saved === 'ja-JP') {
     return saved
   }
   return isChineseBrowser() ? 'zh-CN' : 'en-US'

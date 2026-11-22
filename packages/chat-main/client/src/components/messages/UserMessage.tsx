@@ -48,13 +48,13 @@ export const UserMessage = memo(function UserMessage({
   }
 
   return (
-    <div className={clsx(styles.container, isFirst && styles.isFirst)} data-chat-message={message.id}>
+    <div className={clsx(styles.container, isFirst && styles.isFirst)} data-chat-message={message.id} data-chat-role="user">
       {/* P2-F: 附件信息(文件名/大小;处理方式已在上传时展示) */}
       {message.files.length > 0 ? (
         <div className={styles.files}>
           {message.files.map((file) => (
             <FileCard key={file.id} name={file.name} size={file.size} status={file.unavailable ? 'error' : undefined}
-              error={file.unavailable ? '历史附件 · 需重新上传' : undefined} onOpen={file.archivedCopy ? () => {
+              error={file.unavailable ? t('attachmentUnavailableHint') : undefined} onOpen={file.archivedCopy ? () => {
                 setAttachmentError('')
                 void api.downloadArchivedAttachment(sessionId, file.id, file.name).catch((error: Error) => setAttachmentError(error.message))
               } : undefined}
@@ -98,7 +98,7 @@ export const UserMessage = memo(function UserMessage({
         </div>
       ) : (
         <>
-          {message.content ? <div className={styles.bubble}>{message.content}</div> : null}
+          {message.content ? <div className={styles.bubble} data-chat-bubble="">{message.content}</div> : null}
           <div className={styles.bottom}>
             <div className={clsx(styles.actions, isLast && styles.alwaysShow)}>
               {message.content ? <CopyButton text={message.content} /> : null}

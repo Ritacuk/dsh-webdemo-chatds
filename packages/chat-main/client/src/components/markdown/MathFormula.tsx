@@ -1,6 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { ensureKatex, type Katex } from '../../services/markdown/katex.js'
 import { showToast } from '../base/toastState.js'
+import { translate, useTranslate } from '../../i18n/index.js'
 
 /** renderToString 外层包裹的标签，组件自己渲染外层，这里切掉 */
 const KATEX_WRAPPER = {
@@ -18,9 +19,9 @@ const noop = () => {}
 const copyFormula = async (value: string) => {
   try {
     await navigator.clipboard.writeText(value)
-    showToast('已复制 LaTeX')
+    showToast(translate('mathCopiedToast'))
   } catch {
-    showToast('无法访问剪贴板')
+    showToast(translate('mathClipboardUnavailableToast'))
   }
 }
 
@@ -57,13 +58,14 @@ const useMathHtml = (input: string, isInline: boolean): MathHtmlResult => {
 }
 
 export const MathBlock = memo(function MathBlock({ value }: { value: string }) {
+  const t = useTranslate()
   const { html, renderMode } = useMathHtml(value, false)
   if (renderMode === 'fallback') {
     return <p className="ds-markdown-paragraph">{html}</p>
   }
   return (
     <span className="katex-display ds-markdown-math ds-copy-formula" role="button" tabIndex={0}
-      aria-label="复制 LaTeX" title="复制 LaTeX" onClick={() => void copyFormula(value)}
+      aria-label={t('mathCopyLaTeX')} title={t('mathCopyLaTeX')} onClick={() => void copyFormula(value)}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
@@ -76,11 +78,12 @@ export const MathBlock = memo(function MathBlock({ value }: { value: string }) {
 })
 
 export const InlineMath = memo(function InlineMath({ value }: { value: string }) {
+  const t = useTranslate()
   const { html, renderMode } = useMathHtml(value, true)
   if (renderMode === 'fallback') {
     return html
   }
-  return <span className="katex ds-copy-formula" role="button" tabIndex={0} aria-label="复制 LaTeX" title="复制 LaTeX"
+  return <span className="katex ds-copy-formula" role="button" tabIndex={0} aria-label={t('mathCopyLaTeX')} title={t('mathCopyLaTeX')}
     onClick={() => void copyFormula(value)} onKeyDown={(event) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault()

@@ -72,7 +72,7 @@ export const App = () => {
   }, [activeId])
 
   useEffect(() => {
-    if (language) setLocale(language === 'browser' ? (isChineseBrowser() ? 'zh-CN' : 'en-US') : language)
+    if (language) setLocale(language === 'browser' ? (isChineseBrowser() ? 'zh-CN' : 'en-US') : language === 'ja-JP' ? 'ja-JP' : language)
   }, [language])
 
   useEffect(() => {
@@ -104,8 +104,8 @@ export const App = () => {
     <>
       <div ref={frameRef} className={styles.frame}>
         {sideChat ? null : isMobile ? <MobileSider onData={setDataAction} /> : siderCollapsed ? null : <Sider onData={setDataAction} />}
-        <main className={styles.main}>
-          <div className={styles.content}>
+        <main className={styles.main} data-webchat-main="">
+          <div className={styles.content} data-webchat-content="">
             {!sideChat && siderCollapsed ? <CollapsedSider /> : null}
             {sideChat ? <SidecarContext streaming={streaming}>{sessionView}</SidecarContext> : !ready || (activeId !== null && !session) ? (
               <div className={styles.loadingView}>

@@ -11,6 +11,7 @@ import { TemplateMenu } from './TemplateMenu.js'
 import { ImportModal } from '../session/ImportModal.js'
 import {
   IconChevronDownOutline14,
+  IconMicOutline16,
   IconSendOutline16,
   IconStopFill16,
 } from '../base/icons.js'
@@ -18,7 +19,8 @@ import { useIsMobile } from '../../app/viewport.js'
 import {
   sendMessage,
   stopStreaming,
-  takeDraftText,
+  readDraftText,
+  saveDraftText,
   useChatStore,
   useInputState,
   updateInputState,
@@ -27,13 +29,13 @@ import {
   selectModel,
   createSession,
 } from '../../store/workspace.js'
-import { useTranslate } from '../../i18n/index.js'
+import { translate, useTranslate } from '../../i18n/index.js'
 import { api } from '../../services/api.js'
 import type { WireModelEntry } from '@dsh-chat/shared'
 import styles from './ChatInput.module.css'
 
 // P2: 语音输入(VoiceButton / useVoiceInput / Spectrum)暂不移植。
-// P2: 草稿服务(services/chat/drafts.ts)暂不移植,输入内容不跨会话保留。
+// R8.5: 草稿服务以 store.draftTexts 形式落地,输入内容跨会话/新建保留。
 
 const EMPTY_ATTACHMENTS: never[] = []
 
@@ -45,7 +47,16 @@ export const ChatInput = memo(function ChatInput({ sessionId }: { sessionId: str
 
 const Input = ({ sessionId }: { sessionId: string | null }) => {
   const t = useTranslate()
-  const [text, setText] = useState(() => takeDraftText(sessionId ?? 'new') ?? '')
+  // R8.5:草稿文本持久在 store(键 = sessionId 或 'new');发送成功后由 setText('') 归零。
+  const draftKey = sessionId ?? 'new'
+  const [text, setTextState] = useState(() => readDraftText(draftKey))
+  const setText = (value: string | ((previous: string) => string)) => {
+    setTextState((previous) => {
+      const next = typeof value === 'function' ? value(previous) : value
+      saveDraftText(draftKey, next)
+      return next
+    })
+  }
   const streaming = useChatStore(
     (state) => sessionId !== null && Object.hasOwn(state.streaming, sessionId)
   )
@@ -70,7 +81,9 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   const autoSendRef = useRef(false)
   const [importOpen, setImportOpen] = useState(false)
   const [voiceOpen, setVoiceOpen] = useState(false)
-  const voiceEnabled = useChatStore((state) => state.settings?.enableVoiceInput === true)
+  // R8.5:语音可用 = 显式开启,或 DSH 语音输入组件已提供转写服务(Host 计算)。
+  const voiceAvailable = useChatStore((state) =>
+    state.settings?.enableVoiceInput === true || state.settings?.voiceAvailable === true)
   const sendShortcut = useChatStore((state) => state.settings?.sendShortcut ?? 'enter')
 
   // 模板「插入并发送」:文本就绪且无上传占用时自动触发一次发送
@@ -118,7 +131,8 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
     if (selected.length === 0) return
     setUploading(true)
     try {
-      const id = sessionId ?? await (creatingSession.current ??= createSession(input))
+      // R8.5:欢迎页上传附件 → 预建 draft 占位会话(首条消息前不出现在历史),并迁移已输入文本。
+      const id = sessionId ?? await (creatingSession.current ??= createSession(input, { draft: true, carryDraft: true }))
       setUploadQueue((queue) => [...queue.filter((item) => !selected.includes(item.file)), ...selected.map((file) => ({ file }))])
       for (const file of selected) {
         try {
@@ -163,7 +177,7 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
       {dragging && <DragMask />}
       {currentModelBlocked && (
         <div className={styles.blockedBanner} role="alert">
-          <span>当前模型已被禁用，发送已被阻止。请重新选择模型，或在 ChatDS 设置 → 模型中重新启用。</span>
+          <span>{t('modelBlockedBanner')}</span>
         </div>
       )}
       {permissionsOpen && <Modal title="插件权限" onClose={() => setPermissionsOpen(false)}>
@@ -219,8 +233,8 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
             <small>发送时由 DeepSeek 云端解析 PDF 或图片。文件引用可用于后续对话。</small>}
         </div>
       )}
-      <div className={styles.functionRow}>
-        <div className={styles.toggles}>
+      <div className={styles.functionRow} data-webchat-composer-bar="">
+        <div className={styles.toggles} data-webchat-toggles="">
           <input ref={fileInputRef} type="file" multiple hidden onChange={(event) => {
             if (event.target.files) void handleFiles(event.target.files)
             event.target.value = ''
@@ -234,12 +248,12 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
               setText((current) => (current.trim().length === 0 ? resolved : `${current}\n\n${resolved}`))
               autoSendRef.current = true
             }} />
-          <ComposerMenu label="聊天设置" caption="⚙" triggerClass={styles.gearTrigger}>
+          <ComposerMenu label={t('composerChatSettings')} caption="⚙" triggerClass={styles.gearTrigger}>
             {(close) => <>
-              <h3>工作模式</h3>
+              <h3>{t('menuWorkMode')}</h3>
               <button type="button" aria-pressed={input.mode === 'chat'} onClick={() => updateInputState(sessionId, { mode: 'chat' })}>Chat</button>
               <button type="button" aria-pressed={input.mode === 'plan'} onClick={() => updateInputState(sessionId, { mode: 'plan' })}>Plan（只读）</button>
-              <h3>聊天能力</h3>
+              <h3>{t('menuChatCapabilities')}</h3>
               <CapabilitySwitch label="深度思考" disabled={!canToggleThinking} checked={efforts.includes(input.thinking) && input.thinking !== 'off'}
                 toggle={() => updateInputState(sessionId, { thinking: input.thinking === 'off'
                   ? efforts.find((effort) => effort !== 'off') : 'off' })} />
@@ -247,25 +261,37 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
                 toggle={() => updateInputState(sessionId, { search: !input.search })} />
               <CapabilitySwitch label="本地检索" checked={input.localSearch}
                 toggle={() => updateInputState(sessionId, { localSearch: !input.localSearch })} />
-              <h3>附件和扩展</h3>
-              <button type="button" onClick={() => { close(); fileInputRef.current?.click() }}>添加附件</button>
-              {voiceEnabled && <button type="button" onClick={() => { close(); setVoiceOpen(true) }}>{t('voiceInput')}</button>}
-              <button type="button" onClick={() => { close(); setPermissionsOpen(true) }}>插件权限</button>
-              <button type="button" onClick={() => { close(); setImportOpen(true) }}>导入会话归档…</button>
+              <h3>{t('menuAttachmentsExt')}</h3>
+              <button type="button" onClick={() => { close(); fileInputRef.current?.click() }}>{t('uploadFile')}</button>
+              {voiceAvailable && <button type="button" onClick={() => { close(); setVoiceOpen(true) }}>{t('voiceInput')}</button>}
+              <button type="button" onClick={() => { close(); setPermissionsOpen(true) }}>{t('pluginPermissions')}</button>
+              <button type="button" onClick={() => { close(); setImportOpen(true) }}>{t('importSessionArchive')}</button>
               <button type="button" onClick={() => {
                 close()
                 if (window.parent !== window) window.parent.postMessage({ type: 'chatds:open-settings' }, location.origin)
-                else showToast('请在 DSH 原生设置中选择 ChatDS 设置')
-              }}>更多设置</button>
+                else showToast(t('openSettingsHint'))
+              }}>{t('moreSettings')}</button>
             </>}
           </ComposerMenu>
         </div>
-        <div className={styles.right}>
-          <ComposerMenu label="选择模型" align="end" triggerClass={styles.modelTrigger}
+        <div className={styles.right} data-webchat-composer-right="">
+          {/* R8.5(F03):语音可用时在输入框右侧提供麦克风入口(官方 demo 同位);录音结束只是插入草稿,不自动发送。 */}
+          {voiceAvailable && (
+            <button
+              type="button"
+              className={styles.voiceButton}
+              aria-label={t('voiceInput')}
+              title={t('voiceInput')}
+              onClick={() => setVoiceOpen(true)}
+            >
+              <IconMicOutline16 />
+            </button>
+          )}
+          <ComposerMenu label={t('composerSelectModel')} align="end" triggerClass={styles.modelTrigger}
             caption={<>
               <span className={styles.modelTriggerName}>{currentModel?.name ?? input.model}</span>
               {efforts.length > 0 && <span className={styles.modelTriggerEffort}>
-                {currentModel?.capability.thinkingEffortNames?.[input.thinking] ?? effortLabels[input.thinking] ?? input.thinking}
+                {currentModel?.capability.thinkingEffortNames?.[input.thinking] ?? effortLabel(input.thinking) ?? input.thinking}
               </span>}
               <span className={styles.modelTriggerChevron}><IconChevronDownOutline14 /></span>
             </>}>
@@ -300,7 +326,17 @@ const Input = ({ sessionId }: { sessionId: string | null }) => {
   )
 }
 
-const effortLabels: Record<string, string> = { off: '关闭', enabled: '开启', low: '低', medium: '中', high: '高', max: '最高' }
+// R8.5(F06):推理等级标签按当前语言即时取值(模块级不可缓存)。
+const effortLabels: Record<string, string> = {
+  off: 'off', enabled: 'enabled', low: 'low', medium: 'medium', high: 'high', max: 'max',
+}
+const effortLabel = (id: string): string => {
+  const keys: Record<string, 'effortOff' | 'effortOn' | 'effortLow' | 'effortMedium' | 'effortHigh' | 'effortMax'> = {
+    off: 'effortOff', enabled: 'effortOn', low: 'effortLow', medium: 'effortMedium', high: 'effortHigh', max: 'effortMax',
+  }
+  const key = keys[id]
+  return key ? translate(key) : id
+}
 
 function ModelOptions({ current, sessionId, close }: { current?: WireModelEntry; sessionId: string | null; close: () => void }) {
   const catalog = useChatStore((state) => state.models)
@@ -309,7 +345,7 @@ function ModelOptions({ current, sessionId, close }: { current?: WireModelEntry;
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
   const root = useRef<HTMLDivElement>(null)
-  const effortName = (id: string) => current?.capability.thinkingEffortNames?.[id] ?? effortLabels[id] ?? id
+  const effortName = (id: string) => current?.capability.thinkingEffortNames?.[id] ?? effortLabel(id) ?? id
   const efforts = current?.capability.thinkingEfforts ?? []
   // R8 白名单:whitelist 模式下仅展示 enabled !== false 的模型
   const whitelist = catalog?.modelScope === 'whitelist'

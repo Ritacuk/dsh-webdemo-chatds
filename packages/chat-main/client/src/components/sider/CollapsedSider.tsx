@@ -1,7 +1,7 @@
 import { IconPanelLeftOutline16, NewChatIcon } from '../base/icons.js'
 import { useTranslate } from '../../i18n/index.js'
 import { setSiderCollapsed } from '../../services/settings.js'
-import { createSession } from '../../store/workspace.js'
+import { closeSession } from '../../store/workspace.js'
 import { IconButton } from '../base/IconButton.js'
 import styles from './Sider.module.css'
 
@@ -23,7 +23,7 @@ export const CollapsedSider = () => {
           tone="primary"
           icon={<NewChatIcon />}
           tooltip={t('newChat')}
-          onClick={() => void createSession()}
+          onClick={() => closeSession()}
         />
       </div>
     </div>

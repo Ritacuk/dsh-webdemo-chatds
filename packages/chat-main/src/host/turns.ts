@@ -209,6 +209,8 @@ export class TurnRunner {
     private readonly gateway: RichGateway,
     private readonly search: LocalSearchEngine,
     private readonly diagnostics: () => Promise<{ requestDiagnostics: boolean }>,
+    /** R8.5:Rich 用量 → cost-meter 外部账本(旁聊实例为 undefined)。 */
+    private readonly ledger?: { append(info: { messageId: string; at: number; model: string; usage: NonNullable<DemoAssistant['usage']> }): void },
   ) {}
 
   /** 停止某会话正在进行的生成(用户主动取消)。 */
@@ -805,6 +807,13 @@ export class TurnRunner {
     }, { surfaceOp: 'append' })
     if (rich && usage !== undefined) {
       writePluginRecord(session, 'plugin:chat-workspace/rich-usage', { messageId: message.id, usage })
+      // R8.5:同一用量按官方 external_usage.json 协议进 dsh-cost-meter 统一账本(幂等,失败不影响回合)。
+      this.ledger?.append({
+        messageId: message.id,
+        at: Date.now(),
+        model: message.source.model ?? args.model,
+        usage,
+      })
     }
     if (args.branch !== undefined) {
       writePluginRecord(session, 'plugin:chat-workspace/branch', {

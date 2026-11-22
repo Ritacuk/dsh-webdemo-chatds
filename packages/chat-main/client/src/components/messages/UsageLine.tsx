@@ -1,5 +1,7 @@
 import { memo } from 'react'
 import type { AssistantMessage } from '@dsh-chat/shared'
+import { useTranslate } from '../../i18n/index.js'
+import { useChatStore } from '../../store/workspace.js'
 import styles from './AssistantMessage.module.css'
 
 /**
@@ -20,6 +22,9 @@ interface TurnCostShape {
 }
 
 export const UsageLine = memo(function UsageLine({ message }: { message: AssistantMessage }) {
+  const t = useTranslate()
+  // R8.5:Rich 用量按外部账本状态显示口径(已入账 / 未入账)。
+  const richLedgerOk = useChatStore((state) => state.richLedgerOk)
   const usage = message.usage
   if (usage === undefined || (usage.input_tokens === 0 && usage.output_tokens === 0)) return null
   const input = usage.input_tokens
@@ -33,11 +38,11 @@ export const UsageLine = memo(function UsageLine({ message }: { message: Assista
     ? cost.cost
     : null
   return (
-    <div className={styles.usageLine} title="本回合用量来自模型服务返回的数据">
-      <span>输入 {compactTokens(input)}</span>
-      <span>输出 {compactTokens(output)}</span>
-      {cacheHit !== null && <span>缓存命中 {cacheHit}%</span>}
-      {message.usageSource === 'rich' && <span>· Rich 独立用量，未纳入费用总账</span>}
+    <div className={styles.usageLine} title={t('usageFromServerTooltip')}>
+      <span>{t('usageInput', { count: compactTokens(input) })}</span>
+      <span>{t('usageOutput', { count: compactTokens(output) })}</span>
+      {cacheHit !== null && <span>{t('usageCacheHit', { count: cacheHit })}</span>}
+      {message.usageSource === 'rich' && <span>{t(richLedgerOk === true ? 'usageRichIngested' : 'usageRichNote')}</span>}
       {realCost !== null && <span className={styles.usageCost}>· {formatCost(realCost)}</span>}
     </div>
   )

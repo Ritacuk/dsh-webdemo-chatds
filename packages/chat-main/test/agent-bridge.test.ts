@@ -49,7 +49,8 @@ describe('Agent 工作分支持久化与补偿', () => {
 
   it('没有工作目录时拒绝创建', async () => {
     const test = setup('')
-    await expect(test.run()).rejects.toThrow('请选择 Agent 工作目录')
+    // R8.5:工作分支改走 DSH 工作区选择;无工作区/目录时给出工作区文案。
+    await expect(test.run()).rejects.toThrow('请选择工作分支使用的 DSH 工作区')
     expect(test.fork).not.toHaveBeenCalled()
     expect(test.archive).not.toHaveBeenCalled()
   })

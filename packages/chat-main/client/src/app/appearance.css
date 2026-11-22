@@ -1,7 +1,23 @@
+/**
+ * R8.5(F08):四套界面风格——不再只是换色,而是真实的结构差异:
+ * - WebChat 默认:官方 demo 布局(居中窄列、气泡用户消息、完整侧栏)。
+ * - GPT 风格:极简侧栏(无应用名、紧凑新对话/搜索)、更宽内容列、用户消息灰胶囊、
+ *   平坦大圆角 composer、消息工具栏紧凑。
+ * - Gemini 风格:中央大欢迎语(渐变强调)、宽胶囊 composer、内容列更宽、
+ *   蓝紫强调色、柔和背景层次。
+ * - Claude 风格:暖纸底、衬线正文、752px 阅读宽、有边框的纸张感 composer、
+ *   低调消息工具栏、欢迎页呼吸感排版。
+ *
+ * 结构性选择器全部走 data-* 钩子(组件内置),不依赖 CSS module 哈希类名。
+ * 所有差异仍是同一套业务组件与状态——只换视觉结构,不换聊天核心。
+ */
+
+/* ─────────────────────────── GPT 风格 ─────────────────────────── */
 body[data-chat-style="gpt"] {
-  --chat-composer-radius: 18px;
+  --chat-composer-radius: 22px;
   --chat-bubble-radius: 18px;
-  --chat-reading-line: 1.55;
+  --chat-reading-line: 1.6;
+  --message-list-max-width: 860px;
   --dsw-specific-sidebar-fill: #f4f6f5;
   --dsw-specific-bubble: #e7efeb;
 }
@@ -9,18 +25,85 @@ body.dark[data-chat-style="gpt"] {
   --dsw-specific-sidebar-fill: #202523;
   --dsw-specific-bubble: #2c3632;
 }
+/* 结构:侧栏极简——应用名隐藏,新对话变成紧凑条,搜索输入收窄 */
+body[data-chat-style="gpt"] [data-webchat-appname] { display: none; }
+body[data-chat-style="gpt"] [data-webchat-newchat] {
+  justify-content: center;
+  font-weight: 500;
+}
+body[data-chat-style="gpt"] [data-webchat-search] {
+  border-radius: 10px;
+}
+/* 结构:内容列更宽,标题栏弱化为细线 */
+body[data-chat-style="gpt"] [data-webchat-header] {
+  min-height: 44px;
+  font-size: 14px;
+  opacity: 0.92;
+}
+/* 结构:用户消息 = 紧凑灰胶囊(占宽上限更低),助手消息保持通栏 */
+body[data-chat-style="gpt"] [data-chat-role="user"] [data-chat-bubble] {
+  padding: 10px 16px;
+  border-radius: var(--chat-bubble-radius);
+}
+/* 结构:composer 更平坦(阴影弱化、内边距收紧) */
+body[data-chat-style="gpt"] [data-webchat-composer] {
+  box-shadow: none;
+}
+body[data-chat-style="gpt"] [data-webchat-composer-bar] {
+  min-height: 40px;
+}
+body[data-chat-style="gpt"] [data-webchat-statusbar] {
+  opacity: 0.75;
+  font-size: 11px;
+}
+
+/* ─────────────────────────── Gemini 风格 ─────────────────────────── */
 body[data-chat-style="gemini"] {
   --chat-composer-radius: 30px;
   --chat-bubble-radius: 16px;
   --chat-reading-line: 1.75;
+  --message-list-max-width: 920px;
   --chat-composer-decoration: linear-gradient(130deg, color-mix(in srgb, #7686e3 13%, transparent), transparent 60%);
   --dsw-specific-sidebar-fill: #eff1fc;
   --dsw-specific-bubble: #e9edfd;
+  --dsw-alias-brand-primary: #6a72d8;
+  --dsw-alias-brand-text: #5b63c7;
 }
 body.dark[data-chat-style="gemini"] {
   --dsw-specific-sidebar-fill: #202333;
   --dsw-specific-bubble: #2f3650;
+  --dsw-alias-brand-primary: #8a91e8;
+  --dsw-alias-brand-text: #9ba1f0;
 }
+/* 结构:欢迎页 = 大号居中问候 + 渐变文字装饰,composer 胶囊化 */
+body[data-chat-style="gemini"] [data-webchat-greeting] {
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  background: linear-gradient(120deg, var(--dsw-alias-label-primary) 40%, #6a72d8 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+body.dark[data-chat-style="gemini"] [data-webchat-greeting] {
+  background: linear-gradient(120deg, var(--dsw-alias-label-primary) 40%, #8a91e8 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+body[data-chat-style="gemini"] [data-webchat-welcome] [data-webchat-composer] {
+  padding: 14px 20px;
+}
+/* 结构:用户消息 = 右侧软胶囊;正文行距更大 */
+body[data-chat-style="gemini"] [data-chat-role="user"] [data-chat-bubble] {
+  padding: 10px 18px;
+  border-radius: 20px;
+}
+/* 结构:状态条融入右下角,弱化为浮动小胶囊 */
+body[data-chat-style="gemini"] [data-webchat-statusbar] {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* ─────────────────────────── Claude 风格 ─────────────────────────── */
 body[data-chat-style="claude"] {
   --chat-composer-radius: 14px;
   --chat-bubble-radius: 12px;
@@ -31,19 +114,85 @@ body[data-chat-style="claude"] {
   --dsw-specific-input-major: #fffcf7;
   --dsw-specific-sidebar-fill: #f1ebe1;
   --dsw-specific-bubble: #eee4d5;
+  --dsw-alias-brand-primary: #a9624b;
+  --dsw-alias-brand-text: #95563f;
 }
 body.dark[data-chat-style="claude"] {
   --dsw-alias-bg-base: #272420;
   --dsw-specific-input-major: #302b25;
   --dsw-specific-sidebar-fill: #211e1a;
   --dsw-specific-bubble: #3b332a;
+  --dsw-alias-brand-primary: #c1805f;
+  --dsw-alias-brand-text: #d09372;
 }
+/* 结构:标题栏衬线化、加宽字距;欢迎语更大、行距舒展 */
+body[data-chat-style="claude"] [data-webchat-header] {
+  font-family: var(--chat-reading-family);
+  letter-spacing: 0.01em;
+}
+body[data-chat-style="claude"] [data-webchat-greeting] {
+  font-family: var(--chat-reading-family);
+  font-size: 34px;
+  line-height: 1.35;
+}
+/* 结构:纸张感 composer——可见边框替代阴影 */
+body[data-chat-style="claude"] [data-webchat-composer] {
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-label-secondary, #777) 26%, transparent);
+  box-shadow: none;
+}
+/* 结构:用户消息 = 暖色纸片,弱圆角;工具栏降低存在感 */
+body[data-chat-style="claude"] [data-chat-role="user"] [data-chat-bubble] {
+  padding: 10px 14px;
+  border-radius: var(--chat-bubble-radius);
+}
+body[data-chat-style="claude"] [data-chat-role="assistant"] {
+  font-family: var(--chat-reading-family);
+}
+body[data-chat-style="claude"] [data-webchat-statusbar] {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ─────────────────────────── 阅读宽度覆盖 ─────────────────────────── */
 body[data-chat-width="narrow"] { --message-list-max-width: 720px; }
 body[data-chat-width="wide"] { --message-list-max-width: 1040px; }
 
+/* ─────────────────────────── 磨砂(R8.5:可见化) ───────────────────────────
+ * 之前磨砂只改了几个流内元素的透明度——背后没有内容,模糊无从生效,用户看不见。
+ * 现在:磨砂开启时,标题栏与 composer 覆盖在滚动内容之上(overlay),
+ * 消息从其后滚过时会真实地被 blur;浮层菜单/模态框本就盖在内容上,同样生效。
+ * 注意:这是"窗口内部磨砂",与 Windows Acrylic/Mica 系统级效果不是一回事;
+ * 窗口外部内容无法通过 DSH 插件接口做系统级模糊,不修改官方 Electron。
+ */
 @supports (backdrop-filter: blur(8px)) {
-  body[data-chat-glass="light"] { --chat-glass-blur: blur(10px); --chat-glass-opacity: 91%; }
-  body[data-chat-glass="strong"] { --chat-glass-blur: blur(18px); --chat-glass-opacity: 83%; }
+  body[data-chat-glass="light"] { --chat-glass-blur: blur(10px); --chat-glass-opacity: 78%; }
+  body[data-chat-glass="strong"] { --chat-glass-blur: blur(18px); --chat-glass-opacity: 66%; }
+
+  body[data-chat-glass="light"] [data-webchat-header],
+  body[data-chat-glass="strong"] [data-webchat-header] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 3;
+    background: color-mix(in srgb, var(--dsw-specific-sidebar-fill, Canvas) var(--chat-glass-opacity, 80%), transparent);
+    backdrop-filter: var(--chat-glass-blur, none);
+    -webkit-backdrop-filter: var(--chat-glass-blur, none);
+  }
+  body[data-chat-glass="light"] [data-webchat-header] ~ [data-webchat-messages] [data-webchat-column],
+  body[data-chat-glass="strong"] [data-webchat-header] ~ [data-webchat-messages] [data-webchat-column] {
+    padding-top: 64px;
+  }
+
+  /* composer overlay:输入区盖在消息流上,滚动内容真实地从其后经过 */
+  body[data-chat-glass="light"] [data-webchat-session="full"] [data-webchat-composer],
+  body[data-chat-glass="strong"] [data-webchat-session="full"] [data-webchat-composer],
+  body[data-chat-glass="light"] [data-webchat-welcome] [data-webchat-composer],
+  body[data-chat-glass="strong"] [data-webchat-welcome] [data-webchat-composer] {
+    background: color-mix(in srgb, var(--dsw-specific-input-major, Canvas) var(--chat-glass-opacity, 80%), transparent);
+    backdrop-filter: var(--chat-glass-blur, none);
+    -webkit-backdrop-filter: var(--chat-glass-blur, none);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -32,8 +32,8 @@ DeepSeek's official adapter (`dsh-llm-deepseek`) intentionally "circuit-breaks" 
 
 | Platform | Status |
 | --- | --- |
-| Linux DSH Web (DSH 0.2.2-rc.3, Node 22) | ✅ fully verified this round (install, real-model chat, persistence, restart recovery, uninstall/reinstall) |
-| Windows Desktop (DSH Desktop 44.7.0, bundled runtime 0.2.2-rc.5, Node 24) | ✅ fully verified in the R8.2 round (125 host unit tests + native UI regression) |
+| Linux DSH Web (DSH 0.2.2-rc.5, Node 22) | ✅ R8.5 real-model acceptance (isolated profile): all ten feedback fixes verified live; production web profile upgraded |
+| Windows Desktop (DSH Desktop 44.7.0, bundled runtime 0.2.2-rc.5, Node 24) | ✅ verified in R8.2 (0.10.0); 0.11.0 shares the same code paths — desktop acceptance in progress |
 | macOS (Apple Silicon) DSH Web | ✅ acceptance-tested (macOS 26.6.2, Apple M4, DSH Web track; Desktop/Intel not claimed) |
 | Other DSH versions | ⚠️ peer range declared as `>=0.2.2-rc.3 <0.2.3-0`; higher major versions are not guaranteed |
 
@@ -108,9 +108,9 @@ WebChat does not make the DeepSeek API free: model requests, web search, file pa
 ## Known limitations (truthful)
 
 - **Real web search**: protocol and UI implemented; real search billing must be confirmed by the user (not acceptance-tested this round).
-- **Voice**: transcription depends on DeepSeek ASR plus credentials; desktop local speech uses Windows voices only.
-- **Agent work-branch directory picking**: only DSH Desktop (`dsh-app:` protocol) offers a native picker; on Linux Web, creating a native branch with a working directory is explicitly refused.
-- **Rich usage ledger**: Rich usage is labeled truthfully but is not yet merged into the `dsh-cost-meter` unified ledger (pending upstream support).
+- **Voice**: transcription prefers the DSH voice-input component when installed (local SenseVoice or the provider you configured); otherwise it falls back to DeepSeek ASR, and only when voice input is explicitly enabled in ChatDS settings (charges may apply).
+- **Agent work-branch workspace picking**: the branch dialog lists your registered DSH workspaces (parent chat's workspace preselected); the native directory picker appears only when you create a brand-new workspace, through DSH's official flow.
+- **Rich usage ledger**: Rich usage is recorded into the `dsh-cost-meter` unified ledger via its official `external_usage.json` protocol (source `chatds-rich`); the meter's native budget widget still counts the DSH ledger only — WebChat's own budget view merges both, and cost-meter's Settings → Cost shows combined totals.
 - **Linux directory picker**: on servers without a portal, DSH's official picker service may be unavailable — use the manual path grant.
 - Non-ASCII attachment filenames are rewritten to a safe whitelist on disk (content is unaffected).
 

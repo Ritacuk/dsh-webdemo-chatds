@@ -9,7 +9,8 @@ import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Menu, type MenuOption } from '../base/Menu.js'
 import { showToast } from '../base/toastState.js'
-import { api, pickWorkBranchDirectory, saveDownload } from '../../services/api.js'
+import { api, saveDownload } from '../../services/api.js'
+import { WorkBranchPicker } from './WorkBranchPicker.js'
 import { Markdown } from '../markdown/Markdown.js'
 import { SiteThumbnails } from '../search/SiteLogo.js'
 import { toggleSearchPanel, useSearchPanel } from '../search/searchPanelState.js'
@@ -53,18 +54,15 @@ export const AssistantMessage = memo(function AssistantMessage({
   const copyText = responseText || notice?.text
   const waiting = streaming && view.steps.length === 0 && !view.answer && !message.thinking
   const summaryEntry = `${message.id}-summary`
+  // R8.5(F10):工作分支改走 DSH 工作区选择器(默认父会话工作区);不再直接弹目录选择。
+  const [branchPickerOpen, setBranchPickerOpen] = useState(false)
+  const openBranch = (branchId: string) => {
+    setBranchPickerOpen(false)
+    window.parent.postMessage({ type: 'chatds:open-work-branch', sessionId: branchId }, location.origin)
+  }
   const actions: MenuOption[] = [{
-    key: 'work-branch', label: '创建工作分支', icon: null,
-    onSelect: () => {
-      if (!window.confirm('从此消息创建 DSH Agent 工作分支？请选择 Agent 的工作目录。')) return
-      void pickWorkBranchDirectory()
-        .then(async (directory) => {
-          if (!directory) return
-          const { sessionId: id } = await api.createWorkBranch(sessionId, message.id, directory)
-          window.parent.postMessage({ type: 'chatds:open-work-branch', sessionId: id }, location.origin)
-        })
-        .catch((error: Error) => showToast(error.message))
-    },
+    key: 'work-branch', label: t('workBranchMenuOption'), icon: null,
+    onSelect: () => setBranchPickerOpen(true),
   }]
   if (copyText) {
     actions.push({
@@ -100,17 +98,20 @@ export const AssistantMessage = memo(function AssistantMessage({
     })
   }
   if (sessionId.startsWith('chatws-side-')) actions.push({
-    key: 'deliver', label: '将结论交给父 Agent', icon: null,
+    key: 'deliver', label: t('deliverConclusionOption'), icon: null,
     onSelect: () => {
-      if (window.confirm('将这条回复加入父 Agent 的下一轮收件箱？当前工作会继续。')) {
+      if (window.confirm(t('deliverConclusionConfirm'))) {
         void api.deliverConclusion(sessionId, message.id)
-          .then(() => showToast('已加入父 Agent 的下一轮收件箱'))
+          .then(() => showToast(t('deliverConclusionDone')))
           .catch((error: Error) => showToast(error.message))
       }
     },
   })
   return (
-    <div className={styles.message} data-chat-message={message.id}>
+    <div className={styles.message} data-chat-message={message.id} data-chat-role="assistant">
+      {branchPickerOpen && (
+        <WorkBranchPicker sessionId={sessionId} messageId={message.id} onClose={() => setBranchPickerOpen(false)} onCreated={openBranch} />
+      )}
       {refused ? null : (
         <ReplyArea
           message={message}

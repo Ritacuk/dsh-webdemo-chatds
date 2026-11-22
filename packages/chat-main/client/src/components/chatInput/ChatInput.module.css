@@ -334,6 +334,33 @@
   }
 }
 
+/* R8.5(F03):麦克风入口(语音可用时出现在发送按钮左侧;官方 demo 同位)。 */
+.voiceButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  margin-left: 6px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dsw-alias-fg-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: var(--dsw-alias-interactive-bg-hover, #8882);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--dsw-alias-brand-primary, #3b64ed);
+    outline-offset: 1px;
+  }
+}
+
 /* ── P2-A:模式下拉 / 模型选择 / 本地检索 / 附件行(继承 demo 设计语言) ── */
 
 .modeSelect,
@@ -596,6 +623,8 @@
   gap: 12px;
 }
 
+/* R8.5(F02):开关状态用"颜色+位置"双通道表达——关闭=中性灰轨,开启=品牌强调色轨;
+   深浅色下都保持高对比,不再依赖深灰 #303646(深色模式下与背景难以区分)。 */
 .switchTrack {
   display: inline-flex;
   align-items: center;
@@ -603,8 +632,9 @@
   height: 17px;
   padding: 2px;
   border-radius: 99px;
-  background: #92969f;
+  background: color-mix(in srgb, var(--dsw-alias-label-secondary, #92969f) 62%, Canvas);
   box-sizing: border-box;
+  transition: background 120ms ease;
 }
 
 .switchTrack::before {
@@ -617,7 +647,7 @@
 }
 
 .capabilitySwitch[aria-checked='true'] .switchTrack {
-  background: #303646;
+  background: var(--dsw-alias-brand-primary, #3b64ed);
 }
 
 .capabilitySwitch[aria-checked='true'] .switchTrack::before {
@@ -626,6 +656,11 @@
 
 .capabilitySwitch:disabled .switchTrack {
   opacity: 0.5;
+}
+
+.capabilitySwitch:focus-visible .switchTrack {
+  outline: 2px solid var(--dsw-alias-brand-primary, #3b64ed);
+  outline-offset: 1px;
 }
 
 /* ── R8:插件权限弹窗内容 ── */

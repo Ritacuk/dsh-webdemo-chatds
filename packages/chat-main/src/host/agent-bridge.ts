@@ -15,8 +15,17 @@ interface SessionController {
   follow(request: { address: { kind: 'session'; sessionId: SessionId }; maxMessages: number }, signal: AbortSignal):
     AsyncIterable<{ type: string }>
 }
+interface WorkspaceEntity {
+  id: string
+  path: string
+  title?: string
+  sessionIds?: readonly string[]
+}
 interface WorkspaceRegistry {
-  create(path: string): Promise<{ path: string; attachSession(id: SessionId): Promise<void> }>
+  create(path: string, title?: string): Promise<WorkspaceEntity & { attachSession(id: SessionId): Promise<void> }>
+  get(id: string): WorkspaceEntity | undefined
+  list(): readonly WorkspaceEntity[]
+  resolveByPath(path: string): Promise<WorkspaceEntity | undefined>
   archiveSession(id: SessionId): Promise<void>
 }
 
@@ -27,9 +36,49 @@ function agents(ctx: Context): AgentRegistry | undefined {
 
 export class WorkBranchDirectoryRequired extends Error {}
 
+/** R8.5:工作分支创建参数——优先选已注册 DSH 工作区,兼容旧的原始目录路径。 */
+export interface WorkBranchOptions {
+  directory?: string
+  workspaceId?: string
+}
+
+/** 工作分支可用的 DSH 工作区清单(父会话工作区优先;供选择器渲染)。 */
+export async function listWorkBranchWorkspaces(ctx: Context, parent: string): Promise<{
+  available: boolean
+  reason?: string
+  workspaces: { id: string; title?: string; path: string; sessions: number }[]
+  parentWorkspaceId?: string
+}> {
+  const workspaces = ctx.get('workspaceRegistry' as never) as WorkspaceRegistry | undefined
+  if (!workspaces?.list) return { available: false, reason: 'DSH 工作区服务不可用。', workspaces: [] }
+  let parentWorkspaceId: string | undefined
+  try {
+    const source = await ctx.sessionPersistence.open(SessionId(parent), 'read')
+    try {
+      const headerCwd = source.header.cwd
+      if (headerCwd) parentWorkspaceId = (await workspaces.resolveByPath(headerCwd))?.id
+    } finally {
+      await source.close()
+    }
+  } catch {
+    // 父会话头部不可读时只影响默认选中,不阻塞清单
+  }
+  return {
+    available: true,
+    workspaces: workspaces.list().map((workspace) => ({
+      id: workspace.id,
+      ...(workspace.title !== undefined ? { title: workspace.title } : {}),
+      path: workspace.path,
+      sessions: workspace.sessionIds?.length ?? 0,
+    })),
+    ...(parentWorkspaceId !== undefined ? { parentWorkspaceId } : {}),
+  }
+}
+
 export async function createWorkBranch(
-  ctx: Context, parent: string, events: readonly SessionEvent[], messageId: string, directory: string | undefined,
+  ctx: Context, parent: string, events: readonly SessionEvent[], messageId: string, options: WorkBranchOptions = {},
 ) {
+  const { directory, workspaceId } = options
   if (!eventsToWireMessages(events).some((message) => message.id === messageId)) throw new Error('Checkpoint unavailable')
   const checkpoint = events.find((event) => event.type === 'user/message' ? event.data.id === messageId
     : event.type === 'assistant/message' && event.data.message.id === messageId)
@@ -56,17 +105,32 @@ export async function createWorkBranch(
   }
   let sessionId: SessionId | undefined
   try {
-    if (headerCwd) {
-      if (!(await stat(headerCwd)).isDirectory()) throw new WorkBranchDirectoryRequired('原工作目录已不可用。')
+    // R8.5:目标工作目录解析——已注册 DSH 工作区 id 优先(默认父会话所在工作区),
+    // 兼容旧的原始目录路径(仅"新建工作区"流程使用)。路径与父会话一致时走纯 fork。
+    let targetCwd: string | undefined
+    if (typeof workspaceId === 'string' && workspaceId !== '') {
+      const workspace = workspaces.get(workspaceId)
+      if (!workspace) throw new WorkBranchDirectoryRequired('所选 DSH 工作区不存在或已被删除，请重新选择。')
+      targetCwd = workspace.path
+    } else if (directory) {
+      if (!isAbsolute(directory)) throw new WorkBranchDirectoryRequired('请选择 Agent 工作目录。')
+      const canonical = await realpath(directory).catch(() => undefined)
+      if (!canonical || !(await stat(canonical).catch(() => undefined))?.isDirectory()) {
+        throw new WorkBranchDirectoryRequired('所选工作目录已不可用，请重新选择。')
+      }
+      targetCwd = canonical
+    } else if (headerCwd) {
+      targetCwd = headerCwd
+    } else {
+      throw new WorkBranchDirectoryRequired('请选择工作分支使用的 DSH 工作区。')
+    }
+    if (targetCwd === undefined || !(await stat(targetCwd).catch(() => undefined))?.isDirectory()) {
+      throw new WorkBranchDirectoryRequired('所选 DSH 工作区的目录已不可访问，请重新选择。')
+    }
+    if (headerCwd !== undefined && targetCwd === headerCwd) {
       const branch = await controller.fork({ sessionId: parentId, atSeq: checkpoint.seq, allowMigration: false })
       sessionId = branch.sessionId
     } else {
-      if (!directory || !isAbsolute(directory)) throw new WorkBranchDirectoryRequired('请选择 Agent 工作目录。')
-      const cwd = await realpath(directory).catch(() => undefined)
-      if (!cwd || !(await stat(cwd).catch(() => undefined))?.isDirectory()) {
-        throw new WorkBranchDirectoryRequired('所选工作目录已不可用，请重新选择。')
-      }
-
       const registry = agents(ctx)
       const defaults = ctx.get('agentDefaultModel' as never) as { currentSelection(): NonNullable<CreateAgentOptions['agentOptions']> } | undefined
       const presets = ctx.get('agentPresets' as never) as {
@@ -75,7 +139,8 @@ export async function createWorkBranch(
       } | undefined
       if (!registry || !defaults) throw new Error('Native Agent Registry is unavailable')
       const presetId = (await presets?.resolve(undefined))?.id
-      const workspace = await workspaces.create(cwd)
+      // create() 按规范路径幂等:已注册工作区返回既有实体,新路径才创建注册(官方语义)。
+      const workspace = await workspaces.create(targetCwd)
       const id = SessionId('session-' + randomUUID())
       sessionId = id
       await registry.create({

@@ -23,6 +23,14 @@ export function VoiceInput({ onText, onClose }: { onText: (text: string) => void
       audio.current = null
     }
   }, [])
+  // R8.5(F03):从麦克风按钮打开即开始录音(官方 demo 交互);用户仍可停止/取消,识别文字需确认后才插入草稿。
+  const startedRef = useRef(false)
+  useEffect(() => {
+    if (startedRef.current) return
+    startedRef.current = true
+    void record()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const stop = async () => {
     const current = recording.current

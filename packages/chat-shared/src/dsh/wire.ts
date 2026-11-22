@@ -45,7 +45,7 @@ export interface TurnEdit {
 /** 页面发出的回合请求(P2)。 */
 export interface TurnRequest {
   sessionId: string
-  locale?: 'zh-CN' | 'en-US'
+  locale?: 'zh-CN' | 'en-US' | 'ja-JP'
   timeZone?: string
   /** 用户输入文本(edit=编辑后的文本;regenerate/continue=原提问文本,Host 以日志为准) */
   content: string
@@ -235,7 +235,7 @@ export type WireHealth = {
 
 /** 设置(P2-I):运行时可变默认值,存 KV 域 global;部署级默认在插件行 Config。 */
 export interface WorkspaceSettings {
-  interfaceLanguage: 'browser' | 'zh-CN' | 'en-US'
+  interfaceLanguage: 'browser' | 'zh-CN' | 'en-US' | 'ja-JP'
   sendShortcut: 'enter' | 'ctrl-enter'
   enableVoiceInput: boolean
   appearanceMode: 'dsh' | 'light' | 'dark' | 'system'
@@ -283,6 +283,11 @@ export interface WorkspaceSettings {
   budgetWarnThresholds: number[]
   /** R8:预算提醒开关。 */
   budgetRemindersEnabled: boolean
+  // ── R8.5:以下为 GET/PUT 响应中由 Host 计算的只读字段(存储 schema 不接受) ──
+  /** 语音输入是否可用(显式开启,或 DSH 语音输入组件已提供转写服务)。 */
+  voiceAvailable?: boolean
+  /** DSH 语音输入组件是否可用(提供本地/已配置的转写引擎)。 */
+  dshSpeechAvailable?: boolean
 }
 
 /** 会话级持久化偏好(P2-A:随会话保存,切换会话恢复)。 */

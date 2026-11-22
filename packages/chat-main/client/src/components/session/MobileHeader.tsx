@@ -1,6 +1,6 @@
 import { IconMenuOutline20, IconNewChatOutline20 } from '../base/icons.js'
 import { useTranslate } from '../../i18n/index.js'
-import { createSession } from '../../store/workspace.js'
+import { closeSession } from '../../store/workspace.js'
 import { IconButton } from '../base/IconButton.js'
 import { openMobileSider } from '../sider/mobileSiderState.js'
 import styles from './MobileHeader.module.css'
@@ -25,7 +25,7 @@ export const MobileHeader = ({ title }: { title?: string }) => {
             tone="primary"
             icon={<IconNewChatOutline20 />}
             aria-label={t('newChat')}
-            onClick={() => void createSession()}
+            onClick={() => closeSession()}
           />
         </>
       )}

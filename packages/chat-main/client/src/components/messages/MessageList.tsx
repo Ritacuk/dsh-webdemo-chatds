@@ -133,9 +133,9 @@ export const MessageList = ({
   const lastIndex = messages.length - 1
   return (
     <ScrollToBottomContext.Provider value={scrollToBottom}>
-      <div ref={isMobile ? undefined : scrollRef} className={styles.container}>
+      <div ref={isMobile ? undefined : scrollRef} className={styles.container} data-webchat-messages="">
         <div ref={isMobile ? scrollRef : undefined} className={styles.scroll}>
-          <div ref={contentRef} className={styles.column}>
+          <div ref={contentRef} className={styles.column} data-webchat-column="">
             {messages.map((message, index) => {
               const siblings = session.versions?.[message.id]
               return <Fragment key={message.id}>

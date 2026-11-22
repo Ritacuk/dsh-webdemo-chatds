@@ -2,6 +2,31 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.0 (2026-11-22)
+
+R8.5 — the ten-item real-user feedback round, verified live on an isolated Linux DSH Web profile (DSH 0.2.2-rc.5) and shipped to the production web profile. Windows Desktop acceptance for this round is in progress.
+
+### Fixed
+
+- **[P0] New-chat clicks created endless empty history**: the sidebar "new chat" button now returns to the welcome page locally; a session entity is created only when the first message is sent. Attachments and handovers pre-create a **draft session** that stays out of the history list until its first message lands. Composer text now persists per chat (and across new-chat toggles) in the store.
+- **[P0] Side Chat had no entry**: the sidecar registers a real right-sidebar tab (`WebChat 侧聊`, kind `chatds-side-chat` — distinct from dsh-better-sidebar's kinds) plus a per-session header action that opens it bound to the current Agent session; the body hosts the sidecar page with the parent checkpoint sync. The sidecar component now enables/disables live with DSH hot-toggles.
+- **[P1] Dark-mode switches were illegible**: both switch families (composer + settings) use an accent track for on / muted track for off, with focus-visible and saving states.
+- **[P1] No microphone entry despite voice support**: a mic button sits in the composer when voice is available (DSH voice component detected or explicitly enabled). Transcription prefers the DSH speech service; the paid DeepSeek ASR is a fallback only when voice input is explicitly enabled.
+- **[P1] Plugin hot-toggle now recovers the navigation** (verified live on DSH 0.2.2-rc.5 web: disable removes the entry, re-enable restores it, no restart); a disabled-state panel notice replaces the broken-iframe window.
+- **[P1] Rich usage now reaches the unified ledger**: per-call records are written to `dsh-cost-meter`'s official `external_usage.json` protocol (source `chatds-rich`, idempotent per message, cache-read separated, unpriced models deferred). The status bar, cost details, and per-message usage lines show the merged view; the reminder chain runs on the merged ratio.
+- **[P1] Budget threshold is a real number input** (1–100, saved on blur, quick chips retained), with an honest "no budget set" state and a shortcut into dsh-cost-meter's native settings. Reminder firing verified live with a test budget.
+- **[P1] The four UI styles are real layouts now**: GPT (minimal sidebar, wide content, flat composer), Gemini (large gradient greeting, pill composer, blue-violet accent), Claude (serif reading width, paper composer), default (demo). Frosted glass actually blurs: header/composer overlay scrolling content, and floating layers blur it.
+- **[P1] Agent work branches pick a DSH workspace**: a workspace dialog lists the official registry (parent chat's workspace preselected); the directory picker only appears when creating a brand-new workspace. Branches inherit context as native seeds and open through the official navigation (verified live).
+- **[P2] Full Japanese interface**: complete ja-JP dictionary (383 keys incl. the settings surface), locale-aware month grouping, browser-fallback chain.
+
+### Verified platforms
+
+| Platform | Status |
+| --- | --- |
+| Linux DSH Web (DSH 0.2.2-rc.5, Node 22) | ✅ R8.5 acceptance in an isolated profile; production web profile upgraded to 0.11.0 |
+| Windows Desktop (DSH Desktop 44.7.0, runtime 0.2.2-rc.5) | ✅ R8.2 (0.10.0); 0.11.0 desktop acceptance in progress |
+| macOS | ✅ 0.10.0 acceptance; 0.11.0 not re-tested |
+
 ## 0.10.0 (2026-11-22)
 
 First cross-platform-verified release: Linux DSH Web (R8.4) and macOS Apple Silicon DSH Web (M01–M05) both acceptance-tested on real hosts; Windows Desktop verified in R8.2.

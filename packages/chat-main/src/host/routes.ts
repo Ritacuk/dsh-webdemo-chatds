@@ -43,7 +43,7 @@ import { pluginIntegrations } from './integrations.js'
 import { buildCatalog } from './models.js'
 import { prefsFromSession } from './prefs.js'
 import { buildCommit, pluginVersion } from './version.js'
-import { createWorkBranch, WorkBranchDirectoryRequired } from './agent-bridge.js'
+import { createWorkBranch, listWorkBranchWorkspaces, WorkBranchDirectoryRequired } from './agent-bridge.js'
 import { planTools } from './read-only-plan.js'
 import {
   ensureDefaultPrompts,
@@ -97,8 +97,35 @@ export interface RouteDeps {
   gateway: RichGateway
   search: LocalSearchEngine
   store: WorkspaceStore
+  /** R8.5:Rich 用量外部账本(旁聊实例为 undefined)。 */
+  ledger?: import('./rich-ledger.js').RichUsageLedger
   clientDist: string
   sidecar?: import('./sidecar-context.js').SidecarContext
+}
+
+/** R8.5:DSH 语音输入组件提供的转写服务(experimental-voice-input bundle;可选)。 */
+interface DshSpeechLike {
+  listProviders(): readonly unknown[]
+  resolve(request: { audio: Uint8Array }): unknown
+  transcribe(spec: unknown, signal: AbortSignal): Promise<{ text?: unknown }>
+}
+
+function dshSpeech(ctx: Context): DshSpeechLike | undefined {
+  const service = ctx.get('speechToText' as never) as Partial<DshSpeechLike> | undefined
+  if (service === undefined || typeof service.resolve !== 'function' || typeof service.transcribe !== 'function') return undefined
+  const providers = typeof service.listProviders === 'function' ? service.listProviders() : []
+  if (providers.length === 0) return undefined
+  return service as DshSpeechLike
+}
+
+/** 设置视图:用户存储字段 + 计算出的只读可用性标志(客户端只读)。 */
+async function settingsView(ctx: Context, settings: WorkspaceSettings): Promise<WorkspaceSettings> {
+  const speech = dshSpeech(ctx)
+  return {
+    ...settings,
+    dshSpeechAvailable: speech !== undefined,
+    voiceAvailable: settings.enableVoiceInput === true || speech !== undefined,
+  }
 }
 
 /** 读取请求体(原始字节,带上限)。 */
@@ -359,8 +386,10 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
           sendError(res, 400, '请先选择父任务检查点')
           return
         }
-        const session = await deps.sessions.create()
-        sendJson(res, 201, { id: session.id, title: '新对话' })
+        // R8.5:草稿会话(附件上传/交接单预建)在首条消息前不进入历史列表。
+        const draft = new URL(req.url ?? '/', 'http://localhost').searchParams.get('draft') === '1'
+        const session = await deps.sessions.create(undefined, draft ? { draft: true } : {})
+        sendJson(res, 201, { id: session.id, title: '新对话', ...(draft ? { draft: true } : {}) })
         return
       }
       sendError(res, 405, 'method not allowed')
@@ -451,7 +480,7 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
         return
       }
       if (req.method === 'POST' && (action === 'work-branch' || action === 'deliver')) {
-        const body = await readJsonBody(req, 160 * 1024).catch(() => undefined) as { messageId?: unknown; confirmed?: unknown; directory?: unknown } | undefined
+        const body = await readJsonBody(req, 160 * 1024).catch(() => undefined) as { messageId?: unknown; confirmed?: unknown; directory?: unknown; workspaceId?: unknown } | undefined
         if (body?.confirmed !== true || typeof body.messageId !== 'string' || deps.turns.isRunning(id)) {
           sendError(res, 400, '请选择已保存的消息并确认操作')
           return
@@ -464,7 +493,8 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
             const events = await deps.sessions.readEvents(id)
             if (events === undefined) throw new Error('Session unavailable')
             const directory = typeof body.directory === 'string' && body.directory.length <= 32_767 ? body.directory : undefined
-            sendJson(res, 201, await createWorkBranch(ctx, id, events, body.messageId, directory))
+            const workspaceId = typeof body.workspaceId === 'string' && body.workspaceId.length <= 200 ? body.workspaceId : undefined
+            sendJson(res, 201, await createWorkBranch(ctx, id, events, body.messageId, { directory, workspaceId }))
           } else {
             sendError(res, 404, '操作不可用')
           }
@@ -797,6 +827,21 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
     },
   }))
 
+  // ── R8.5:DSH 工作区清单(工作分支选择器;官方 workspaceRegistry 只读透传)──
+  disposers.push(register({
+    kind: 'exact',
+    path: `${apiPrefix}/workspaces`,
+    handler: async (req, res) => {
+      if (!guard(req, res)) return
+      const parent = new URL(req.url ?? '/', 'http://x').searchParams.get('parent') ?? ''
+      if (parent !== '' && !deps.sessions.owns(parent)) {
+        sendError(res, 400, 'sessionId is invalid')
+        return
+      }
+      sendJson(res, 200, await listWorkBranchWorkspaces(ctx, parent || 'chatws-none'))
+    },
+  }))
+
   disposers.push(register({
     kind: 'exact',
     path: `${apiPrefix}/file-access`,
@@ -849,7 +894,7 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       if (!guard(req, res)) return
       if (req.method === 'GET') {
         const settings: WorkspaceSettings = await deps.store.getSettings({})
-        sendJson(res, 200, settings)
+        sendJson(res, 200, await settingsView(ctx, settings))
         return
       }
       if (req.method === 'PUT') {
@@ -874,7 +919,7 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
             })))]
           }
           const settings = await deps.store.updateSettings(patch)
-          sendJson(res, 200, settings)
+          sendJson(res, 200, await settingsView(ctx, settings))
         } catch (error) {
           sendError(res, 400, error instanceof Error ? error.message : 'invalid settings')
         }
@@ -1007,7 +1052,19 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       const url = new URL(req.url ?? '/', 'http://x')
       const rest = url.pathname.slice(`${apiPrefix}/cost/`.length)
       if (req.method === 'GET' && rest === 'today') {
-        sendJson(res, 200, await costToday(ctx))
+        const view = await costToday(ctx)
+        const status = deps.ledger?.status()
+        sendJson(res, 200, {
+          ...view,
+          ...(status !== undefined ? {
+            richLedger: {
+              available: status.available,
+              ...(status.reason !== undefined ? { reason: status.reason } : {}),
+              ...(status.lastError !== undefined ? { lastError: status.lastError } : {}),
+              records24h: deps.ledger?.recentCount() ?? 0,
+            },
+          } : {}),
+        })
         return
       }
       if (req.method === 'GET' && rest === 'session') {
@@ -1235,8 +1292,12 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
         sendError(res, 405, 'method not allowed')
         return
       }
-      if (!(await deps.store.getSettings({})).enableVoiceInput) {
-        sendError(res, 403, '请在 ChatDS 设置中启用语音输入。')
+      // R8.5:语音可用性 = 显式开启设置,或 DSH 语音输入 bundle 已提供转写服务。
+      const settings = await deps.store.getSettings({})
+      const speech = dshSpeech(ctx)
+      const speechReady = speech !== undefined
+      if (!settings.enableVoiceInput && !speechReady) {
+        sendError(res, 403, '语音输入不可用:请在 ChatDS 设置中开启语音输入,或启用 DSH 语音输入组件。')
         return
       }
       const maximum = 44 + 120 * 16_000 * 2
@@ -1251,9 +1312,31 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       const controller = new AbortController()
       const cancel = () => controller.abort()
       res.once('close', cancel)
+      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(90_000)])
       try {
-        const text = await deps.gateway.transcribe(new Uint8Array(bytes), AbortSignal.any([controller.signal, AbortSignal.timeout(60_000)]))
-        sendJson(res, 200, { text })
+        // 引擎优先级:DSH 语音输入组件(本地/用户已配置的 provider)→ DeepSeek ASR。
+        if (speech !== undefined) {
+          try {
+            const spec = speech.resolve({ audio: new Uint8Array(bytes) })
+            const transcript = await speech.transcribe(spec, signal)
+            const text = typeof transcript?.text === 'string' ? transcript.text.trim() : ''
+            if (text !== '') {
+              sendJson(res, 200, { text, engine: 'dsh-speech' })
+              return
+            }
+            throw new Error('转写结果为空。')
+          } catch (error) {
+            if (signal.aborted) throw error
+            // 只有用户显式开启语音输入(接受 DeepSeek 转写费用)时才回退付费 ASR;
+            // 否则如实报告 DSH 语音组件的问题,不悄悄花钱。
+            if (!settings.enableVoiceInput) {
+              if (!res.destroyed) sendError(res, 502, `DSH 语音转写不可用:${error instanceof Error ? error.message : String(error)}。可在 ChatDS 设置中开启语音输入以改用 DeepSeek 转写。`)
+              return
+            }
+          }
+        }
+        const text = await deps.gateway.transcribe(new Uint8Array(bytes), signal)
+        sendJson(res, 200, { text, ...(speech !== undefined ? { engine: 'deepseek' } : {}) })
       } catch (error) {
         if (!res.destroyed) sendError(res, 502, error instanceof Error ? error.message : '语音转写失败。')
       } finally {

@@ -22,6 +22,7 @@ import { WorkspaceSessions } from './sessions.js'
 import { WorkspaceStore } from './store.js'
 import { TurnRunner } from './turns.js'
 import { RichGateway } from './rich.js'
+import { RichUsageLedger } from './rich-ledger.js'
 import { LocalSearchEngine } from './local-search.js'
 import type { MainConfig } from './config.js'
 import { Config } from './config.js'
@@ -69,13 +70,15 @@ export function mountWorkspace(ctx: Context, config: MainConfig, sidecar: boolea
   const store = new WorkspaceStore(ctx, sidecar ? 'chat_workspace_sidecar' : undefined)
   const sessions = new WorkspaceSessions(ctx, store, sidecar)
   const gateway = new RichGateway(ctx, config)
+  // R8.5:Rich 用量 → cost-meter 外部用量账本(仅主实例;旁聊回合也经此入账)。
+  const ledger = sidecar ? undefined : new RichUsageLedger(ctx)
   // 行 Config 的 P1 字段映射为运行时默认(P2-I 部署级默认;KV 可覆盖)。
   const rowDefaults: Partial<WorkspaceSettings> = {
     defaultThinking: config.thinking === 'enabled' ? 'enabled' : 'off',
     defaultSearch: config.search,
   }
   const search = new LocalSearchEngine(async () => (await store.getSettings(rowDefaults)).authorizedDirs)
-  const turns = new TurnRunner(ctx, sessions, store, gateway, search, async () => ({ requestDiagnostics: (await store.getSettings(rowDefaults)).requestDiagnostics }))
+  const turns = new TurnRunner(ctx, sessions, store, gateway, search, async () => ({ requestDiagnostics: (await store.getSettings(rowDefaults)).requestDiagnostics }), ledger)
 
   // 路由注册 + 会话监听全部折进一个 effect:停用/重载时按注册的逆序释放,
   // 并 flush + close 全部写句柄与 KV 域(持久性屏障在卸载路径上同样成立)。
@@ -87,6 +90,7 @@ export function mountWorkspace(ctx: Context, config: MainConfig, sidecar: boolea
       gateway,
       search,
       store,
+      ledger,
       clientDist: resolveClientDist(),
       sidecar: sidecar ? new SidecarContext(ctx, sessions, turns) : undefined,
     })
@@ -94,6 +98,7 @@ export function mountWorkspace(ctx: Context, config: MainConfig, sidecar: boolea
       disposeRoutes()
       await turns.dispose()
       await sessions.disposeAll()
+      await ledger?.dispose()
       await store.close()
     }
   }, 'chat-workspace-main.mount')

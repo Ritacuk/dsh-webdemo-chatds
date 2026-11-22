@@ -9,10 +9,10 @@ export const Welcome = () => {
   const t = useTranslate()
   const isMobile = useIsMobile()
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-webchat-welcome="">
       {isMobile ? <MobileHeader /> : null}
       <div className={styles.welcome}>
-        <div className={styles.greeting}>{t('welcomeMessageChat250808')}</div>
+        <div className={styles.greeting} data-webchat-greeting="">{t('welcomeMessageChat250808')}</div>
         <ChatInput sessionId={null} />
         {isMobile ? <div className={styles.caveat}>{t('contentCaveat')}</div> : null}
       </div>

@@ -1,5 +1,6 @@
 import { useSettings } from '../services/settings.js'
 import { en } from './en.js'
+import { ja } from './ja.js'
 import { zh } from './zh.js'
 
 export type TranslationKey = keyof typeof zh
@@ -14,10 +15,11 @@ export type LinkedMessage = TranslationMessage & {
 export const isTranslationKey = (key: unknown): key is TranslationKey =>
   typeof key === 'string' && Object.hasOwn(zh, key)
 
+// R8.5(F06):ja 译者;缺译时回退 en(zh 为 key 源)。
 const createTranslate =
-  (messages: Record<TranslationKey, string>) =>
+  (messages: Partial<Record<TranslationKey, string>>, fallback?: Record<TranslationKey, string>) =>
   (key: TranslationKey, params?: TranslationParams): string =>
-    messages[key].replace(/\{(\w+)\}/g, (placeholder, name: string) => {
+    ((messages[key] ?? fallback?.[key] ?? key) as string).replace(/\{(\w+)\}/g, (placeholder, name: string) => {
       const value = params?.[name]
       return typeof value === 'string' || typeof value === 'number' ? String(value) : placeholder
     })
@@ -25,6 +27,7 @@ const createTranslate =
 const translators = {
   'zh-CN': createTranslate(zh),
   'en-US': createTranslate(en),
+  'ja-JP': createTranslate(ja, en),
 }
 
 /** 组件订阅语言变化；普通函数在调用时读取当前语言。 */

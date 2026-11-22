@@ -1,0 +1,94 @@
+/* R8.5(F10):DSH 工作区选择器 */
+.description {
+  margin: 0 0 12px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.list {
+  display: grid;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.row {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  border: 1px solid var(--dsw-alias-border-l2, #8884);
+  border-radius: 10px;
+  background: var(--dsw-specific-input-major, Canvas);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row[data-selected] {
+  border-color: var(--dsw-alias-brand-primary, #3b64ed);
+  outline: 1px solid var(--dsw-alias-brand-primary, #3b64ed);
+}
+
+.row:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.name {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  flex: none;
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  border: 1px solid color-mix(in srgb, var(--dsw-alias-brand-primary, #3b64ed) 40%, transparent);
+  color: var(--dsw-alias-brand-primary, #3b64ed);
+}
+
+.path {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary, #777);
+  overflow-wrap: anywhere;
+}
+
+.footerRow {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--dsw-alias-border-l2, #8884);
+}
+
+.createNew {
+  padding: 7px 12px;
+  border: 1px dashed var(--dsw-alias-border-l2, #8884);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.createNew:hover {
+  background: var(--dsw-alias-interactive-bg-hover, #8882);
+}
+
+.createNew:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.muted {
+  color: var(--dsw-alias-label-secondary, #777);
+  font-size: 12px;
+}

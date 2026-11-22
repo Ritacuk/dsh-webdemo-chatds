@@ -91,6 +91,20 @@
   color: var(--dsw-alias-label-primary);
   font: inherit;
 }
+.cleanupHint {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border: 1px dashed var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.cleanupHint:hover { color: var(--dsw-alias-label-primary); }
+.cleanupHint:disabled { opacity: 0.6; cursor: default; }
 .empty { color: var(--dsw-alias-label-secondary); font-size: 13px; }
 .listWrap {
   position: relative;

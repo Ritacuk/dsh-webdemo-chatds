@@ -101,6 +101,16 @@ export interface CostBudgetView {
   ratio?: number
 }
 
+/** R8.5:cost-meter 外部用量账本(chatds-rich 经官方 external_usage.json 注入)的日视图。 */
+export interface CostExternalDay {
+  input?: number
+  output?: number
+  cached?: number
+  cacheWrite?: number
+  calls?: number
+  cost?: number
+}
+
 export interface CostTodayView {
   available: boolean
   reason?: string
@@ -114,6 +124,13 @@ export interface CostTodayView {
   apiCost?: number
   byProviderModel?: Record<string, unknown>
   budget?: CostBudgetView
+  /** R8.5:外部用量合计(Rich 直连账目;cost-meter externalUsage.combined.today)。 */
+  external?: CostExternalDay
+  externalStale?: boolean
+  /** R8.5:合并预算视图(native used + external today cost / cap)。 */
+  budgetMerged?: CostBudgetView
+  /** R8.5:Rich 流水账状态(由 host rich-ledger 维护)。 */
+  richLedger?: { available: boolean; reason?: string; records24h: number }
 }
 
 interface CostMeterService {
@@ -125,9 +142,16 @@ interface CostMeterService {
 }
 
 interface CostStateLike {
-  config?: { budget?: { period?: string; cap?: number; customStart?: string; customEnd?: string }, displayCurrency?: string, main?: boolean }
+  config?: { budget?: { period?: string; cap?: number; /** cost-meter 实际字段名:金额上限(显示币种)。 */ amount?: number; customStart?: string; customEnd?: string },
+    /** 显示币种代码(cost-meter config.currency)。 */ currency?: string,
+    /** USD→显示币种汇率(cost-meter config.exchangeRate,formatMoney 同语义)。 */ exchangeRate?: number, main?: boolean }
   budgetUsed?: number
   today?: { cost?: number; input?: number; output?: number }
+  externalUsage?: {
+    fetchedAt?: number
+    stale?: boolean
+    combined?: { today?: CostExternalDay }
+  }
   history?: unknown
 }
 
@@ -146,14 +170,16 @@ function costMeter(ctx: Context): CostMeterService | undefined {
 function budgetView(state: CostStateLike | undefined): CostBudgetView | undefined {
   const budget = state?.config?.budget
   if (budget === undefined) return undefined
-  const cap = typeof budget.cap === 'number' && budget.cap > 0 ? budget.cap : undefined
+  // R8.5:cost-meter 预算金额字段为 amount(cap 是旧别名),两者取其一。
+  const capSource = typeof budget.cap === 'number' ? budget.cap : budget.amount
+  const cap = typeof capSource === 'number' && capSource > 0 ? capSource : undefined
   const period = budget.period
   const used = typeof state?.budgetUsed === 'number' ? state.budgetUsed : undefined
   const ratio = cap !== undefined && used !== undefined ? used / cap : undefined
   return { ...(period !== undefined ? { period } : {}), ...(cap !== undefined ? { cap } : {}), ...(used !== undefined ? { used } : {}), ...(ratio !== undefined ? { ratio } : {}) }
 }
 
-/** 今日费用(官方 costMeter 日账本 + 预算视图)。 */
+/** 今日费用(官方 costMeter 日账本 + 外部用量合计 + 合并预算视图)。 */
 export async function costToday(ctx: Context): Promise<CostTodayView> {
   const meter = costMeter(ctx)
   if (meter === undefined || typeof meter.getDaySessions !== 'function') {
@@ -161,26 +187,62 @@ export async function costToday(ctx: Context): Promise<CostTodayView> {
   }
   const date = localDayKey()
   const day = await Promise.resolve().then(() => meter.getDaySessions!(date)).catch(() => undefined)
-  if (day == null || !Number.isFinite(day.calls) || !Number.isFinite(day.input) || !Number.isFinite(day.output)) {
-    return { available: false, reason: '费用账本不可用或返回了不兼容的数据。', date }
-  }
   let state: CostStateLike | undefined
   if (typeof meter.getState === 'function') {
     state = await Promise.resolve().then(() => meter.getState!()).catch(() => undefined)
   }
+  // R8.5:外部用量(Rich 直连)与原生账本合并。原生日账本缺失时按零处理,以外部数据为准。
+  const externalDay = state?.externalUsage?.combined?.today
+  const externalHasData = externalDay != null && Object.values(externalDay).some((value) => typeof value === 'number' && value > 0)
+  const nativeUsable = day != null && Number.isFinite(day.input) && Number.isFinite(day.output)
+  if (!nativeUsable && !externalHasData) {
+    return { available: false, reason: '费用账本不可用或返回了不兼容的数据。', date }
+  }
+  const native = nativeUsable
+    ? day!
+    : { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, calls: 0, cost: 0, apiCost: 0, byProviderModel: undefined }
   const budget = budgetView(state)
+  const external = externalHasData
+    ? {
+        ...(Number.isFinite(externalDay!.input) ? { input: externalDay!.input } : {}),
+        ...(Number.isFinite(externalDay!.output) ? { output: externalDay!.output } : {}),
+        ...(Number.isFinite(externalDay!.cached) ? { cached: externalDay!.cached } : {}),
+        ...(Number.isFinite(externalDay!.cacheWrite) ? { cacheWrite: externalDay!.cacheWrite } : {}),
+        ...(Number.isFinite(externalDay!.calls) ? { calls: externalDay!.calls } : {}),
+        ...(Number.isFinite(externalDay!.cost) ? { cost: externalDay!.cost } : {}),
+      }
+    : undefined
+  // 合并预算:原生 budgetUsed(显示币种)+ 外部今日费用(账本 USD,按汇率换算到显示币种)。
+  const externalUsd = Number.isFinite(external?.cost) ? (external!.cost as number) : 0
+  const displayPerUsd = (state?.config?.currency ?? 'USD') === 'USD'
+    ? 1
+    : (typeof state?.config?.exchangeRate === 'number' && state.config.exchangeRate > 0 ? state.config.exchangeRate : 1)
+  const externalDisplayCost = externalUsd * displayPerUsd
+  const budgetMerged = ((): CostBudgetView | undefined => {
+    const rawBudget = state?.config?.budget
+    const capSource = rawBudget === undefined ? undefined : (typeof rawBudget.cap === 'number' ? rawBudget.cap : rawBudget.amount)
+    const cap = typeof capSource === 'number' && capSource > 0 ? capSource : undefined
+    if (budget === undefined || cap === undefined) return budget
+    const nativeUsed = typeof state?.budgetUsed === 'number' ? state.budgetUsed : budget.used
+    const mergedUsed = nativeUsed !== undefined ? nativeUsed + externalDisplayCost : externalDisplayCost > 0 ? externalDisplayCost : undefined
+    if (mergedUsed === undefined) return budget
+    return { ...budget, used: mergedUsed, ratio: mergedUsed / cap }
+  })()
   return {
     available: true,
     date,
-    input: day.input,
-    output: day.output,
-    cacheRead: day.cacheRead,
-    cacheWrite: day.cacheWrite,
-    calls: day.calls,
-    ...(day.calls > 0 && Number.isFinite(day.cost) && day.cost > 0 ? { cost: day.cost } : {}),
-    ...(day.calls > 0 && Number.isFinite(day.apiCost) && day.apiCost > 0 ? { apiCost: day.apiCost } : {}),
-    byProviderModel: day.byProviderModel,
+    input: native.input,
+    output: native.output,
+    cacheRead: native.cacheRead,
+    cacheWrite: native.cacheWrite,
+    calls: native.calls,
+    ...(native.calls > 0 && Number.isFinite(native.cost) && native.cost > 0 ? { cost: native.cost } : {}),
+    ...(native.calls > 0 && Number.isFinite(native.apiCost) && native.apiCost > 0 ? { apiCost: native.apiCost } : {}),
+    byProviderModel: native.byProviderModel,
     ...(budget !== undefined ? { budget } : {}),
+    ...(external !== undefined ? { external } : {}),
+    ...(state?.externalUsage?.stale === true ? { externalStale: true } : {}),
+    ...(budgetMerged !== undefined ? { budgetMerged } : {}),
   }
 }
 

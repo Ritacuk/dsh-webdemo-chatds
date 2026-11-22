@@ -52,6 +52,8 @@ export class WorkspaceSessions {
   private readonly live = new Map<string, LiveEntry>()
   private readonly opening = new Map<string, Promise<Session | undefined>>()
   private readonly unavailable = new Map<string, WorkspaceSessionUnavailable>()
+  /** R8.5:由 create({draft}) 声明的占位会话;首条消息落盘前由 persistIndex 维持 draft 标记。 */
+  private readonly pendingDraft = new Set<string>()
   private stopping = false
 
   constructor(
@@ -105,9 +107,10 @@ export class WorkspaceSessions {
     })
   }
 
-  /** 创建新会话(写句柄 + KV 索引)。 */
-  async create(key = this.newKey()): Promise<Session> {
+  /** 创建新会话(写句柄 + KV 索引)。draft 会话在首条消息落盘前不进入历史列表。 */
+  async create(key = this.newKey(), options: { draft?: boolean } = {}): Promise<Session> {
     if (!this.owns(key) || this.live.has(key) || this.opening.has(key)) throw new Error('Invalid or occupied ChatDS session identity')
+    if (options.draft === true) this.pendingDraft.add(key)
     const session = await this.withWriter(key, true)
     if (!session) throw new WorkspaceSessionUnavailable(key)
     return session
@@ -232,13 +235,14 @@ export class WorkspaceSessions {
     }
   }
 
-  /** 列出工作区会话(KV 索引)。 */
+  /** 列出工作区会话(KV 索引)。draft 占位会话(尚无消息)不进入列表。 */
   async list(): Promise<WireSessionSummary[]> {
     const domain = await this.store.ensure()
     const table = domain.table('sessions')
     const out: WireSessionSummary[] = []
     for (const [id, record] of table.entries()) {
       if (record.hidden) continue
+      if (record.draft === true && record.messageCount === 0) continue
       out.push({
         id,
         title: record.title ?? '新对话',
@@ -329,12 +333,16 @@ export class WorkspaceSessions {
     const last = events.at(-1)
     const updatedAt = last?.time ?? Date.now()
     const previous = table.get(session.id)
+    // R8.5:draft 占位在首条消息落盘时解除;此后与普通会话一致。
+    const draft = messageCount === 0 && (this.pendingDraft.has(session.id) || previous?.draft === true)
+    if (messageCount > 0) this.pendingDraft.delete(session.id)
     await table.put(session.id, {
       id: session.id,
       title: previous?.manualTitle ?? title,
       ...(previous?.manualTitle === undefined ? {} : { manualTitle: previous.manualTitle }),
       ...(previous?.pinned === undefined ? {} : { pinned: previous.pinned }),
       ...(previous?.archived === undefined ? {} : { archived: previous.archived }),
+      ...(draft ? { draft: true } : {}),
       createdAt: previous?.createdAt ?? session.header.createdAt,
       updatedAt,
       messageCount,

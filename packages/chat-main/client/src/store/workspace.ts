@@ -72,6 +72,8 @@ type ChatState = {
   settledTick: number
   /** R8:挂载时注入 Input 草稿的队列(交接单「带去新会话」);键为 sessionId。 */
   draftTexts: Record<string, string>
+  /** R8.5:Rich 外部账本是否可用(null=未知/未探测)。 */
+  richLedgerOk: boolean | null
 }
 
 const defaultInput = (settings: WorkspaceSettings | null, last?: SessionInputState): SessionInputState => ({
@@ -101,27 +103,26 @@ export const useChatStore = create<ChatState>(() => ({
   settings: null,
   settledTick: 0,
   draftTexts: {},
+  richLedgerOk: null,
 }))
 
-/** R8:把文本排入指定会话 Input 的挂载草稿(交接单「带去新会话」)。 */
-export const queueDraftText = (sessionId: string, text: string): void => {
-  set((state) => ({ draftTexts: { ...state.draftTexts, [sessionId]: text } }))
+/** R8.5:输入框实时草稿(键 = sessionId 或 'new');切换会话/新建不再丢文本。 */
+export const saveDraftText = (key: string, text: string): void => {
+  set((state) => ({ draftTexts: { ...state.draftTexts, [key]: text } }))
 }
 
-/** R8:Input 挂载时取出排队的草稿文本(取完即清)。 */
-export const takeDraftText = (sessionId: string): string | undefined => {
-  const text = get().draftTexts[sessionId]
-  if (text !== undefined) {
-    set((state) => {
-      const draftTexts = { ...state.draftTexts }
-      delete draftTexts[sessionId]
-      return { draftTexts }
-    })
-  }
-  return text
-}
+/** R8.5:读取某键的当前草稿文本。 */
+export const readDraftText = (key: string): string => get().draftTexts[key] ?? ''
+
+/** R8:把文本写入指定会话 Input 的草稿(交接单「带去新会话」;Input 挂载时读取)。 */
+export const queueDraftText = saveDraftText
 
 const { getState: get, setState: set } = useChatStore
+
+/** R8.5:记录 Rich 外部账本可用性(StatusBar 刷新时探测;UsageLine 显示口径用)。 */
+export const setRichLedgerOk = (ok: boolean | null): void => {
+  set(() => ({ richLedgerOk: ok }))
+}
 
 const sortSessions = (sessions: WireSessionSummary[]) =>
   [...sessions].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.updatedAt - a.updatedAt)
@@ -264,15 +265,31 @@ async function refreshVersionPath(id: string): Promise<void> {
   updateSession(id, (session) => ({ ...session, messages: wire.messages, versions: wire.versions }))
 }
 
-export const createSession = async (options?: SessionInputState): Promise<string> => {
-  const { id } = await api.createSession()
-  set((state) => ({
-    sessionCache: {
-      ...state.sessionCache,
-      [id]: { id, title: '新对话', createdAt: Date.now(), updatedAt: Date.now(), messages: [] },
-    },
-    input: { ...state.input, [id]: options ?? state.draftInput },
-  }))
+/**
+ * 创建会话实体。R8.5 语义:
+ * - draft:附件上传/交接单预建的占位会话,首条消息落盘前不出现在历史列表;
+ * - carryDraft:把欢迎页输入框的未发送文本迁移到新会话(上传附件路径)。
+ */
+export const createSession = async (
+  options?: SessionInputState,
+  opts: { draft?: boolean; carryDraft?: boolean } = {},
+): Promise<string> => {
+  const { id } = await api.createSession(opts.draft === true)
+  set((state) => {
+    const draftTexts = { ...state.draftTexts }
+    if (opts.carryDraft === true && draftTexts['new']) {
+      draftTexts[id] = draftTexts['new']
+      delete draftTexts['new']
+    }
+    return {
+      sessionCache: {
+        ...state.sessionCache,
+        [id]: { id, title: '新对话', createdAt: Date.now(), updatedAt: Date.now(), messages: [] },
+      },
+      input: { ...state.input, [id]: options ?? state.draftInput },
+      draftTexts,
+    }
+  })
   set(() => ({ activeId: id }))
   await refreshSessions()
   return id
@@ -290,10 +307,13 @@ export const deleteSession = async (id: string): Promise<void> => {
     delete input[id]
     const pending = { ...state.pendingAttachments }
     delete pending[id]
+    const draftTexts = { ...state.draftTexts }
+    delete draftTexts[id]
     return {
       sessionCache: cache,
       input,
       pendingAttachments: pending,
+      draftTexts,
       activeId: state.activeId === id ? null : state.activeId,
     }
   })
@@ -560,7 +580,9 @@ export const sendMessage = async (sessionArg: Session | null, content: string, o
   if (sessionArg !== null) {
     sessionId = sessionArg.id
   } else {
+    // R8.5:欢迎页首次发送才创建会话;欢迎页草稿文本随消息发出,不再残留。
     sessionId = await createSession()
+    saveDraftText('new', '')
   }
   if (getStreamController(sessionId) !== undefined) return
   updateInputState(sessionId, options)

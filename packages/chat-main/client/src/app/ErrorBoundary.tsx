@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { translate } from '../i18n/index.js'
 
 interface Props { children: ReactNode }
 interface State { error: Error | null }
@@ -34,13 +35,13 @@ export class ErrorBoundary extends Component<Props, State> {
           font: '14px/1.6 system-ui, -apple-system, "PingFang SC", sans-serif',
         }}
       >
-        <p style={{ margin: 0 }}>WebChat 界面遇到渲染错误。会话数据保存在 DSH 会话存储中,不受影响。</p>
+        <p style={{ margin: 0 }}>{translate('errorBoundaryMessage')}</p>
         <pre style={{ margin: 0, maxWidth: 640, whiteSpace: 'pre-wrap', wordBreak: 'break-word', opacity: 0.7 }}>{error.message}</pre>
         <button
           type="button"
           onClick={() => { this.setState({ error: null }); location.reload() }}
           style={{ padding: '6px 16px', borderRadius: 8, font: 'inherit', cursor: 'pointer' }}
-        >重新加载</button>
+        >{translate('errorBoundaryReload')}</button>
       </div>
     )
   }

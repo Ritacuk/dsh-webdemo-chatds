@@ -66,7 +66,7 @@ export const SessionItem = memo(function SessionItem({
           options={[
             {
               key: 'pin',
-              label: session.pinned ? '取消置顶' : '置顶',
+              label: session.pinned ? t('sessionUnpinOption') : t('sessionPinOption'),
               icon: null,
               onSelect: () => void setSessionPinned(session.id, !session.pinned).catch((error: Error) => showToast(error.message)),
             },
@@ -84,13 +84,13 @@ export const SessionItem = memo(function SessionItem({
             },
             {
               key: 'handover',
-              label: '前情提要 / 交接单',
+              label: t('sessionHandoverMenuOption'),
               icon: <IconDataOutline16 />,
               onSelect: () => setHandover(true),
             },
             {
               key: 'export',
-              label: '导出会话',
+              label: t('sessionExportMenuOption'),
               icon: <IconDownloadOutline16 />,
               onSelect: () => setExporting(true),
             },

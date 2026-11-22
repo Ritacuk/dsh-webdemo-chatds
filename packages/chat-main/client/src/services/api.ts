@@ -88,8 +88,9 @@ export const api = {
   health: (): Promise<WireHealth> => json('api/health'),
   models: (): Promise<WireModelCatalog> => json('api/models'),
   listSessions: (): Promise<{ sessions: WireSessionSummary[] }> => json('api/sessions'),
-  createSession: (): Promise<{ id: string; title: string }> =>
-    json('api/sessions', { method: 'POST', body: '{}' }),
+  /** R8.5:draft=1 创建占位会话(附件/交接单预建;首条消息前不出现在历史列表)。 */
+  createSession: (draft = false): Promise<{ id: string; title: string }> =>
+    json(draft ? 'api/sessions?draft=1' : 'api/sessions', { method: 'POST', body: '{}' }),
   getSession: (id: string): Promise<WireSession> => json(`api/sessions/${encodeURIComponent(id)}`),
   toolPermissions: (id: string): Promise<{
     supported: { name: string; description: string; enabled: boolean }[]
@@ -105,10 +106,18 @@ export const api = {
     json(`api/sessions/${encodeURIComponent(id)}/pin`, { method: 'PUT', body: JSON.stringify({ pinned }) }),
   renameSession: (id: string, title: string): Promise<{ title: string }> =>
     json(`api/sessions/${encodeURIComponent(id)}/title`, { method: 'PUT', body: JSON.stringify({ title }) }),
-  createWorkBranch: (id: string, messageId: string, directory: string): Promise<{ sessionId: string }> =>
+  /** R8.5:工作分支——优先选已注册 DSH 工作区(workspaceId);directory 仅用于"新建工作区"流程。 */
+  createWorkBranch: (id: string, messageId: string, options: { workspaceId?: string; directory?: string }): Promise<{ sessionId: string }> =>
     json(`api/sessions/${encodeURIComponent(id)}/work-branch`, {
-      method: 'POST', body: JSON.stringify({ messageId, confirmed: true, directory }),
+      method: 'POST', body: JSON.stringify({ messageId, confirmed: true, ...options }),
     }),
+  /** R8.5:DSH 工作区清单(官方 workspaceRegistry 只读透传;parent 用于默认选中)。 */
+  workBranchWorkspaces: (parent: string): Promise<{
+    available: boolean
+    reason?: string
+    workspaces: { id: string; title?: string; path: string; sessions: number }[]
+    parentWorkspaceId?: string
+  }> => json(`api/workspaces?parent=${encodeURIComponent(parent)}`),
   deliverConclusion: (id: string, messageId: string): Promise<{ ok: true }> =>
     json(`api/sessions/${encodeURIComponent(id)}/deliver`, {
       method: 'POST', body: JSON.stringify({ messageId, confirmed: true }),
@@ -185,6 +194,10 @@ export const api = {
     calls?: number
     cost?: number
     apiCost?: number
+    external?: { input?: number; output?: number; cached?: number; cacheWrite?: number; calls?: number; cost?: number }
+    externalStale?: boolean
+    budgetMerged?: { period?: string; cap?: number; used?: number; ratio?: number }
+    richLedger?: { available: boolean; reason?: string; records24h: number }
     byProviderModel?: Record<string, unknown>
     budget?: { period?: string; cap?: number; used?: number; ratio?: number }
   }> => json('api/cost/today'),

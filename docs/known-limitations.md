@@ -11,12 +11,12 @@ Kept truthful and version-stamped. Last updated: 2026-11-21 (0.9.0-rc.8).
 ## Environment boundaries
 
 - **Linux directory picker**: DSH's official `uiWorkspace.pickDirectory()` exists on web, but on hosts without a desktop portal the Host-side chooser may fail or hang. The settings page therefore always offers a manual absolute-path grant with the same Host-side validation.
-- **Agent work-branch directory picking** requires DSH Desktop's `dsh-app:` protocol; Linux Web refuses explicitly with a user-facing message.
+- **Agent work-branch workspace picking**: the dialog lists registered DSH workspaces via the official registry; the directory picker is only offered when creating a new workspace.
 - **Attachment filename sanitization**: non-ASCII filenames are rewritten to a whitelist (`[A-Za-z0-9._() -]`) on disk; message content is unaffected.
 
 ## Cost accounting
 
-- Rich-channel usage (WebChat's dedicated DeepSeek channel) is reported by the model service and labeled per message, but is **not merged into the `dsh-cost-meter` unified ledger** — the official meter does not yet observe this channel. DSH's own LLM traffic is unaffected.
+- Rich-channel usage is recorded into the `dsh-cost-meter` unified ledger through its official `external_usage.json` protocol (source `chatds-rich`, idempotent per message). The meter's native budget widget still counts the DSH ledger only; WebChat's budget view merges both and states the caveat in the UI.
 
 ## Compatibility
 
