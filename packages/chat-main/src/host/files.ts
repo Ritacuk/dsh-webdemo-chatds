@@ -3,8 +3,8 @@
  *
  * 处理方式分级(页面必须如实展示,见 WireAttachment.handling):
  * - local-inline:  文本类(TXT/Markdown/JSON/常见代码)— 本地提取后将节选交给所选模型;
- * - local-extract: DOCX — 本地最小提取(fflate 解压 document.xml,仅纯文本,
- *                  版式/表格/公式不完整,页面提示);
+ * - local-extract: DOCX/PPTX/XLSX — 本地最小提取(fflate 解压 OOXML XML 部件,仅纯文本,
+ *                  版式/图片/公式不完整,页面提示);
  * - cloud-files-api: PDF/图片 — 发送轮通过官方 Demo 同款 Files API 上传
  *                  (deepseek_read_url 同源端点;云端处理,页面明示);未配置凭证时报错;
  * - unsupported:   其余格式(PPTX/XLSX 待核实 DSH 原生附件服务能力后再启用)。
@@ -64,6 +64,21 @@ function extractDocxText(bytes: Uint8Array): { text: string; note: string } {
   }
 }
 
+/** R8.6:Office 三件套统一入口(PPTX/XLSX 解析器本就随 extractOfficeText 提供,此前未接线)。 */
+function extractOfficeByExt(bytes: Uint8Array, ext: string): { text: string; note: string } {
+  if (ext === '.docx') return extractDocxText(bytes)
+  if (ext === '.pptx') {
+    return {
+      text: extractOfficeText(bytes, '.pptx'),
+      note: 'PPTX 本地提取:仅文本,图片/动画/版式信息不参与解析',
+    }
+  }
+  return {
+    text: extractOfficeText(bytes, '.xlsx'),
+    note: 'XLSX 本地提取:单元格文本(公式以缓存值计),样式与图表不参与解析',
+  }
+}
+
 /** 单文件上传接收与分类(只读原文件;副本存放于附件目录)。 */
 export async function receiveUpload(options: {
   store: WorkspaceStore
@@ -86,14 +101,14 @@ export async function receiveUpload(options: {
   } else if (INLINE_TEXT_EXTENSIONS.has(ext)) {
     handling = 'local-inline'
     handlingNote = '本地读取 UTF-8 或带编码标记的 UTF-16 文本，发送时将相关内容交给所选模型'
-  } else if (ext === '.docx') {
+  } else if (ext === '.docx' || ext === '.pptx' || ext === '.xlsx') {
     try {
-      extractDocxText(bytes)
+      const { note } = extractOfficeByExt(bytes, ext)
       handling = 'local-extract'
-      handlingNote = '在本地提取纯文本，发送时将相关内容交给所选模型。版式和图片不参与解析'
+      handlingNote = `在本地提取纯文本，发送时将相关内容交给所选模型。${note}`
     } catch (cause) {
       handling = 'unsupported'
-      error = `DOCX 解析失败: ${cause instanceof Error ? cause.message : String(cause)}`
+      error = `${ext.slice(1).toUpperCase()} 解析失败: ${cause instanceof Error ? cause.message : String(cause)}`
     }
   } else if (ext === '.pdf') {
     handling = 'cloud-files-api'
@@ -169,7 +184,7 @@ export function loadAttachment(record: AttachmentRecord): { text?: string; bytes
     return { text: decodeText(bytes), note: record.handlingNote }
   }
   if (record.handling === 'local-extract') {
-    const { text, note } = extractDocxText(new Uint8Array(bytes))
+    const { text, note } = extractOfficeByExt(new Uint8Array(bytes), extLower(record.name))
     return { text, note: `${record.handlingNote ?? ''}; ${note}` }
   }
   return { bytes: new Uint8Array(bytes), note: record.handlingNote }

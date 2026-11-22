@@ -203,6 +203,9 @@ export const api = {
   }> => json('api/cost/today'),
   costSession: (sessionId: string): Promise<{ available: boolean; reason?: string; cost?: unknown }> =>
     json(`api/cost/session?sessionId=${encodeURIComponent(sessionId)}`),
+  /** R8.6:逐消息 Rich 金额(价表+峰谷规则计算;幂等映射 messageId→USD)。 */
+  costMessages: (sessionId: string): Promise<{ available: boolean; amounts?: Record<string, number> }> =>
+    json(`api/cost/messages?sessionId=${encodeURIComponent(sessionId)}`),
   costEstimate: (sessionId: string, draftChars: number): Promise<{
     available: boolean
     reason?: string

@@ -28,12 +28,15 @@ export const AssistantMessage = memo(function AssistantMessage({
   isLast,
   streaming,
   busy,
+  richCost,
 }: {
   sessionId: string
   message: AssistantMessageType
   isLast: boolean
   streaming: boolean
   busy: boolean
+  /** R8.6:Rich 轮金额(Host 按价表+峰谷规则计算;原生轮自带 message.cost)。 */
+  richCost?: number
 }) {
   const t = useTranslate()
   const utterance = useRef<SpeechSynthesisUtterance | null>(null)
@@ -190,7 +193,7 @@ export const AssistantMessage = memo(function AssistantMessage({
       {!streaming && !refused && message.model !== null ? (
         <div className={styles.modelBadge}>模型: {String(message.model)}</div>
       ) : null}
-      {!streaming && !refused ? <UsageLine message={message} /> : null}
+      {!streaming && !refused ? <UsageLine message={message} richCost={richCost} /> : null}
       {streaming ? null : (
         <div className={styles.bottom}>
           {/* P2: 分支切换 UI(BranchSwitcher)暂不接线 */}

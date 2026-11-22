@@ -57,6 +57,7 @@ import {
   costEstimate,
   costPriceCatalog,
   costSession,
+  costMessageAmounts,
   costToday,
   DSH_TOOL_APPROVAL_REQUIRED,
   listRegisteredTools,
@@ -1077,6 +1078,16 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
           return
         }
         sendJson(res, 200, await costSession(ctx, sessionId, deps.ledger))
+        return
+      }
+      // R8.6:逐消息 Rich 金额(价表+峰谷规则计算;消息行显示用)。
+      if (req.method === 'GET' && rest === 'messages') {
+        const sessionId = url.searchParams.get('sessionId') ?? ''
+        if (!deps.sessions.owns(sessionId)) {
+          sendError(res, 400, 'sessionId is required')
+          return
+        }
+        sendJson(res, 200, await costMessageAmounts(ctx, sessionId, deps.ledger))
         return
       }
       if (req.method === 'GET' && rest === 'prices') {

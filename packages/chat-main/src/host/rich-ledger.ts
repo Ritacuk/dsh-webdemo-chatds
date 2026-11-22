@@ -176,6 +176,29 @@ export class RichUsageLedger {
     return calls > 0 ? { calls, input, output, cached, cacheWrite } : null
   }
 
+  /** R8.6:查询前确保流水账已加载(进程重启后懒加载兜底)。 */
+  async ready(): Promise<void> {
+    await this.ensureLoaded()
+  }
+
+  /** R8.6:会话级逐条记录(金额按价表逐条计算;消息 id 从稳定记录 id 反解)。 */
+  sessionRecords(sessionId: string): { messageId: string; model: string; at: number; input: number; output: number; cached: number; cacheWrite: number }[] {
+    const out: { messageId: string; model: string; at: number; input: number; output: number; cached: number; cacheWrite: number }[] = []
+    for (const record of this.records) {
+      if (record.sid !== sessionId) continue
+      out.push({
+        messageId: record.id.startsWith(`${SOURCE_NAME}:`) ? record.id.slice(SOURCE_NAME.length + 1) : record.id,
+        model: record.model,
+        at: Date.parse(record.at),
+        input: record.input,
+        output: record.output,
+        cached: record.cached ?? 0,
+        cacheWrite: record.cacheWrite ?? 0,
+      })
+    }
+    return out
+  }
+
   private scheduleFlush(): void {
     if (this.flushTimer !== undefined) return
     this.flushTimer = setTimeout(() => {

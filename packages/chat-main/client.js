@@ -1215,7 +1215,7 @@ window.__ModuleLoader__.load({
           children: h('div', { style: { display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' } },
             h('input', { type: 'number', 'aria-label': L('预算提醒阈值(%)'), min: 1, max: 100, step: 1,
               key: 'threshold-' + thresholdPercent, defaultValue: thresholdPercent, disabled: busy,
-              style: { width: 76 }, 'aria-describedby': undefined,
+              style: { width: 110 }, 'aria-describedby': undefined,
               onBlur: (event) => {
                 const value = Math.round(event.target.valueAsNumber)
                 if (!Number.isInteger(value) || value < 1 || value > 100) {

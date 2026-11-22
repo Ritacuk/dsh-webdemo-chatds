@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.6 (2026-11-23)
+
+Four desktop-feedback fixes: attachment types, model-whitelist refresh, budget input, and per-message amounts.
+
+### Fixed
+
+- **[P1] PPTX/XLSX attachments are now accepted**: the OOXML text extractor already supported both formats, but receiveUpload only routed .docx — everything else was rejected as unsupported. Both now go through local-extract with format-specific notes (text-only extraction, images/layout not parsed), and loadAttachment dispatches by the stored file name (it previously hard-coded DOCX).
+- **[P1] Model whitelist changes now reach the composer picker**: the picker reads the host-computed model catalog (/api/models), which was only fetched at bootstrap — toggling whitelist models or pressing 恢复默认(全部可用) in settings did not refresh it. Settings reloads now also refresh the model catalog.
+- **[P2] Budget threshold input widened** (the digits were clipped).
+- **[P1] Amounts for Rich turns**: the per-message usage line and the status-bar session segment now show the cost, computed by the host from dsh-cost-meter's own price catalog with the DeepSeek peak/off-peak rule (weekend off-peak; weekday UTC windows from cost-meter defaults) and per-record timestamps — the price data is cost-meter's, no second price table is stored. The "Rich 用量已计入统一费用账本" phrase is removed (amounts instead). Token values carry tok units in the message line and the status bar. Tiny amounts (below 0.0001) render with 6 decimals instead of collapsing to $0.0000.
+
+### Notes
+
+- Session amounts are computed for sessions created with 0.11.2+ (records carry the session id); older Rich records display without amounts (honest), while cost-meter's own external-usage totals remain the authoritative aggregates.
+- Model matching for pricing is display-only (exact, then version-insensitive, then containment); unresolvable models display without amounts.
+
+### Verified
+
+172 automated tests green (files suite extended with PPTX/XLSX extraction cases); isolated instance end-to-end: a real chat round produced a session-bound ledger record and the status bar/message line displayed the computed amount ($0.000006 for a 37/1-token call), tok units present, threshold input full-width.
+
 ## 0.11.5 (2026-11-22)
 
 Definitive fix for the session-menu "flying" reported on desktop: 0.11.4's scroll-close did not address the actual trigger.

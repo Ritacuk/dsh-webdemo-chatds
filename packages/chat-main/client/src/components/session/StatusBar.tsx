@@ -46,7 +46,10 @@ const compact = (value: number | undefined): string | null => {
 
 const formatCost = (value: number | undefined): string | null => {
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) return null
-  return value >= 1 ? `$${value.toFixed(2)}` : `$${value.toFixed(4)}`
+  // Rich 单轮金额可能小到 1e-6 量级,按量级给出有效位,避免显示成 $0.0000。
+  if (value >= 1) return `$${value.toFixed(2)}`
+  if (value >= 0.0001) return `$${value.toFixed(4)}`
+  return `$${value.toFixed(6)}`
 }
 
 /** 预算/占比:<10% 显示一位小数(与 DSH 原生底栏一致,0.9% 不被吞成 0%)。 */
@@ -122,12 +125,12 @@ export const StatusBar = memo(function StatusBar({ sessionId }: { sessionId: str
         <button type="button" className={styles.segment} onClick={openCost}
           title={sessionCost?.source === 'rich' ? t('statusSessionRichNote') : t('statusOpenCostMeter')}>
           {calls !== null && <span>{calls} {t('statusTurnsUnit')}</span>}
-          {input !== null && <span>{t('statusInput')} {input}</span>}
-          {cached !== null && <span>{t('statusCacheLabel')} {cached}</span>}
-          {output !== null && <span>{t('statusOutput')} {output}</span>}
+          {input !== null && <span>{t('statusInput')} {input} tok</span>}
+          {cached !== null && <span>{t('statusCacheLabel')} {cached} tok</span>}
+          {output !== null && <span>{t('statusOutput')} {output} tok</span>}
           {cacheHit !== null && <span>{t('statusCacheHit')} {cacheHit}</span>}
           {(sessionCostValue !== null || sessionCost?.source === 'rich') && (
-            <span>{t('statusSession')} {sessionCostValue ?? t('statusNoAmount')}{sessionCost?.source === 'rich' ? ` · ${t('statusSourceRich')}` : ''}</span>
+            <span>{t('statusSession')} {sessionCostValue ?? t('statusNoAmount')}</span>
           )}
         </button>
       )}

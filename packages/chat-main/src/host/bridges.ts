@@ -250,7 +250,7 @@ export async function costToday(ctx: Context): Promise<CostTodayView> {
 export async function costSession(
   ctx: Context,
   sessionId: string,
-  ledger?: { sessionTotals(sessionId: string): { calls: number; input: number; output: number; cached: number; cacheWrite: number } | null },
+  ledger?: RichLedgerLike,
 ): Promise<{ available: boolean; reason?: string; source?: 'native' | 'rich'; cost?: unknown }> {
   const meter = costMeter(ctx)
   if (meter === undefined || typeof meter.getSessionCost !== 'function') {
@@ -260,17 +260,143 @@ export async function costSession(
   if (cost && typeof cost === 'object' && 'own' in cost && (!('found' in cost) || cost.found === true)) {
     return { available: true, source: 'native', cost }
   }
-  // R8.6(6.3):纯 Rich 会话不在原生账本,但 WebChat 自己有外部记录——如实展示 tokens 与来源,
-  // 不再显示含糊的"暂无账单"(金额仍以 dsh-cost-meter 外部用量区为准,不在插件内二次计价)。
-  const rich = ledger?.sessionTotals(sessionId)
-  if (rich) {
-    return {
-      available: true,
-      source: 'rich',
-      cost: { own: { input: rich.input, output: rich.output, cacheRead: rich.cached, cacheWrite: rich.cacheWrite, calls: rich.calls } },
+  // R8.6(6.3):纯 Rich 会话不在原生账本,但 WebChat 自己有外部记录——如实展示 tokens、
+  // 来源与金额(金额按 cost-meter 价表与峰谷规则逐条计算,价表为其权威数据源)。
+  const priced = await priceRichSession(ctx, sessionId, ledger)
+  if (priced !== null && ledger?.sessionTotals !== undefined) {
+    const rich = ledger.sessionTotals(sessionId)
+    if (rich !== null) {
+      return {
+        available: true,
+        source: 'rich',
+        cost: { own: { cost: priced.total, input: rich.input, output: rich.output, cacheRead: rich.cached, cacheWrite: rich.cacheWrite, calls: rich.calls } },
+      }
     }
   }
   return { available: false, reason: '本会话暂无可用的 dsh-cost-meter 账单。' }
+}
+
+/** R8.6:逐消息 Rich 金额(价表 + 峰谷规则;幂等映射,供消息行显示)。 */
+export async function costMessageAmounts(
+  ctx: Context,
+  sessionId: string,
+  ledger?: RichLedgerLike,
+): Promise<{ available: boolean; amounts?: Record<string, number> }> {
+  const priced = await priceRichSession(ctx, sessionId, ledger)
+  return priced === null ? { available: false } : { available: true, amounts: priced.perMessage }
+}
+
+/** DeepSeek 峰时段窗口(UTC 小时,半开区间)——与 cost-meter DEFAULT_PEAK_WINDOWS 同源。 */
+const DEEPSEEK_PEAK_WINDOWS = [{ start: 1, end: 4 }, { start: 6, end: 10 }]
+
+/** cost-meter configuredPeakAt 的 DeepSeek 官方规则子集:UTC+8 周末为谷,工作日峰窗为峰,其余为谷。 */
+function deepSeekPeakPhase(atMs: number): 'peak' | 'offPeak' {
+  const local = new Date(atMs + 8 * 3600000)
+  if (local.getUTCDay() === 0 || local.getUTCDay() === 6) return 'offPeak'
+  const utc = new Date(atMs)
+  const hour = utc.getUTCHours() + utc.getUTCMinutes() / 60
+  return DEEPSEEK_PEAK_WINDOWS.some((window) => hour >= window.start && hour < window.end) ? 'peak' : 'offPeak'
+}
+
+interface RichPriceTier { cacheHit: number; cacheMiss: number; output: number; cacheWrite?: number; peak?: RichPriceTier; offPeak?: RichPriceTier; rateHistory?: { before?: string; cacheHit?: number; cacheMiss?: number; output?: number }[] }
+
+/** 价表解析(只用于显示;权威账目仍在 dsh-cost-meter)。 */
+async function priceRichSession(
+  ctx: Context,
+  sessionId: string,
+  ledger?: RichLedgerLike,
+): Promise<{ total: number; perMessage: Record<string, number> } | null> {
+  if (ledger?.sessionRecords === undefined || ledger.sessionTotals === undefined) {
+    console.error('[chatds][price-debug] ledger missing')
+    return null
+  }
+  await ledger.ready?.()
+  const records = ledger.sessionRecords(sessionId)
+  if (records.length === 0) {
+    console.error('[chatds][price-debug] no records for', sessionId)
+    return null
+  }
+  const meter = costMeter(ctx)
+  if (meter === undefined || typeof meter.getPriceCatalog !== 'function') {
+    console.error('[chatds][price-debug] meter/catalog missing')
+    return null
+  }
+  const catalog = await Promise.resolve().then(() => meter.getPriceCatalog!()).catch((error: unknown) => {
+    console.error('[chatds][price-debug] catalog threw:', String(error))
+    return undefined
+  }) as
+    | { deepseek?: Record<string, Record<string, RichPriceTier>>; catalog?: { deepseek?: Record<string, Record<string, RichPriceTier>> } }
+    | undefined
+  // getPriceCatalog 原始返回即 {deepseek: …};兼容包一层 catalog 的历史形态。
+  const groups = catalog?.deepseek ?? catalog?.catalog?.deepseek
+  if (groups === undefined || groups === null || typeof groups !== 'object') {
+    console.error('[chatds][price-debug] groups missing:', JSON.stringify(catalog).slice(0, 200))
+    return null
+  }
+
+  const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]/g, '')
+  /** 版本号无关匹配(wire 模型名常缺版本段,如 deepseek-flash ↔ deepseek-v4-flash)。 */
+  const stripVersions = (value: string) => value.replace(/v\d+/g, '')
+  const entryFor = (model: string): RichPriceTier | null => {
+    const wanted = normalize(model)
+    const wantedLoose = stripVersions(wanted)
+    let loose: RichPriceTier | null = null
+    let loosest: RichPriceTier | null = null
+    for (const group of Object.values(groups)) {
+      for (const [id, entry] of Object.entries(group ?? {})) {
+        const candidate = normalize(id)
+        if (candidate === wanted) return entry
+        if (loose === null && wanted.length >= 6 && (candidate.includes(wanted) || wanted.includes(candidate))) loose = entry
+        if (loosest === null && wantedLoose.length >= 6 && stripVersions(candidate) === wantedLoose) loosest = entry
+      }
+    }
+    return loose ?? loosest
+  }
+  /** rateHistory 选择价档(cost-meter priceAt 同源:取 before ≤ at 的最近一档)。 */
+  const tierAt = (entry: RichPriceTier, atMs: number): RichPriceTier => {
+    const history = Array.isArray(entry.rateHistory) ? [...entry.rateHistory].filter((row) => typeof row?.before === 'string' && Number.isFinite(Date.parse(row.before))) : []
+    if (history.length === 0) return entry
+    history.sort((a, b) => Date.parse(a.before!) - Date.parse(b.before!))
+    let tier = entry
+    for (const row of history) {
+      if (Date.parse(row.before!) <= atMs && typeof row.cacheMiss === 'number') {
+        tier = { ...entry, cacheHit: row.cacheHit ?? entry.cacheHit, cacheMiss: row.cacheMiss, output: row.output ?? entry.output }
+      }
+    }
+    return tier
+  }
+  const priceRecord = (record: { model: string; at: number; input: number; output: number; cached: number; cacheWrite: number }): number | null => {
+    const found = entryFor(record.model)
+    if (found === null) return null
+    const entry = tierAt(found, record.at)
+    const phase = deepSeekPeakPhase(record.at)
+    const tier = (phase === 'peak' ? entry.peak : entry.offPeak) ?? entry
+    const cacheWritePrice = tier.cacheWrite ?? tier.cacheHit
+    return (record.input * tier.cacheMiss
+      + record.output * tier.output
+      + record.cached * tier.cacheHit
+      + record.cacheWrite * cacheWritePrice) / 1_000_000
+  }
+
+  let total = 0
+  const perMessage: Record<string, number> = {}
+  for (const record of records) {
+    const cost = priceRecord(record)
+    if (cost === null) {
+      console.error('[chatds][price-debug] unmatched model:', record.model)
+      return null
+    }
+    total += cost
+    perMessage[record.messageId] = cost
+  }
+  return { total, perMessage }
+}
+
+/** R8.6:Rich 用量账本的最小接口(与 RichUsageLedger 对齐)。 */
+interface RichLedgerLike {
+  ready?(): Promise<void>
+  sessionTotals?(sessionId: string): { calls: number; input: number; output: number; cached: number; cacheWrite: number } | null
+  sessionRecords?(sessionId: string): { messageId: string; model: string; at: number; input: number; output: number; cached: number; cacheWrite: number }[]
 }
 
 /** 官方价格目录(只读透传;不在本插件存储第二份价格)。 */

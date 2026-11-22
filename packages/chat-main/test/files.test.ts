@@ -60,7 +60,7 @@ describe('P2-F:分类与处理方式', () => {
     })
     const attachment = await upload('report.docx', docx)
     expect(attachment.handling).toBe('local-extract')
-    expect(attachment.handlingNote).toContain('版式和图片不参与解析')
+    expect(attachment.handlingNote).toContain('DOCX 本地提取')
     const loaded = loadAttachment({ ...(await store.getAttachment(attachment.id))! })
     expect(loaded.text).toContain('第一段内容')
     expect(loaded.text).toContain('第二段内容')
@@ -70,6 +70,29 @@ describe('P2-F:分类与处理方式', () => {
     const attachment = await upload('doc.pdf', new TextEncoder().encode('%PDF-fake'))
     expect(attachment.handling).toBe('cloud-files-api')
     expect(attachment.handlingNote).toContain('云端')
+  })
+
+  it('PPTX → local-extract(R8.6:接线已内置的幻灯片文本解析)', async () => {
+    const pptx = zipSync({
+      'ppt/slides/slide1.xml': strToU8('<?xml version="1.0"?><p:sld><p:txBody><a:p><a:r><a:t>幻灯片第一页文本</a:t></a:r></a:p></p:txBody></p:sld>'),
+    })
+    const attachment = await upload('deck.pptx', pptx)
+    expect(attachment.handling).toBe('local-extract')
+    expect(attachment.handlingNote).toContain('PPTX 本地提取')
+    const loaded = loadAttachment({ ...(await store.getAttachment(attachment.id))! })
+    expect(loaded.text).toContain('幻灯片第一页文本')
+  })
+
+  it('XLSX → local-extract(单元格文本)', async () => {
+    const xlsx = zipSync({
+      'xl/sharedStrings.xml': strToU8('<?xml version="1.0"?><sst><si><t>表格文本</t></si></sst>'),
+      'xl/worksheets/sheet1.xml': strToU8('<?xml version="1.0"?><worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c></row></sheetData></worksheet>'),
+    })
+    const attachment = await upload('book.xlsx', xlsx)
+    expect(attachment.handling).toBe('local-extract')
+    expect(attachment.handlingNote).toContain('XLSX 本地提取')
+    const loaded = loadAttachment({ ...(await store.getAttachment(attachment.id))! })
+    expect(loaded.text).toContain('表格文本')
   })
 
   it('PNG → cloud-files-api', async () => {

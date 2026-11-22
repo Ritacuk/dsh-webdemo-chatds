@@ -9,7 +9,8 @@ import { AssistantMessage } from './AssistantMessage.js'
 import { ScrollToBottomContext } from './scrollContext.js'
 import { UserMessage } from './UserMessage.js'
 import { BranchSwitcher } from './BranchSwitcher.js'
-import { selectSessionVersion } from '../../store/workspace.js'
+import { selectSessionVersion, useChatStore } from '../../store/workspace.js'
+import { api } from '../../services/api.js'
 import { showToast } from '../base/toastState.js'
 import styles from './MessageList.module.css'
 
@@ -46,6 +47,18 @@ export const MessageList = ({
   const scrollTopRef = useRef(0)
   const messages = getVisibleMessages(session)
   const lastMessageId = messages.at(-1)?.id
+  // R8.6(修4):Rich 轮逐消息金额(Host 按 dsh-cost-meter 价表+峰谷规则计算;原生轮自带 message.cost)。
+  const settledTick = useChatStore((state) => state.settledTick)
+  const [richCosts, setRichCosts] = useState<Record<string, number> | null>(null)
+  useEffect(() => {
+    let active = true
+    void api.costMessages(session.id).then((value) => {
+      if (active) setRichCosts(value.available === true && value.amounts !== undefined ? value.amounts : null)
+    }).catch(() => {
+      if (active) setRichCosts(null)
+    })
+    return () => { active = false }
+  }, [session.id, settledTick])
   const scrollToBottom = useCallback(() => {
     const el = scrollRef.current
     if (el && stickyRef.current) {
@@ -169,6 +182,7 @@ export const MessageList = ({
                   isLast={index === lastIndex}
                   streaming={streaming && index === lastIndex}
                   busy={streaming}
+                  richCost={richCosts?.[message.id]}
                 />
               )}
               {siblings && <BranchSwitcher versions={{ ids: siblings, index: siblings.indexOf(message.id) }}

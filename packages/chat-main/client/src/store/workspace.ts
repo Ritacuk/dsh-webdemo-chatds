@@ -368,11 +368,20 @@ export const runLocalSearchPreview = async (query: string): Promise<LocalSearchR
 export const updateSettings = async (patch: Partial<WorkspaceSettings>): Promise<WorkspaceSettings> => {
   const settings = await api.updateSettings(patch)
   applySettings(settings)
+  await refreshModelCatalog()
   return settings
 }
 
 export const reloadSettings = async (): Promise<void> => {
   applySettings(await api.getSettings())
+  await refreshModelCatalog()
+}
+
+/** R8.6(修):模型目录的 enabled/modelScope 由 Host 按 settings 实时计算——
+ *  设置(白名单/恢复默认)变化后必须重拉 /api/models,否则 composer 选择器不刷新。 */
+async function refreshModelCatalog(): Promise<void> {
+  const models = await api.models().catch(() => null)
+  if (models) set(() => ({ models: models as WireModelCatalog }))
 }
 
 function applySettings(settings: WorkspaceSettings): void {
