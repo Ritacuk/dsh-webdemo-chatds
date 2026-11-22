@@ -609,7 +609,9 @@ window.__ModuleLoader__.load({
               reject(error)
             }, 8000)
             navigator.mediaDevices.getUserMedia({
-              audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+              // 约束与 DSH 官方语音输入完全一致(官方不含 channelCount;多设备环境下的
+              // 额外约束可能造成 OverconstrainedError,没必要在此引入)。
+              audio: { echoCancellation: true, noiseSuppression: true },
             }).then((value) => {
               clearTimeout(timeout)
               if (settled) {

@@ -2,6 +2,23 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.4 (2026-11-22)
+
+Two real-device fixes from desktop feedback.
+
+### Fixed
+
+- **[P1] Voice dialog no longer sits at "正在打开麦克风…"**: in the top-frame capture bridge, the dialog only advanced to the recording state after the user pressed stop — recording actually started (the Windows microphone indicator lit up) but the UI showed no meter, no timer and no stop button, looking like a stuck "checking the microphone" state. The dialog now enters the recording state as soon as the bridge accepts the capture (live level meter + timer + stop button from the first frame); failure/cancel paths still advance through the result callback. Capture constraints now match the official DSH voice input exactly (dropped `channelCount`, which could produce OverconstrainedError on some devices).
+- **[P1] Session context menus no longer "fly away"**: the menu is a fixed-position portal that does not follow its anchor, so scrolling the session list (or a window resize) left it floating detached over unrelated rows with the hover highlight stuck. Menus now close on any container scroll (capture phase) or window resize; scroll inside the menu itself does not close it.
+
+### Reference (DSH Desktop internals, read from app.asar)
+
+The desktop permission handler grants `media` only when the request comes from the primary window's **main frame** with an application URL (`dsh-app://app`) and audio-only media types; iframe-originated requests are always denied (`callback(false)`) — this is why the system microphone settings never helped WebChat before the top-frame bridge, and why DSH native voice never appears to "check" anything (its requests are main-frame and auto-granted on Windows).
+
+### Verified
+
+172 automated tests green; isolated Linux instance: bridge record dialog enters the recording state immediately with meter/timer/stop, and the 8s honest timeout still reports correctly when no device answers.
+
 ## 0.11.3 (2026-11-22)
 
 Hotfix for the 0.11.2 desktop feedback: the WebChat sidebar entry still did not appear right after installing/updating the plugin, while plugins like dsh-plugin-magi recovered instantly. Root cause found by reading the DSH client-modules runtime and comparing registration patterns.

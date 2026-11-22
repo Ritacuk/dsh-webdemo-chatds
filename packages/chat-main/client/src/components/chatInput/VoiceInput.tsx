@@ -131,6 +131,10 @@ export function VoiceInput({ localEngine, onText, onClose }: { localEngine?: boo
       bridgeRequest.current = requestId
       const done = new Promise<BridgeResult>((resolve) => { bridgeResult.current = resolve })
       window.parent.postMessage({ type: 'chatds:voice-capture-start', requestId }, location.origin)
+      // R8.6(修):桥接受理后立即进入录音界面(电平/计时/停止按钮)。
+      // 此前停在"正在打开"直到停止才推进——录音实际已在进行,但用户看不到任何反馈、无法停止,
+      // 看起来像"一直在检查麦克风"。失败/取消仍经 done 回调推进到对应状态。
+      setStage('recording')
       const result = await done
       if (!mounted.current) return
       if (result.cancelled) {
