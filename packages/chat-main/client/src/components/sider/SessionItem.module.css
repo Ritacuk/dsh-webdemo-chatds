@@ -43,6 +43,12 @@
   display: none;
   flex-shrink: 0;
   margin-left: 4px;
+
+  /* R8.6(修):菜单打开期间保持 ⋯ 可见——锚点失去盒子会让 fixed 菜单在
+     鼠标移开后重新定位到视口左上角("飞走")。 */
+  &:has([data-menu-open]) {
+    display: flex;
+  }
 }
 
 .renameInput {

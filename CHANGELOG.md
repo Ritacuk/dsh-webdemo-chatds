@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. Versions follow semver; pre-release versions use `-rc.N` and were published under the `next` npm dist-tag; stable-line releases publish as `latest`.
 
+## 0.11.5 (2026-11-22)
+
+Definitive fix for the session-menu "flying" reported on desktop: 0.11.4's scroll-close did not address the actual trigger.
+
+### Fixed
+
+- **[P1] Session menus no longer fly to the top-left when the mouse moves away**: the ⋯ button container is `display:none` unless the row is hovered, and the menu's positioning loop observes the anchor — moving the mouse away collapsed the anchor to a zero rect, a re-measure fired, and the fixed-position menu was recomputed to the viewport's top-left corner (photos showed the menu pinned at the top while the cursor was far below). Two layers:
+  - while a session menu is open, the ⋯ button stays visible (`data-menu-open` + `:has()` CSS), so the anchor never loses its box while the menu is open;
+  - the positioning loop ignores zero-size anchor rects (display:none elements report a 0×0 rect at 0,0), keeping the last position for any other hidden-anchor case.
+- Verified on the isolated instance: with the menu open and the anchor force-hidden + a forced re-measure, the menu stays exactly where it opened; outside pointerdown still closes it; 172 automated tests green.
 ## 0.11.4 (2026-11-22)
 
 Two real-device fixes from desktop feedback.

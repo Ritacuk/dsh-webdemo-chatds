@@ -103,8 +103,12 @@ export const SessionItem = memo(function SessionItem({
             },
           ]}
         >
-          {({ toggle }) => (
-            <IconButton icon={<IconEllipsisOutline16 />} aria-label={t('more')} onClick={toggle} />
+          {({ open, toggle }) => (
+            // R8.6(修):菜单打开期间保持 ⋯ 可见(否则鼠标移开 → 行失焦 → .action 隐藏 →
+            // 锚点失去盒子,浮层重定位飞到视口左上角)。data-menu-open 驱动 CSS 保持显示。
+            <span data-menu-open={open ? 'true' : undefined} style={{ display: 'contents' }}>
+              <IconButton icon={<IconEllipsisOutline16 />} aria-label={t('more')} aria-expanded={open} onClick={toggle} />
+            </span>
           )}
         </Menu>
       </div>

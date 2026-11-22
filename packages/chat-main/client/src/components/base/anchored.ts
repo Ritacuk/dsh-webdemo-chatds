@@ -137,6 +137,12 @@ export const useAnchoredPosition = <T extends HTMLElement, F extends HTMLElement
       return
     }
     const rect = anchor.getBoundingClientRect()
+    // R8.6(修):锚点失去盒子(display:none,如悬停触发的 ⋯ 按钮在鼠标移开后隐藏)时,
+    // getBoundingClientRect 返回全零矩形——此时不重定位,保持上次位置,
+    // 否则 fixed 浮层会"飞"到视口左上角(ResizeObserver 因锚点尺寸变化触发本函数)。
+    if (rect.width === 0 && rect.height === 0 && rect.top === 0 && rect.left === 0) {
+      return
+    }
     const composer = excludeComposer ? anchor.closest('[data-webchat-composer]')?.getBoundingClientRect() : undefined
     const { width } = floating.getBoundingClientRect()
     if (composer && maxHeight && composer.right + width + offset + VIEWPORT_PADDING <= window.innerWidth) {
