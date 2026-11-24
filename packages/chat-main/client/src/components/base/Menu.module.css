@@ -7,6 +7,8 @@
   z-index: 900;
   box-sizing: border-box;
   min-width: 124px;
+  max-width: min(340px, calc(100vw - 16px));
+  overflow: auto;
   padding: 4px;
   border-radius: 12px;
   background-color: var(--dsw-specific-menu);
@@ -19,6 +21,12 @@
 }
 
 .option {
+  font: inherit;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: start;
+  overflow-wrap: anywhere;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -30,9 +38,14 @@
   cursor: pointer;
   user-select: none;
 
-  &:hover {
+  &:hover, &:focus-visible {
     background-color: var(--dsw-alias-interactive-bg-hover);
   }
+}
+
+.option:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .icon {
@@ -43,7 +56,7 @@
 .danger {
   color: var(--dsw-alias-state-error-primary);
 
-  &:hover {
+  &:hover, &:focus-visible {
     background-color: var(--dsw-alias-interactive-bg-hover-danger);
   }
 }

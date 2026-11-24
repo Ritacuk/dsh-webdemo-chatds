@@ -86,6 +86,17 @@ The DeepSeek Demo-based default interface is kept, plus **free appearance settin
 
 The interface offers Chinese, English, and Japanese; switching the UI language does not translate existing chats.
 
+### 6. Data sharing between your own devices (opt-in)
+
+WebChat ships an optional **Data Sharing** plugin row. It is disabled by default and is separate from Main and Side Chat. Turn it on in the DSH plugin manager when you want to move selected chats between devices you own.
+
+- **A single device sync password.** Set a passphrase on the first device. On a second device, open **Data Sharing → Devices → Join existing devices**, choose the first device, and enter the same passphrase. Enable LAN connections on both devices and keep them on the same network for enrollment.
+- **Private chat sharing.** Devices authenticate with their own identities. LAN sessions use fresh X25519 exchanges. Cloud objects use one-time keys. The sync passphrase authenticates enrollment.
+- **Windows LAN permissions.** Use **Allow local devices to connect**. ChatDS grants access to its sync and discovery traffic on the Private profile for the local subnet. ChatDS can rebind its listener while DSH keeps running.
+- **Device removal.** Removing a device stops subsequent sharing with that device. Copies already downloaded stay on that device.
+
+See the [sharing setup and migration guide](docs/sharing-setup.md) for installation, password recovery and backup.
+
 ## Install
 
 ### What you need
@@ -107,7 +118,7 @@ After installing, enable **WebChat Main** — the **WebChat** entry appears on t
 ### Command-line install (web profile example)
 
 ```bash
-dsh plugin --profile web add dsh-webdemo-chatds@0.11.7
+dsh plugin --profile web add dsh-webdemo-chatds@0.12.1
 ```
 
 If your DSH uses a different profile (for example `desktop` on Windows Desktop), operate in that profile's plugin manager; do not treat `web` as the profile name for every platform.

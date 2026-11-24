@@ -1,4 +1,12 @@
 :root {
+  --chat-surface: var(--dsw-alias-bg-base);
+  --chat-surface-elevated: var(--dsw-specific-input-major);
+  --chat-surface-muted: var(--dsw-alias-interactive-bg-hover);
+  --chat-text-primary: var(--dsw-alias-label-primary);
+  --chat-text-secondary: var(--dsw-alias-label-secondary);
+  --chat-border: var(--dsw-alias-border-l2);
+  --chat-danger: var(--dsw-alias-state-error-primary);
+  --chat-control-radius: 10px;
   --message-list-max-width: 840px;
   --message-list-padding-horizontal: 44px;
 }
@@ -14,7 +22,7 @@ body {
   overflow: hidden;
   margin: 0;
   word-break: break-word;
-  font-family: var(--dsw-font-family);
+  font-family: var(--dsw-font-family), system-ui, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   font-size: var(--ds-font-size-m);
   color: var(--dsw-alias-label-primary);
   background-color: color-mix(in srgb, var(--dsw-alias-bg-base) calc(var(--chat-bg-alpha, 1) * 100%), transparent);

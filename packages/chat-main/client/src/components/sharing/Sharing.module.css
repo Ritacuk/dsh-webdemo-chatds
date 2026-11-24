@@ -1,0 +1,61 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  justify-content: center;
+}
+
+.source {
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.messageLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.picker,
+.excerpts,
+.excerpts article {
+  display: grid;
+  gap: 10px;
+}
+
+.picker fieldset {
+  padding: 8px 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+}
+
+.picker label {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-end: 12px;
+  gap: 6px;
+}
+
+.picker input,
+.messageLabel input {
+  accent-color: var(--chat-accent, var(--dsw-alias-brand-primary));
+}
+
+.excerpts article {
+  padding: 12px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 10px;
+  justify-items: start;
+}
+
+.excerpts p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow-y: auto;
+  margin: 0;
+}

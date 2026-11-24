@@ -47,6 +47,228 @@ window.__ModuleLoader__.load({
     }
     const STRINGS = {
       en: {
+        "操作完成": "Done",
+        "查看失败原因": "View details",
+        "本机设备": "This device",
+        "本机": "This device",
+        "设备类型未知": "Device type unknown",
+        "设备同步密码": "Device sync password",
+        "设置设备同步密码": "Set device sync password",
+        "修改同步密码": "Change sync password",
+        "确认密码": "Confirm password",
+        "保存同步密码": "Save sync password",
+        "两次输入的密码不同。": "The passwords do not match.",
+        "显示密码": "Show password",
+        "隐藏密码": "Hide password",
+        "已设置": "Set",
+        "尚未设置": "Not set",
+        "请使用至少 12 个字符。": "Use at least 12 characters.",
+        "长度合格。更长的易记短语更稳妥。": "A longer, memorable phrase is stronger.",
+        "已使用较长的密码。": "The password is long.",
+        "知道这个密码的人可以将新设备加入你的共享设备组，请勿随意分享。": "Anyone who knows this password can add a device to your group. Keep it private.",
+        "重设同步密码？其他设备需要使用新密码重新验证，已有聊天记录会保留。": "Reset the sync password? Other devices will need the new password to verify again. Existing chats will remain.",
+        "已加入的设备": "Joined devices",
+        "还没有其他已授权设备。": "There are no other authorized devices yet.",
+        "局域网在线": "Discovered on the LAN",
+        "未在局域网发现": "Not seen on the LAN",
+        "加入新设备": "Add a device",
+        "加入已有设备": "Join existing devices",
+        "选择要加入的设备": "Choose a device to join",
+        "验证并加入": "Verify and join",
+        "同步密码已保存。": "Sync password saved.",
+        "设备已加入。": "Device joined.",
+        "重新验证": "Verify again",
+        "需要重新验证": "Verification required",
+        "移除此设备": "Remove this device",
+        "打开局域网设置": "Open LAN settings",
+        "允许局域网设备连接本机": "Allow local devices to connect",
+        "自动发现": "Automatic discovery",
+        "未运行": "Inactive",
+        "安全状态": "Security status",
+        "端到端加密": "End-to-end encryption",
+        "设备授权": "Device authorization",
+        "密钥更新": "Key updates",
+        "自动管理": "Automatic",
+        "共享的聊天记录正在受到端到端加密保护。": "Shared chats are protected by end-to-end encryption.",
+        "查看已授权设备": "View authorized devices",
+        "备份与恢复": "Backup and recovery",
+        "备份数据": "Back up data",
+        "已下载备份。": "Backup downloaded.",
+        "备份已恢复。": "Backup restored.",
+        "请将两台设备连接到同一网络，并在已设置密码的设备上允许局域网连接。": "Connect both devices to the same network and allow LAN connections on the device that has the password.",
+        "暂未发现可加入的设备。确认两台设备的局域网连接已开启，再重新检测。": "No available devices yet. Allow LAN connections on both devices and check again.",
+        "本次操作未能完成，已有聊天记录没有受到影响。你可以重试，或查看失败原因。": "The operation could not finish. Your chat history is safe. Try again or view details.",
+        '基本偏好': 'Preferences',
+        '聊天界面偏好': 'Chat preferences',
+        '隐私与清理': 'Privacy and cleanup',
+        '常规设置': 'General settings',
+        '概览': 'Overview',
+        '设备': 'Devices',
+        '高级设置': 'Advanced',
+        '数据共享设置': 'Data sharing settings',
+        '百度网盘': 'Baidu Netdisk',
+        '百度网盘同步（Beta）': 'Baidu Netdisk sync (Beta)',
+        '连接百度网盘': 'Connect Baidu Netdisk',
+        '断开百度网盘': 'Disconnect Baidu Netdisk',
+        '重新授权': 'Reauthorize',
+        '已连接': 'Connected',
+        '同步通道': 'Sync channels',
+        '应用目录': 'App folder',
+        '自动同步': 'Automatic sync',
+        '已关闭': 'Off',
+        '开启': 'On',
+        '关闭': 'Off',
+        '局域网可用': 'LAN ready',
+        '等待可用网络': 'Waiting for network',
+        '局域网同步暂不可用': 'LAN sync unavailable',
+        '待同步消息': 'Pending messages',
+        '待上传': 'Pending uploads',
+        '待下载': 'Pending downloads',
+        '最近同步': 'Last sync',
+        '重新检测网络': 'Recheck network',
+        '查看最近一次同步问题': 'View last sync issue',
+        '旧版网盘兼容设置': 'Legacy cloud providers',
+        '本机存储占用': 'Local storage',
+        '导入和导出仅操作 WebChat 聊天记录。DSH 原生聊天记录不受影响。': 'Import and export use WebChat history only. Your DSH chat history is unaffected.',
+        '授权后在百度网盘应用目录同步端到端加密的消息。': 'Sync end-to-end encrypted messages in the Baidu Netdisk app folder.',
+        '请在百度网盘开放平台创建支持设备码授权和应用目录读写的应用。各设备须使用同一应用并授权同一账号。': 'Register an app with device-code authorization and app-folder access. Authorize the same app and account on each device.',
+        '打开百度网盘开放平台': 'Open the developer platform',
+        '开放平台应用名称': 'Registered application name',
+        '获取授权码': 'Get device code',
+        '在百度页面输入授权码': 'Enter this code on Baidu',
+        '打开百度授权页面': 'Open Baidu authorization',
+        '等待百度网盘授权': 'Waiting for Baidu authorization',
+        '网络诊断': 'Network diagnostics',
+        '自动选择推荐网络': 'Automatically select recommended networks',
+        '恢复自动选择': 'Restore automatic selection',
+        '聊天缓存': 'Chat cache',
+        '清理缓存': 'Clear cache',
+        "基础设置": "Basics",
+        "本地文件管理": "Local file management",
+        "数据共享": "Data Sharing",
+        "数据共享已停用": "Data Sharing is disabled",
+        "数据共享已启用": "Data Sharing is enabled",
+        "读取数据共享状态失败": "Unable to load Data Sharing status",
+        "读取同步范围失败": "Unable to load the sharing scope",
+        "刷新共享状态": "Refresh sharing status",
+        "同步状态": "Sync status",
+        "正在同步…": "Synchronizing…",
+        "待发送 {count} 条": "{count} pending",
+        "尚未同步": "No synchronization yet",
+        "立即同步": "Sync now",
+        "局域网监听端口 {port}": "LAN listener port {port}",
+        "设备管理": "Devices",
+        "本机设备名称": "This device name",
+        "添加配对设备": "Pair a device",
+        "双方交换配对码，并从另一台设备核对显示的完整指纹。": "Exchange pairing codes on both devices and verify the full fingerprint on the other device.",
+        "本机配对码": "This device pairing code",
+        "对方配对码": "Other device pairing code",
+        "查看对方指纹": "Inspect fingerprint",
+        "输入对方设备显示的完整指纹": "Enter the full fingerprint shown on the other device",
+        "确认替换旧配对密钥": "Confirm replacement of the previous pairing key",
+        "确认配对": "Confirm pairing",
+        "局域网已发现": "Discovered on LAN",
+        "监听地址：{addresses}": "Listening on: {addresses}",
+        "无": "None",
+        "自动发现（mDNS）：": "Automatic discovery (mDNS): ",
+        "运行中": "running",
+        "不可用：{reason}": "unavailable: {reason}",
+        "同网段发现 {count} 台设备": "{count} device(s) found on this subnet",
+        "尚未发现其他设备。请确认两台设备在同一局域网，且组播/Bonjour 未被网络策略阻断。": "No other device found yet. Confirm both devices are on the same LAN and multicast/Bonjour is not blocked.",
+        "未找到私有局域网接口，当前只监听回环地址。请连接 Wi-Fi/以太网，或在下方显式选择网卡。": "No private LAN interface was found; only loopback is listening. Connect Wi-Fi/Ethernet or explicitly select an interface below.",
+        "此配置从旧版静态密钥协议迁移。所有设备都需要重新配对；旧配对密钥不再用于历史密文。": "This profile was migrated from the static-key protocol. Pair every device again; old pairing keys no longer decrypt historical ciphertext.",
+        "运行诊断": "Run diagnostics",
+        "诊断结果": "Diagnostics",
+        "接口：{addresses}": "Interfaces: {addresses}",
+        "Windows 防火墙最小权限命令": "Minimal Windows firewall command",
+        "复制防火墙命令": "Copy firewall command",
+        "已复制到剪贴板": "Copied to clipboard",
+        "复制失败，请手动选择文本": "Copy failed; select the text manually",
+        "附近设备（自动发现，不自动信任）": "Nearby devices (discovered, not trusted)",
+        "尚未发现设备。可展开下方「添加配对设备」手动填写地址。": "No device discovered yet. Expand “Pair a device” below to enter an address manually.",
+        "配对码 {code}": "Pairing code {code}",
+        "请求配对": "Request pairing",
+        "已配对": "Paired",
+        "已配对。请确认对方也完成配对。": "Paired. Confirm the other device completed pairing too.",
+        "已读取 {name} 的配对信息。请与对方屏幕核对配对码和完整指纹。": "Loaded pairing information for {name}. Compare the pairing code and full fingerprint on both screens.",
+        "对方设备：": "Other device: ",
+        "对方配对码：": "Other device pairing code: ",
+        "发现地址：{endpoint}": "Discovered at: {endpoint}",
+        "配对码：": "Pairing code: ",
+        "局域网网卡选择": "LAN interface selection",
+        "默认只使用物理私有网卡，排除回环、Docker/WSL/Hyper-V、Tailscale 和其他 VPN。显式勾选会覆盖默认排除。": "By default only physical private interfaces are used; loopback, Docker/WSL/Hyper-V, Tailscale and other VPNs are excluded. Explicit selection overrides the default exclusion.",
+        "显示默认排除的网卡": "Show excluded interfaces",
+        "提示：取消全部勾选会恢复默认网卡策略。": "Unchecking every interface restores the default interface policy.",
+        "虚拟网卡（默认排除）": "virtual adapter (excluded by default)",
+        "链路本地地址（默认排除）": "link-local address (excluded by default)",
+        "回环地址": "loopback address",
+        "公网地址（禁止）": "public address (not allowed)",
+        "运营商/VPN 地址（默认排除）": "carrier/VPN address (excluded by default)",
+        "未配置地址": "unconfigured address",
+        "Windows 防火墙与入站连接": "Windows firewall and inbound connections",
+        "已检测到 ChatDS Sync 入站规则。": "A ChatDS Sync inbound rule is present.",
+        "未检测到 ChatDS Sync 入站规则。": "No ChatDS Sync inbound rule was detected.",
+        "当前网络配置文件：{profile}": "Current network profile: {profile}",
+        "当前 DSH 进程未以管理员身份运行，请把命令粘贴到「以管理员身份运行」的 PowerShell。": "This DSH process is not elevated. Paste the command into an elevated PowerShell window.",
+        "添加最小权限防火墙规则": "Add minimal firewall rule",
+        "只允许本程序的 TCP 同步端口和 mDNS UDP 5353，仅限专用网络配置文件和本地子网。不会关闭防火墙。继续？": "Allow only this app's TCP sync port and mDNS UDP 5353, on the Private profile and the local subnet. The firewall is not disabled. Continue?",
+        "已添加最小权限防火墙规则。": "The minimal firewall rule was added.",
+        "未修改防火墙。": "The firewall was not changed.",
+        "规则只允许本程序的 TCP 同步端口和 mDNS，仅限 Private 配置文件和本地子网；可在 Windows 防火墙中随时删除。": "The rule allows only this app's TCP sync port and mDNS, on the Private profile and local subnet; remove it any time in Windows Firewall.",
+        "设备身份只用于认证，聊天密文使用一次性消息密钥。已接收消息的预密钥会被删除，因此当前身份密钥泄露不能解密历史密文。": "Device identity authenticates only. Chat ciphertext uses one-time message keys; received prekeys are deleted, so a current identity-key leak cannot decrypt historical messages.",
+        "可用预密钥 {available} 枚，已使用 {consumed} 枚。到达阈值时会自动补充并发布。": "{available} prekeys available, {consumed} used. More are generated and published when the floor is reached.",
+        "局域网未发现": "Not discovered on LAN",
+        "可选的局域网地址": "Optional LAN address",
+        "撤销设备": "Revoke device",
+        "撤销配对并停止向这台设备发送新数据？已下载的副本会保留。": "Revoke this device and stop sending new data? Existing downloaded copies remain.",
+        "同步通道": "Sync channels",
+        "局域网同步": "LAN synchronization",
+        "网盘同步": "Cloud synchronization",
+        "未配置": "Not configured",
+        "断开网盘": "Disconnect cloud storage",
+        "配置网盘": "Configure cloud storage",
+        "网盘服务": "Cloud provider",
+        "WebDAV 目录地址": "WebDAV collection address",
+        "用户名": "Username",
+        "密码或应用密码": "Password or app password",
+        "使用允许个人 Microsoft 帐户的公开客户端应用 ID。": "Use a public client application ID that accepts personal Microsoft accounts.",
+        "Microsoft 应用 ID": "Microsoft application ID",
+        "开始 OneDrive 授权": "Authorize OneDrive",
+        "打开 Microsoft 登录页面": "Open Microsoft sign-in",
+        "检查授权结果": "Check authorization",
+        "等待 Microsoft 授权": "Waiting for Microsoft authorization",
+        "同步范围": "Sharing scope",
+        "默认不共享历史。仅共享通过检查的聊天正文，省略附件、工具结果和隐藏内容。": "Sharing is off by default. Selected, eligible chat text can be shared. Attachments, tool output and hidden content are omitted.",
+        "全部会话": "All chats",
+        "选中分区": "Selected partitions",
+        "指定会话": "Specific chats",
+        "从本策略排除": "Exclude from this policy",
+        "排除分区或会话": "Excluded partitions or chats",
+        "接收设备": "Recipients",
+        "同步方式": "Synchronization mode",
+        "一次性共享": "One-time share",
+        "持续自动同步": "Continuous sync",
+        "预览共享范围": "Preview sharing scope",
+        "{count} 条消息，{blocked} 条被拦截，省略 {size} KiB 附件": "{count} messages, {blocked} blocked, {size} KiB of attachments omitted",
+        "确认共享": "Confirm sharing",
+        "已保存共享策略": "Sharing policy saved",
+        "全局禁止同步": "Global exclusions",
+        "分区、会话或消息 ID": "Partition, conversation or message IDs",
+        "策略与审计": "Policies and audit",
+        "撤销策略": "Revoke policy",
+        "停止执行这项共享策略？本机历史会保留。": "Stop applying this policy? Local history will remain.",
+        "查看策略记录": "View policy audit",
+        "自动同步范围变更": "Effective automatic scope changed",
+        "加密与恢复": "Encryption and recovery",
+        "备份包含共享密钥和接收记录。请保管口令，并只在替换同一台设备时恢复。": "The backup includes the sharing key and inbox. Keep the passphrase and restore only to replace this device.",
+        "导出加密备份": "Export encrypted backup",
+        "备份口令": "Backup passphrase",
+        "从备份恢复": "Restore backup",
+        "替换本机的共享身份和接收记录？恢复后需重新启用同步通道和策略。": "Replace the local sharing identity and inbox? Channels and policies will need to be enabled again.",
+        "无法读取备份": "Unable to read the backup",
+        "加密备份文件": "Encrypted backup file",
+        "轮换设备密钥": "Rotate device key",
+        "轮换密钥后需重新配对。已下载的数据仍保留。": "Devices must pair again after key rotation. Existing downloads remain.",
         '常规': 'General', '模型': 'Models', '提示词': 'Prompts', '用量与费用': 'Usage & cost',
         '插件与工具': 'Plugins & tools', '文件': 'Files', '数据管理': 'Data', '外观': 'Appearance',
         'ChatDS 设置': 'ChatDS settings', '设置': 'Settings', '重试': 'Retry',
@@ -126,6 +348,10 @@ window.__ModuleLoader__.load({
         '当前环境使用纯色背景。': 'This environment falls back to solid backgrounds.',
         '正文字号': 'Reading font size', '阅读宽度': 'Reading width', '跟随风格': 'Follow style', '较窄': 'Narrower', '较宽': 'Wider',
         '主题强调色': 'Accent color', '应用于发送按钮、用户气泡与链接。': 'Applied to the send button, user bubbles and links.',
+        '侧边栏标题': 'Sidebar title', '显示在聊天列表上方。留空使用 WebChat。': 'Shown above the chat list. Leave blank to use WebChat.',
+        '标题字号': 'Title font size', '标题颜色': 'Title color', '标题字重': 'Title weight',
+        '常规字重': 'Regular', '中等字重': 'Medium', '半粗体': 'Semibold', '粗体': 'Bold',
+        '沿用主题色': 'Use accent color', '恢复默认标题': 'Reset sidebar title',
         '背景透明度': 'Background opacity', '降低后可透出 DSH 桌面/窗口背景。': 'Lower it to let the DSH desktop or window show through.',
         '浮动面板透明度': 'Panel opacity', '弹窗与菜单。': 'Dialogs and menus.', '输入框透明度': 'Composer opacity',
         '布局密度': 'Layout density', '紧凑': 'Compact', '标准': 'Standard', '宽松': 'Relaxed',
@@ -157,6 +383,57 @@ window.__ModuleLoader__.load({
         'Rich 外部账本 ${cost}(合并合计 ${total})': 'Rich external ledger ${cost} (merged total ${total})',
       },
       ja: {
+        "操作完成": "完了しました",
+        "查看失败原因": "詳細を表示",
+        "本机设备": "このデバイス",
+        "本机": "このデバイス",
+        "设备类型未知": "デバイスの種類は不明です",
+        "设备同步密码": "デバイス同期パスワード",
+        "设置设备同步密码": "デバイス同期パスワードを設定",
+        "修改同步密码": "同期パスワードを変更",
+        "确认密码": "パスワードを確認",
+        "保存同步密码": "同期パスワードを保存",
+        "两次输入的密码不同。": "パスワードが一致しません。",
+        "显示密码": "パスワードを表示",
+        "隐藏密码": "パスワードを非表示",
+        "已设置": "設定済み",
+        "尚未设置": "未設定",
+        "请使用至少 12 个字符。": "12 文字以上で入力してください。",
+        "长度合格。更长的易记短语更稳妥。": "覚えやすい長めのフレーズが安全です。",
+        "已使用较长的密码。": "長いパスワードです。",
+        "知道这个密码的人可以将新设备加入你的共享设备组，请勿随意分享。": "このパスワードを知っている人はデバイスを追加できます。大切に保管してください。",
+        "重设同步密码？其他设备需要使用新密码重新验证，已有聊天记录会保留。": "同期パスワードを再設定しますか？ほかのデバイスでは新しいパスワードでの再認証が必要です。既存のチャットは保持されます。",
+        "已加入的设备": "参加済みのデバイス",
+        "还没有其他已授权设备。": "ほかの許可済みデバイスはありません。",
+        "局域网在线": "LAN で検出済み",
+        "未在局域网发现": "LAN で未検出",
+        "加入新设备": "デバイスを追加",
+        "加入已有设备": "既存のデバイスに参加",
+        "选择要加入的设备": "参加先のデバイスを選択",
+        "验证并加入": "認証して参加",
+        "同步密码已保存。": "同期パスワードを保存しました。",
+        "设备已加入。": "デバイスが参加しました。",
+        "重新验证": "再認証",
+        "需要重新验证": "再認証が必要",
+        "移除此设备": "このデバイスを削除",
+        "打开局域网设置": "LAN 設定を開く",
+        "允许局域网设备连接本机": "LAN 上のデバイスの接続を許可",
+        "自动发现": "自動検出",
+        "未运行": "停止中",
+        "安全状态": "セキュリティ状態",
+        "端到端加密": "エンドツーエンド暗号化",
+        "设备授权": "デバイスの認証",
+        "密钥更新": "鍵の更新",
+        "自动管理": "自動",
+        "共享的聊天记录正在受到端到端加密保护。": "共有したチャットはエンドツーエンド暗号化で保護されています。",
+        "查看已授权设备": "許可済みデバイスを表示",
+        "备份与恢复": "バックアップと復元",
+        "备份数据": "データをバックアップ",
+        "已下载备份。": "バックアップをダウンロードしました。",
+        "备份已恢复。": "バックアップを復元しました。",
+        "请将两台设备连接到同一网络，并在已设置密码的设备上允许局域网连接。": "両方のデバイスを同じネットワークに接続し、パスワードを設定したデバイスで LAN 接続を許可してください。",
+        "暂未发现可加入的设备。确认两台设备的局域网连接已开启，再重新检测。": "参加できるデバイスがありません。両方で LAN 接続を許可してから再検出してください。",
+        "本次操作未能完成，已有聊天记录没有受到影响。你可以重试，或查看失败原因。": "操作を完了できませんでした。チャット履歴は保持されています。再試行するか詳細を確認してください。",
         '常规': '一般', '模型': 'モデル', '提示词': 'プロンプト', '用量与费用': '使用量と料金',
         '插件与工具': 'プラグインとツール', '文件': 'ファイル', '数据管理': 'データ管理', '外观': '外観',
         'ChatDS 设置': 'ChatDS 設定', '设置': '設定', '重试': '再試行',
@@ -401,8 +678,44 @@ window.__ModuleLoader__.load({
     }
 
     const chatDSSettingsStyles = `
-      .chatds-settings { display:grid; gap:20px; max-width:760px; min-width:0; font-size:14px; color:var(--dsw-alias-label-primary,CanvasText) }
-      .chatds-settings nav { display:flex; gap:4px; overflow:auto; white-space:nowrap; padding:2px; scrollbar-width:thin }
+      .chatds-settings {
+        --chat-surface:var(--dsw-alias-bg-base,Canvas);
+        --chat-surface-elevated:var(--dsw-specific-input-major,Canvas);
+        --chat-surface-muted:var(--dsw-alias-interactive-bg-hover,#8882);
+        --chat-text-primary:var(--dsw-alias-label-primary,CanvasText);
+        --chat-text-secondary:var(--dsw-alias-label-secondary,GrayText);
+        --chat-border:var(--dsw-alias-border-l2,#8885);
+        --chat-accent:var(--dsw-alias-brand-primary,#4164db);
+        --chat-switch-on:#3b64df;
+        --chat-switch-off:#626d7c;
+        --chat-danger:var(--dsw-alias-state-error-primary,#c33053);
+        --chat-radius:12px;
+        display:grid; gap:14px; max-width:880px; min-width:0; width:100%; box-sizing:border-box;
+        font:14px/1.5 system-ui,"Noto Sans CJK SC","Microsoft YaHei",sans-serif; color:var(--chat-text-primary);
+        padding-block:4px 16px; overflow-wrap:anywhere;
+      }
+      .chatds-settings nav { display:flex; flex-wrap:wrap; gap:4px; padding:3px; min-width:0 }
+      .chatds-settings-header { margin:0; font-weight:650; letter-spacing:-.015em }
+      .chatds-settings-subnav { margin-bottom:12px; border-bottom:1px solid var(--chat-border) }
+      .chatds-settings nav button[aria-pressed=true] { color:var(--chat-accent); font-weight:650 }
+      .chatds-settings [hidden] { display:none }
+      .chatds-settings .chatds-share-section[hidden] { display:none }
+      .chatds-settings .chatds-settings-group { padding-block:8px 16px }
+      .chatds-settings-group > :last-child { margin-block-end:0 }
+      .chatds-settings-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:10px; margin-block:10px }
+      .chatds-settings-summary > div { min-width:0; background:var(--chat-surface-muted); border-radius:var(--chat-radius); padding:13px }
+      .chatds-settings-summary dt { color:var(--chat-text-secondary); font-size:12px }
+      .chatds-settings-summary dd { font-weight:600; margin:3px 0 0 }
+      .chatds-share fieldset { min-width:0; margin:0 }
+      .chatds-share-actions { display:flex; flex-wrap:wrap; gap:8px }
+      .chatds-share details > summary { cursor:pointer }
+      .chatds-share details > summary:focus-visible { outline-offset:3px }
+      @media (max-width:560px) {
+        .chatds-settings-card { padding-inline:10px }
+        .chatds-settings .chatds-settings-row { flex-wrap:wrap; gap:7px }
+        .chatds-settings .chatds-settings-row > div:first-child { flex:1 0 100% }
+        .chatds-settings .chatds-settings-row select { max-width:100% }
+      }
       .chatds-settings button,.chatds-settings select,.chatds-settings input,.chatds-settings textarea { font:inherit; color:inherit; min-height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--dsw-alias-border-l2,#8884); background:var(--dsw-specific-input-major,Canvas); box-sizing:border-box }
       .chatds-settings textarea { padding:8px 10px; width:100%; min-height:96px; resize:vertical; line-height:1.5 }
       .chatds-settings nav button { background:transparent; border-color:transparent; flex:none }
@@ -417,12 +730,15 @@ window.__ModuleLoader__.load({
       .chatds-settings small { color:var(--dsw-alias-label-secondary,#777); font-size:12px }
       .chatds-settings select,.chatds-settings input[type=number],.chatds-settings input[type=search] { width:160px; max-width:46%; box-sizing:border-box }
       .chatds-settings button:disabled,.chatds-settings select:disabled,.chatds-settings input:disabled,.chatds-settings textarea:disabled { opacity:.55 }
-      .chatds-settings button.chatds-settings-switch { display:flex; flex:0 0 34px; min-height:20px; padding:2px; border:0; border-radius:999px; background:color-mix(in srgb, var(--dsw-alias-label-secondary,#858b97) 62%, Canvas); align-items:center }
-      .chatds-settings button.chatds-settings-switch[aria-checked=true] { background:var(--dsw-alias-brand-primary,#3b64ed) }
-      .chatds-settings-switch span { width:16px; height:16px; border-radius:50%; background:white; transition:transform 120ms ease }
-      .chatds-settings-switch[aria-checked=true] span { transform:translateX(14px) }
-      .chatds-settings button.chatds-settings-switch:focus-visible { outline:2px solid var(--dsw-alias-brand-primary,#3b64ed); outline-offset:2px }
-      .chatds-settings button.chatds-settings-switch[data-busy] span { animation:chatds-switch-busy 900ms ease-in-out infinite }
+      .chatds-settings button.chatds-settings-switch { display:inline-flex; flex:none; align-items:center; gap:8px; padding:5px 7px; background:transparent; min-height:36px; border-radius:8px; cursor:pointer }
+      .chatds-settings-switch .chatds-switch-track { display:flex; align-items:center; width:38px; height:22px; box-sizing:border-box; padding:3px; border-radius:20px; background:var(--chat-switch-off); }
+      .chatds-settings-switch[aria-checked=true] .chatds-switch-track { background:var(--chat-switch-on) }
+      .chatds-switch-thumb { width:16px; height:16px; border-radius:50%; background:#fff; transition:transform 120ms ease }
+      .chatds-settings-switch[aria-checked=true] .chatds-switch-thumb { transform:translateX(16px) }
+      .chatds-switch-state { min-width:2em; font-size:12px; text-align:start }
+      .chatds-settings button.chatds-settings-switch:focus-visible { outline:2px solid var(--chat-accent); outline-offset:2px }
+      .chatds-settings button.chatds-settings-switch[data-busy] .chatds-switch-thumb { animation:chatds-switch-busy 900ms ease-in-out infinite }
+      .chatds-settings button.chatds-settings-switch:disabled { cursor:default }
       @keyframes chatds-switch-busy { 0%,100% { opacity:1 } 50% { opacity:.45 } }
       .chatds-model-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 0; border-bottom:1px solid var(--dsw-alias-border-l2,#8884) }
       .chatds-model-toolbar input[type=search] { flex:1 1 140px; max-width:none }
@@ -431,7 +747,7 @@ window.__ModuleLoader__.load({
       .chatds-scope button[aria-pressed=true] { background:var(--dsw-alias-interactive-bg-hover,#8882); font-weight:600 }
       .chatds-model-group { padding:6px 0 }
       .chatds-model-group > button { background:transparent; border:0; width:100%; text-align:start; padding:8px 0; font-weight:600; display:flex; gap:8px; align-items:center }
-      .chatds-model-row { display:flex; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884); min-width:0 }
+      .chatds-model-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884); min-width:0 }
       .chatds-model-row:first-of-type { border-top:0 }
       .chatds-model-name { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
       .chatds-model-name small { color:var(--dsw-alias-label-secondary,#777); margin-left:6px; font-size:11px }
@@ -465,6 +781,26 @@ window.__ModuleLoader__.load({
       .chatds-range input[type=range] { width:150px; min-height:20px; padding:0; border:0; background:transparent; accent-color:var(--chat-accent, var(--dsw-alias-brand-primary,#3b64ed)) }
       .chatds-range small { min-width:64px; text-align:right }
       .chatds-settings input[type=color] { width:38px; height:28px; padding:2px; border-radius:8px }
+      .chatds-share { display:grid; gap:16px; min-width:0; overflow-wrap:anywhere }
+      .chatds-share-card,.chatds-share-feedback { display:grid; gap:10px; min-width:0; padding:14px 16px; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:10px }
+      .chatds-share-feedback { border-inline-start:3px solid var(--dsw-alias-brand-primary,#3b64ed); justify-items:start }
+      .chatds-share-feedback[data-error=true] { border-inline-start-color:#c44863 }
+      .chatds-share-feedback p { margin:0 }
+      .chatds-share-form-actions { flex-basis:100% }
+      .chatds-share-field select { width:100%; min-width:0 }
+      .chatds-share-devices { padding:0; margin:0; list-style:none; display:grid; gap:8px }
+      .chatds-share-devices li { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-width:0; padding-block:6px }
+      .chatds-share-devices li + li { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-share-section { display:grid; gap:10px; border-top:1px solid var(--dsw-alias-border-l2,#8884); padding-top:8px }
+      .chatds-share-section h3,.chatds-share-section p { margin:0 }
+      .chatds-share-section > button { justify-self:start }
+      .chatds-share-form { display:flex; flex-wrap:wrap; align-items:end; gap:8px; margin:8px 0 }
+      .chatds-share-field { display:grid; gap:4px; flex:1 1 180px; min-width:0 }
+      .chatds-share-field input { width:100%; min-width:0 }
+      .chatds-share-options { display:grid; gap:6px; max-height:180px; overflow:auto; padding:8px 12px; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px }
+      .chatds-share label:has(input[type=checkbox]) { display:flex; align-items:center; gap:6px }
+      .chatds-share input[type=checkbox] { min-height:16px; width:16px; accent-color:var(--dsw-alias-brand-primary,#3b64ed) }
+      .chatds-share-code { overflow-wrap:anywhere; color:var(--dsw-alias-label-secondary,#777) }
       @media (prefers-reduced-motion:reduce) { .chatds-settings-switch span { transition:none } }
     `
 
@@ -483,7 +819,10 @@ window.__ModuleLoader__.load({
     function Switch({ label, enabled, disabled, busy, onToggle }) {
       return h('button', { type: 'button', className: 'chatds-settings-switch', role: 'switch', 'aria-label': label,
         'aria-checked': enabled, 'aria-busy': busy === true || undefined, 'data-busy': busy === true || undefined,
-        disabled: disabled || busy === true, onClick: onToggle }, h('span', { 'aria-hidden': true }))
+        disabled: disabled || busy === true, onClick: onToggle },
+        h('span', { className: 'chatds-switch-track', 'aria-hidden': true }, h('span', { className: 'chatds-switch-thumb' })),
+        h('span', { className: 'chatds-switch-state', 'aria-hidden': true }, L(busy ? '正在处理…' : enabled ? '开启' : '关闭')))
+
     }
 
     // ── R8.6(P0):设置区错误边界。任何页面/插件条目渲染异常只降级自身区域, ──
@@ -693,6 +1032,7 @@ window.__ModuleLoader__.load({
     /** 设置窗口关闭后，在途保存继续。重新打开可重试上次失败的修改。 */
     function ChatDSSettings({ theme, openData, openPlugins, pickDirectory, openCostMeter }) {
       const [page, setPage] = React.useState('常规')
+      const [generalPage, setGeneralPage] = React.useState('基本偏好')
       const [settings, setSettings] = React.useState(null)
       const [error, setError] = React.useState(failedSave?.message ?? '')
       const [busy, setBusy] = React.useState(Boolean(pendingSave))
@@ -761,9 +1101,16 @@ window.__ModuleLoader__.load({
               void transact(retry, save)
             } }, L('重试')))
         : busy ? h(StatusLine, { key: 'status', state: { tone: 'pending', message: L('正在处理…') } }) : null
-      const pages = ['常规', '模型', '提示词', '用量与费用', '插件与工具', '文件', '数据管理', '外观']
+      const pages = ['常规', '模型', '提示词', '用量与费用', '插件与工具', '外观', '数据共享']
+      const generalGroups = ['基本偏好', '聊天界面偏好', '本地文件访问', '数据管理', '隐私与清理']
+      const general = (label, ...controls) => h('section', { key: label, hidden: generalPage !== label, className: 'chatds-settings-group' },
+        h('h2', null, L(label)), ...controls)
       const content = {
         常规: () => [
+          h('nav', { key: 'general-nav', className: 'chatds-settings-subnav', 'aria-label': L('常规设置') },
+            generalGroups.map((label) => h('button', { key: label, type: 'button', 'aria-pressed': generalPage === label,
+              onClick: () => setGeneralPage(label) }, L(label)))),
+          general('基本偏好',
           h(Row, { keyId: 'language', label: L('聊天界面语言'),
             children: h('select', { 'aria-label': L('聊天界面语言'), value: settings.interfaceLanguage, disabled: busy,
               onChange: (event) => { const value = event.target.value; syncUiLanguage(value); void transact(() => ({ interfaceLanguage: value })) } },
@@ -780,6 +1127,8 @@ window.__ModuleLoader__.load({
               : L('点击录音并确认转写后，音频会发送到已配置的 DeepSeek 接口，可能产生费用。'),
             children: Switch({ label: L('语音输入'), enabled: settings.enableVoiceInput, disabled: busy, busy,
               onToggle: () => void transact(() => ({ enableVoiceInput: !settings.enableVoiceInput })) }) }),
+          ),
+          general('聊天界面偏好',
           h(Row, { keyId: 'mode', label: L('默认模式'), description: L('用于新建聊天。'),
             children: h('select', { 'aria-label': L('默认模式'), value: settings.defaultMode, disabled: busy,
               onChange: (event) => { const mode = event.target.value; void transact(() => ({ defaultMode: mode })) } },
@@ -799,16 +1148,22 @@ window.__ModuleLoader__.load({
           h(Row, { keyId: 'steps', label: L('Plan 本地检索步数上限'), description: L('每次回复可调用只读工具的最大步数。'),
             children: h('input', { type: 'number', 'aria-label': L('Plan 本地检索步数上限'), min: 1, max: 20, key: settings.maxPlanSteps, defaultValue: settings.maxPlanSteps, disabled: busy,
               onBlur: (event) => { const steps = event.target.valueAsNumber; if (Number.isInteger(steps) && steps >= 1 && steps <= 20 && steps !== settings.maxPlanSteps) void transact(() => ({ maxPlanSteps: steps })) } }) }),
+          ),
+          general('隐私与清理',
           h(Row, { keyId: 'diagnostics', label: L('基础请求诊断'), description: L('把每轮请求/用量摘要写入 Host 日志(不含正文)。'),
             children: Switch({ label: L('基础请求诊断'), enabled: settings.requestDiagnostics === true, disabled: busy, busy,
               onToggle: () => void transact(() => ({ requestDiagnostics: !settings.requestDiagnostics })) }) }),
+          h(Row, { label: L('聊天缓存'), description: L('清除其他会话在此窗口中的临时缓存。历史、草稿和正在进行的聊天会保留。'),
+            children: h('button', { type: 'button', onClick: () => openData('clear-cache') }, L('清理缓存')) }),
+          h('p', null, L('可在会话菜单中移除单条会话。导入和导出位于「数据管理」。'))),
+          general('本地文件访问', h(FileAccess, { settings, busy, transact, pickDirectory })),
+          general('数据管理', h(DataSettings, { openData, active: generalPage === '数据管理' })),
         ],
         模型: () => h(ModelManager, { settings, busy, transact }),
         提示词: () => h(PromptManager, { settings, busy, transact }),
         用量与费用: () => h(CostManager, { settings, busy, transact, openCostMeter }),
         插件与工具: () => h(ToolManager, { openPlugins }),
-        文件: () => h(FileAccess, { settings, busy, transact, pickDirectory }),
-        数据管理: () => h(DataSettings, { openData }),
+        数据共享: () => h(SharingSettings, { openPlugins }),
         外观: () => h(AppearanceSettings, { settings, busy, transact, theme }),
       }
       return h('section', { className: 'chatds-settings', 'aria-busy': busy },
@@ -847,10 +1202,9 @@ window.__ModuleLoader__.load({
         return { path }
       }, (body) => apiSend('/api/file-access', 'POST', body))
       return [
-        h('h2', { key: 'title' }, L('本地文件访问')),
         h('p', { key: 'intro' }, L('仅允许 WebChat 访问你选择的文件夹。可以随时添加或移除。')),
         canPick && h('button', { key: 'add', type: 'button', disabled: busy, onClick: pickViaPicker }, L('＋ 添加文件夹')),
-        h('details', { key: 'manual', className: 'chatds-details' },
+        h('details', { key: 'manual', className: 'chatds-details', open: !canPick || undefined },
           h('summary', null, L('手动输入路径授权(无目录选择器的环境)')),
           h('div', { style: { display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 8 } },
             h('input', {
@@ -859,7 +1213,7 @@ window.__ModuleLoader__.load({
               'aria-label': L('授权文件夹绝对路径'),
               onChange: (event) => setManualPath(event.target.value),
               onKeyDown: (event) => { if (event.key === 'Enter' && manualPath.trim()) addManual() },
-              style: { flex: '1 1 260px', minWidth: 220 },
+              style: { flex: '1 1 260px', minWidth: 0 },
             }),
             h('button', { type: 'button', disabled: busy || !manualPath.trim(), onClick: addManual }, L('授权此文件夹'))),
           h('p', { style: { marginTop: 6 } }, L('Host 会校验路径存在且可读；软链接跳出目录的部分不可访问。'))),
@@ -868,8 +1222,9 @@ window.__ModuleLoader__.load({
           : h('p', { key: 'empty' }, L('还没有授权任何文件夹。添加后，开启本地检索即可搜索其中的文件。')),
         ...settings.authorizedDirs.map((path) => h(Row, {
           key: path, label: path.replace(/[\\\/]+$/, '').split(/[\\\/]/).pop() || path,
-          description: h(React.Fragment, null, path, h('br'), L('只读 · 包含子文件夹 · ') + ' ',
-            availability[path] === true ? L('可用') : availability[path] === false ? L('当前不可访问') : L('待检查')),
+          description: h(React.Fragment, null, L('只读 · 包含子文件夹 · ') + ' ',
+            availability[path] === true ? L('可用') : availability[path] === false ? L('当前不可访问') : L('待检查'),
+            h('details', { className: 'chatds-details' }, h('summary', null, L('查看位置')), path)),
           children: h('button', { type: 'button', disabled: busy, onClick: () => void transact(
             () => ({ path }), (body) => apiSend('/api/file-access', 'DELETE', body)) }, L('移除访问权限')),
         })),
@@ -881,8 +1236,22 @@ window.__ModuleLoader__.load({
       ]
     }
 
-    function DataSettings({ openData }) {
+    function DataSettings({ openData, active }) {
+      const [usage, setUsage] = React.useState()
+      React.useEffect(() => {
+        if (!active) return
+        let current = true
+        void apiGet('/api/local-data').then((value) => { if (current) setUsage(value) },
+          () => { if (current) setUsage(null) })
+        return () => { current = false }
+      }, [active])
+      const size = (bytes) => new Intl.NumberFormat(navigator.language, { maximumFractionDigits: 1 }).format(bytes / 1024 / 1024)
       return [
+        h(Row, { key: 'usage', label: L('本机存储占用'),
+          description: usage ? L('{count} 个会话 · 本地日志 {logs} MiB · 附件记录 {attachments} MiB', {
+            count: usage.sessions, logs: size(usage.logBytes), attachments: size(usage.attachmentBytes),
+          }) : L(usage === null ? '暂时无法读取存储占用' : '正在读取…') }),
+        h('p', { key: 'scope' }, L('导入和导出仅操作 WebChat 聊天记录。DSH 原生聊天记录不受影响。')),
         h(Row, { key: 'import', label: L('导入聊天记录'), description: L('从 ZIP 或会话 JSON 预览并合并导入。'),
           children: h('button', { onClick: () => openData('import') }, L('导入')) }),
         h(Row, { key: 'export', label: L('导出聊天记录'), description: L('选择会话下载 ZIP，或从单个会话下载 Markdown、JSON。'),
@@ -891,10 +1260,483 @@ window.__ModuleLoader__.load({
       ]
     }
 
+    function SharingSettings({ openPlugins }) {
+      const [page, setPage] = React.useState('同步状态')
+      const [baiduGrant, setBaiduGrant] = React.useState(null)
+      const [showBaiduSetup, setShowBaiduSetup] = React.useState(false)
+      const [status, setStatus] = React.useState(null)
+      const [scope, setScope] = React.useState({ partitions: [], sessions: [] })
+      const [busy, setBusy] = React.useState(false)
+      const [notice, setNotice] = React.useState('')
+      const [error, setError] = React.useState('')
+      const [passwordMode, setPasswordMode] = React.useState(null)
+      const [showPassword, setShowPassword] = React.useState(false)
+      const [passwordLength, setPasswordLength] = React.useState(0)
+      const [backupMode, setBackupMode] = React.useState(null)
+      const [retry, setRetry] = React.useState(null)
+      const [preview, setPreview] = React.useState(null)
+      const [audit, setAudit] = React.useState(null)
+      const [provider, setProvider] = React.useState('webdav')
+      const [graphGrant, setGraphGrant] = React.useState(null)
+      const [diagnosis, setDiagnosis] = React.useState(null)
+      const [selection, setSelection] = React.useState({
+        all: false, partitionIds: [], conversationIds: [], messageIds: [], branchIds: [], excludedIds: [],
+        recipientDeviceIds: [], syncMode: 'once', context: 'complete', attachmentPolicy: 'omit',
+      })
+      const cloudForm = React.useRef(null)
+      const enabled = status?.enabled === true
+      const discover = React.useCallback(async () => {
+        const response = await fetch(PAGE_PATH + '/api/sharing?view=settings', { cache: 'no-store', signal: AbortSignal.timeout(8000) })
+        if (response.status === 404) return { enabled: false }
+        if (!response.ok) throw new Error(L('读取数据共享状态失败'))
+        return await response.json()
+      }, [])
+      const post = async (command) => {
+        const response = await fetch(PAGE_PATH + '/api/sharing', {
+          method: 'POST', signal: AbortSignal.timeout(120000), headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(command),
+        })
+        const data = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(data.error?.message ?? L('读取数据共享状态失败'))
+        return data
+      }
+      const protectPassword = async ({ password, ...command }) => {
+        const subtle = globalThis.crypto?.subtle
+        if (!subtle) throw new Error(L('请从本机 DSH 或 HTTPS 页面输入同步密码。'))
+        const response = await fetch(PAGE_PATH + '/api/sharing?view=password-input',
+          { cache: 'no-store', signal: AbortSignal.timeout(8000) })
+        if (!response.ok) throw new Error(L('无法安全提交同步密码。'))
+        const { ticket, publicKey } = await response.json()
+        const decode = (value) => Uint8Array.from(atob(value.replace(/-/g, '+').replace(/_/g, '/')), (char) => char.charCodeAt(0))
+        const encode = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+        const rsa = await subtle.importKey('spki', decode(publicKey), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt'])
+        const key = await subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt'])
+        const iv = crypto.getRandomValues(new Uint8Array(12))
+        const encoder = new TextEncoder()
+        const secret = encoder.encode(password)
+        const rawKey = new Uint8Array(await subtle.exportKey('raw', key))
+        try {
+          const encrypted = new Uint8Array(await subtle.encrypt({ name: 'AES-GCM', iv, additionalData: encoder.encode(ticket) }, key, secret))
+          const wrapped = await subtle.encrypt({ name: 'RSA-OAEP' }, rsa, rawKey)
+          return { ...command, passwordBox: { ticket, key: encode(wrapped), iv: encode(iv),
+            tag: encode(encrypted.slice(-16)), cipher: encode(encrypted.slice(0, -16)) } }
+        } finally { secret.fill(0); rawKey.fill(0) }
+      }
+      React.useEffect(() => {
+        if (!notice) return
+        const timeout = setTimeout(() => setNotice(''), 4500)
+        return () => clearTimeout(timeout)
+      }, [notice])
+      React.useEffect(() => {
+        let active = true
+        const check = () => void discover().then((value) => {
+          if (!active) return
+          setStatus(value)
+          try {
+            const channel = new BroadcastChannel('chatds:sharing')
+            channel.postMessage('status')
+            channel.close()
+          } catch { /* Main also checks when its window receives focus. */ }
+        }).catch(() => { if (active) setError(L('读取数据共享状态失败')) })
+        check()
+        const timer = enabled ? setInterval(check, 8000) : undefined
+        window.addEventListener('focus', check)
+        return () => {
+          active = false
+          window.removeEventListener('focus', check)
+          if (timer !== undefined) clearInterval(timer)
+        }
+      }, [enabled, discover])
+      React.useEffect(() => {
+        if (!enabled) return
+        let active = true
+        void Promise.all([apiGet('/api/partitions'), apiGet('/api/sessions')]).then(([partitions, sessions]) => {
+          if (active) setScope({ partitions: partitions.partitions, sessions: sessions.sessions })
+        }).catch(() => { if (active) setError(L('读取同步范围失败')) })
+        return () => { active = false }
+      }, [enabled])
+      const run = async (command, applyResult = setStatus) => {
+        setBusy(true)
+        setError('')
+        setNotice('')
+        setRetry(null)
+        const privateInput = Object.hasOwn(command, 'password') || Object.hasOwn(command, 'config') || Object.hasOwn(command, 'application')
+        try {
+          const secure = command.action === 'set-sync-password' || command.action === 'join-with-password'
+          const value = await post(secure ? await protectPassword(command) : command)
+          if (applyResult === setStatus) setNotice(L('操作完成'))
+          applyResult(value)
+          if (value?.permissionError) {
+            setNotice('')
+            setError(value.permissionError)
+            setRetry(() => () => void run(command, applyResult))
+          }
+        } catch (reason) {
+          setError(reason.message)
+          if (!privateInput) setRetry(() => () => void run(command, applyResult))
+        } finally { setBusy(false) }
+      }
+      const field = (name, label, type = 'text', props = {}) => h('label', { className: 'chatds-share-field' },
+        h('span', null, L(label)), h('input', { name, type, autoComplete: 'off', ...props }))
+      const options = (key, title, entries) => entries.length > 0 && h('fieldset', { className: 'chatds-share-options' },
+        h('legend', null, L(title)),
+        entries.map(({ id, name }) => h('label', { key: id },
+          h('input', { type: 'checkbox', checked: selection[key].includes(id), disabled: busy,
+            onChange: (event) => {
+              const value = event.currentTarget.checked
+              setPreview(null)
+              setSelection((previous) => ({ ...previous, [key]: value ? [...previous[key], id] : previous[key].filter((item) => item !== id) }))
+            } }), name)))
+      const sections = {
+        同步状态: '概览', 设备管理: '设备', 同步通道: '同步通道', 同步范围: '同步范围',
+        加密与恢复: '加密与恢复', 高级设置: '高级设置',
+      }
+      const section = (title, ...children) => h('section', { className: 'chatds-share-section', hidden: page !== title },
+        h('h2', null, L(sections[title])), ...children)
+      const submit = (title) => h('button', { type: 'submit', disabled: busy }, L(title))
+      const button = (label, click, props) => h('button', { type: 'button', disabled: busy, onClick: click, ...props }, L(label))
+      const form = (onSubmit, ...controls) => h('form', { className: 'chatds-share-form', onSubmit: (event) => {
+        event.preventDefault()
+        onSubmit(new FormData(event.currentTarget), event.currentTarget)
+      } }, ...controls)
+      const genericError = '本次操作未能完成，已有聊天记录没有受到影响。你可以重试，或查看失败原因。'
+      const translatedError = (message) => {
+        if (/^Backup|decrypt|authentication tag/i.test(message)) return '无法打开备份，请检查文件和备份密码。'
+        if (/OneDrive|Baidu|WebDAV|cloud/i.test(message)) return '网盘操作未能完成，请检查连接和授权。'
+        if (/scope changed|Choose|No eligible/i.test(message)) return '请检查设备和聊天范围，再重新预览。'
+        if (/LAN|mDNS/i.test(message)) return '局域网连接暂不可用，请重新检测网络。'
+        return /[\u3400-\u9fff]/.test(message) ? message : genericError
+      }
+      const problem = error || status?.error
+      const result = problem || notice ? h('aside', { key: 'sharing-feedback', className: 'chatds-share-feedback', 'data-error': !!problem },
+        problem
+          ? h(React.Fragment, null, h('p', { role: 'alert' }, L(translatedError(problem))),
+            translatedError(problem) !== problem && h('details', null, h('summary', null, L('查看失败原因')), h('p', null, problem)),
+            retry && button('重试', retry))
+          : h('p', { role: 'status' }, notice)) : null
+      const reasonText = (reason) => ({
+        'virtual-adapter': L('虚拟网卡（默认排除）'), 'link-local': L('链路本地地址（默认排除）'),
+        'loopback': L('回环地址'), 'public': L('公网地址（禁止）'), 'carrier': L('运营商/VPN 地址（默认排除）'),
+        'unspecified': L('未配置地址'),
+      }[reason] ?? reason)
+      if (!enabled) return [
+        h(Row, { key: 'sharing-state', label: L('数据共享'), description: !status ? L('正在读取 ChatDS 设置…') : L('数据共享已停用'),
+          children: button('前往 DSH 插件管理器', openPlugins) }),
+        button('刷新共享状态', () => void discover().then(setStatus).catch(() => setError(L('读取数据共享状态失败')))),
+        result,
+      ]
+      const device = status.device
+      if (!device) return h('div', { className: 'chatds-share' }, result)
+      const peers = status.peers ?? []
+      const authorizedPeers = peers.filter((peer) => !peer.needsVerification)
+      const selectedDevices = selection.recipientDeviceIds.filter((id) => authorizedPeers.some((peer) => peer.id === id))
+      const lan = status.lanDetails
+      const discovered = status.devices ?? []
+      const interfaceCandidates = lan?.candidates ?? status.interfaces ?? []
+      const savedInterfaces = status.interfaceSelection ?? []
+      const grouped = new Map()
+      for (const candidate of interfaceCandidates) {
+        const entries = grouped.get(candidate.name) ?? []
+        grouped.set(candidate.name, [...entries, candidate])
+      }
+      const recommended = [...grouped].filter(([, entries]) => entries.some(({ eligible }) => eligible)).map(([name]) => name)
+      const selectedNames = savedInterfaces.length ? savedInterfaces : recommended
+      const toggleInterface = (name) => {
+        const next = selectedNames.includes(name) ? selectedNames.filter((value) => value !== name) : [...selectedNames, name]
+        void run({ action: 'lan-interfaces', interfaces: next })
+      }
+      const lanState = status.lanState ?? (lan?.loopbackOnly ? 'local-only' : status.lan ? 'ready' : 'off')
+      const lanLabel = { off: '已关闭', ready: '局域网可用', 'local-only': '等待可用网络', unavailable: '局域网同步暂不可用' }[lanState]
+      const firewall = status.firewall?.rulePresent !== undefined ? status.firewall : diagnosis?.firewall ?? status.firewall
+      const cloudName = { baidu: '百度网盘', webdav: 'WebDAV', onedrive: 'OneDrive' }[status.cloud?.provider]
+      const refreshBaidu = ({ phase }) => {
+        if (phase !== 'connected') { setNotice(L('等待百度网盘授权')); return }
+        setBaiduGrant(null)
+        setShowBaiduSetup(false)
+        void discover().then(setStatus).catch(() => setError(L('读取数据共享状态失败')))
+      }
+      const summaryCard = (label, value) => h('div', null, h('dt', null, L(label)), h('dd', null, value))
+      const card = (title, ...children) => h('div', { className: 'chatds-share-card' }, h('h3', null, L(title)), ...children)
+      const deviceType = (platform) => ({ win32: 'Windows', linux: 'Linux', darwin: 'macOS', android: 'Android' }[platform] ?? L('设备类型未知'))
+      const localPassword = !!status.passwordSet
+      const hasPassword = localPassword || !!status.joinedDevice
+      const openPassword = (mode) => {
+        setShowPassword(false)
+        setPasswordLength(0)
+        setPasswordMode(mode)
+      }
+      const passwordFields = (join, targets = []) => form((data, element) => {
+        const password = data.get('password')
+        if (!join && password !== data.get('confirmation')) {
+          setError(L('两次输入的密码不同。'))
+          return
+        }
+        const changing = !join && hasPassword
+        if (changing && !window.confirm(L('重设同步密码？其他设备需要使用新密码重新验证，已有聊天记录会保留。'))) return
+        element.reset()
+        setPasswordLength(0)
+        void run(join
+          ? { action: 'join-with-password', id: data.get('host'), name: data.get('name'), password }
+          : { action: 'set-sync-password', password, confirmed: changing }, (value) => {
+            setStatus(value)
+            setPasswordMode(null)
+            setNotice(L(join ? '设备已加入。' : '同步密码已保存。'))
+          })
+      },
+        join && h('label', { className: 'chatds-share-field' }, L('选择要加入的设备'),
+          h('select', { name: 'host', required: true, defaultValue: status.joinedDevice || targets[0]?.id },
+            targets.map((item) => h('option', { key: item.id, value: item.id }, item.name)))),
+        join && field('name', '本机设备名称', 'text', { required: true, maxLength: 64, defaultValue: device.name }),
+        field('password', '设备同步密码', showPassword ? 'text' : 'password',
+          { required: true, minLength: 12, maxLength: 256, autoComplete: join ? 'current-password' : 'new-password',
+            onInput: (event) => setPasswordLength(event.currentTarget.value.length) }),
+        !join && field('confirmation', '确认密码', showPassword ? 'text' : 'password',
+          { required: true, minLength: 12, maxLength: 256, autoComplete: 'new-password' }),
+        h('div', { className: 'chatds-share-actions chatds-share-form-actions' },
+          button(showPassword ? '隐藏密码' : '显示密码', () => setShowPassword(!showPassword), { 'aria-pressed': showPassword }),
+          submit(join ? '验证并加入' : '保存同步密码'),
+          button('取消', () => setPasswordMode(null))),
+        !join && h('small', { className: 'chatds-share-form-actions', 'aria-live': 'polite' },
+          L(passwordLength < 12 ? '请使用至少 12 个字符。' : passwordLength < 18 ? '长度合格。更长的易记短语更稳妥。' : '已使用较长的密码。')))
+      const passwordCard = () => card('设备同步密码',
+        h('p', null, L(hasPassword ? '已设置' : '尚未设置')),
+        h('p', null, L('知道这个密码的人可以将新设备加入你的共享设备组，请勿随意分享。')),
+        h('div', { className: 'chatds-share-actions' },
+          button(hasPassword ? '修改同步密码' : '设置设备同步密码', () => openPassword('set'))),
+        passwordMode === 'set' && passwordFields(false))
+      const targets = discovered.filter((item) => !item.paired || item.id === status.joinedDevice ||
+        peers.some((peer) => peer.id === item.id && peer.needsVerification))
+      const joinTargets = [...targets, ...peers.filter((peer) => peer.id === status.joinedDevice &&
+        peer.endpoint && !targets.some((item) => item.id === peer.id))]
+      const detectLan = () => { setDiagnosis(null); void run({ action: 'lan-recheck' }) }
+      const lanControls = () => card('局域网同步',
+        h(Row, { label: L('允许局域网设备连接本机'), description: L(lanLabel),
+          children: Switch({ label: L('允许局域网设备连接本机'), enabled: status.lanEnabled ?? status.lan,
+            disabled: busy, busy, onToggle: () => {
+              setDiagnosis(null)
+              void run({ action: 'lan-permission', enabled: !(status.lanEnabled ?? status.lan) })
+            } }) }),
+        h('p', null, L('自动发现') + ' · ' + L(status.discovery?.browsing ? '运行中' : '未运行')),
+        firewall?.supported && status.lanEnabled && firewall.profile && firewall.profile !== 'Private'
+          && h('p', null, L('Windows 仅允许专用网络上的设备连接。')),
+        firewall?.supported && status.lanEnabled && !firewall.rulePresent
+          && h('p', null, L('Windows 入站权限尚未确认。请重新检测网络。')),
+        firewall?.supported && !status.lanEnabled && firewall.ruleOwned
+          && button('重新撤销网络权限', () => void run({ action: 'lan-permission', enabled: false })),
+        h('div', { className: 'chatds-share-actions' }, button('重新检测网络', detectLan)))
+      return h('div', { className: 'chatds-share' },
+        h('nav', { className: 'chatds-settings-subnav', 'aria-label': L('数据共享设置') },
+          Object.entries(sections).map(([key, name]) => h('button', { key, type: 'button', 'aria-pressed': key === page, onClick: () => setPage(key) }, L(name)))),
+        section('同步状态',
+          h('dl', { className: 'chatds-settings-summary' },
+            summaryCard('数据共享', L('数据共享已启用')),
+            summaryCard('同步通道', cloudName ? L(lanState === 'ready' ? '局域网和 {cloud}' : '{cloud}', { cloud: L(cloudName) }) : L(lanLabel)),
+            summaryCard('待同步消息', status.running ? L('正在同步…') : String(status.pending ?? 0)),
+            summaryCard('最近同步', status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : L('尚未同步'))),
+          (lanState === 'unavailable' || lanState === 'local-only') && h('p', { role: 'status' }, L(lanLabel) + ' · ' + L('可重新检测网络，或在高级设置中查看原因。')),
+          h('div', { className: 'chatds-share-actions' },
+            button('立即同步', () => void run({ action: 'sync' })),
+            status.lanEnabled && button('重新检测网络', detectLan),
+            button('前往 DSH 插件管理器', openPlugins))),
+        section('设备管理',
+          card('本机设备',
+            h('p', null, deviceType(status.platform), ' · ', L('本机')),
+            form((data) => void run({ action: 'rename', name: data.get('name') }),
+              field('name', '本机设备名称', 'text', { defaultValue: device.name, maxLength: 64, required: true, key: device.name }),
+              submit('保存'))),
+          passwordCard(),
+          card('已加入的设备',
+            peers.length === 0 ? h('p', null, L('还没有其他已授权设备。')) :
+              h('ul', { className: 'chatds-share-devices' }, peers.map((peer) => h('li', { key: peer.id },
+                h('div', null, h('strong', null, peer.name),
+                  h('p', null, [deviceType(peer.platform), L(peer.needsVerification ? '需要重新验证' :
+                    peer.reachable ? '局域网在线' : '未在局域网发现'),
+                    peer.lastSyncAt ? new Date(peer.lastSyncAt).toLocaleString() : L('尚未同步')].join(' · '))),
+                button('移除此设备', () => {
+                  if (window.confirm(L('移除此设备并停止后续同步？已下载的历史副本会保留。若对方知道密码，请同时修改同步密码。'))) {
+                    void run({ action: 'revoke', id: peer.id, confirmed: true })
+                  }
+                }))))),
+          card('加入新设备',
+            h('p', null, L('请将两台设备连接到同一网络，并在已设置密码的设备上允许局域网连接。')),
+            status.joinedDevice && h('p', null, L('如果对方修改了密码，请使用新密码重新验证。')),
+            h('div', { className: 'chatds-share-actions' },
+              button(status.joinedDevice ? '重新验证' : '加入已有设备', () => openPassword('join')),
+              !status.lanEnabled && button('打开局域网设置', () => setPage('同步通道'))),
+            passwordMode === 'join' && (joinTargets.length ? passwordFields(true, joinTargets)
+              : h('p', { role: 'status' }, L('暂未发现可加入的设备。确认两台设备的局域网连接已开启，再重新检测。'))))),
+        section('同步通道',
+          lanControls(),
+          h(Row, { label: L('百度网盘同步（Beta）'),
+            description: status.baidu ? [L('已连接'), status.baidu.account].filter(Boolean).join(' · ')
+              : L('授权后在百度网盘应用目录同步端到端加密的消息。'),
+            children: button(status.baidu ? '重新授权' : '连接百度网盘', () => { setShowBaiduSetup(!showBaiduSetup); setBaiduGrant(null) }) }),
+          status.baidu && h(React.Fragment, null,
+            h('p', null, L('应用目录') + ' ', h('code', null, status.baidu.directory)),
+            h('dl', { className: 'chatds-settings-summary' },
+              summaryCard('待上传', status.baidu.pendingUploads ?? '—'),
+              summaryCard('待下载', status.baidu.pendingDownloads ?? '—'),
+              summaryCard('最近同步', status.baidu.lastSyncAt ? new Date(status.baidu.lastSyncAt).toLocaleString() : L('尚未同步'))),
+            h(Row, { label: L('自动同步'), children: Switch({ label: L('自动同步'), enabled: status.baidu.auto,
+              disabled: busy, busy, onToggle: () => void run({ action: 'baidu-auto', enabled: !status.baidu.auto }) }) }),
+            h('div', { className: 'chatds-share-actions' },
+              button('立即同步', () => void run({ action: 'sync' })),
+              button('断开百度网盘', () => {
+                if (window.confirm(L('从本机移除百度网盘授权？网盘文件会保留。'))) void run({ action: 'baidu-disconnect' })
+              })),
+            h('small', null, L('可在百度网盘的账号管理中解除该应用的授权。'))),
+          showBaiduSetup && !baiduGrant && h(React.Fragment, null,
+            h('p', null, L('请在百度网盘开放平台创建支持设备码授权和应用目录读写的应用。各设备须使用同一应用并授权同一账号。')),
+            h('a', { href: 'https://pan.baidu.com/union/', target: '_blank', rel: 'noopener noreferrer' }, L('打开百度网盘开放平台')),
+            form((data, element) => {
+              const application = { applicationName: data.get('applicationName'), appKey: data.get('appKey'), appSecret: data.get('appSecret') }
+              element.reset()
+              void run({ action: 'baidu-start', application }, setBaiduGrant)
+            }, field('applicationName', '开放平台应用名称', 'text', { required: true, maxLength: 80 }),
+            field('appKey', 'App Key', 'text', { required: true, maxLength: 128 }),
+            field('appSecret', 'App Secret', 'password', { required: true, maxLength: 256 }), submit('获取授权码'))),
+          showBaiduSetup && baiduGrant && h('div', { className: 'chatds-share-actions' },
+            h('p', null, L('在百度页面输入授权码'), ' ', h('code', null, baiduGrant.userCode)),
+            h('a', { href: baiduGrant.verificationUri, target: '_blank', rel: 'noopener noreferrer' }, L('打开百度授权页面')),
+            button('检查授权结果', () => void run({ action: 'baidu-poll' }, refreshBaidu)),
+            button('取消', () => void run({ action: 'baidu-cancel' }, () => setBaiduGrant(null))))),
+        section('高级设置',
+          h('details', null,
+            h('summary', null, L('局域网网卡选择')),
+            h('p', null, L(savedInterfaces.length ? '正在使用手动选择的网卡' : '自动选择推荐网络')),
+            savedInterfaces.length > 0 && button('恢复自动选择', () => void run({ action: 'lan-interfaces', interfaces: [] })),
+            h('ul', { className: 'chatds-share-devices' }, [...grouped].map(([name, entries]) => h('li', { key: name },
+              h('label', null, h('input', { type: 'checkbox', checked: selectedNames.includes(name),
+                disabled: busy || !entries.some(({ scope }) => scope === 'private' || scope === 'unique-local'),
+                onChange: () => toggleInterface(name) }), name, ' · ', L(recommended.includes(name) ? '推荐网卡' : '其他网卡')),
+              h('small', null, entries.map(({ family, address, reason }) => family + ' ' + address + (reason ? ' · ' + reasonText(reason) : '')).join(' / ')))))),
+          h('details', null, h('summary', null, L('网络诊断')),
+            lan && h('p', null, L('局域网监听端口 {port}', { port: status.lanPort ?? '—' }), ' · ',
+              L('自动发现（mDNS）：') + (status.discovery?.error ? status.discovery.error : L('运行中'))),
+            button('运行诊断', () => void run({ action: 'diagnose' }, setDiagnosis)),
+            diagnosis?.hints?.map((hint) => h('p', { key: hint }, hint))),
+          firewall?.supported && h('details', null, h('summary', null, L('Windows 防火墙与入站连接')),
+            h('p', null, L('规则仅允许本程序在专用网络上接收本地子网的 TCP 同步连接。')),
+            firewall.profile && h('p', null, L('当前网络配置文件：{profile}', { profile: firewall.profile })),
+            h('p', null, L(firewall.rulePresent ? '已确认入站规则' : '未确认入站规则')),
+            firewall.hint && h('p', null, L(translatedError(firewall.hint)))),
+          peers.length > 0 && h('details', null, h('summary', null, L('手动连接地址')),
+            peers.map((peer) => form((data) => void run({ action: 'endpoint', id: peer.id, endpoint: data.get('endpoint') || null }),
+              field('endpoint', peer.name, 'url', { defaultValue: peer.endpoint ?? '', placeholder: 'http://192.168.1.23:46830' }),
+              submit('保存')))),
+          h('details', null, h('summary', null, L('旧版网盘兼容设置')),
+            status.cloud && status.cloud.provider !== 'baidu' && h(Row, { label: cloudName, description: L('已连接'),
+              children: button('断开网盘', () => void run({ action: 'cloud', config: null })) }),
+            h('form', { className: 'chatds-share-form', ref: cloudForm, onSubmit: (event) => {
+              event.preventDefault()
+              const values = new FormData(event.currentTarget)
+              if (provider !== 'webdav') return
+              const config = { provider, url: values.get('url'), username: values.get('username'), password: values.get('password') }
+              void run({ action: 'cloud', config }, (value) => { setStatus(value); cloudForm.current?.reset() })
+            } },
+            h('label', { className: 'chatds-share-field' }, L('网盘服务'),
+              h('select', { value: provider, onChange: (event) => setProvider(event.target.value) },
+                h('option', { value: 'webdav' }, 'WebDAV'), h('option', { value: 'onedrive' }, 'OneDrive'))),
+            provider === 'webdav' && h(React.Fragment, null,
+              field('url', 'WebDAV 目录地址', 'url', { required: true }),
+              field('username', '用户名', 'text', { required: true }),
+              field('password', '密码或应用密码', 'password', { required: true }),
+              submit('保存'))),
+            provider === 'onedrive' && h('div', null,
+              h('p', null, L('使用允许个人 Microsoft 帐户的公开客户端应用 ID。')),
+              form((data) => void run({ action: 'onedrive-start', clientId: data.get('clientId') }, setGraphGrant),
+                field('clientId', 'Microsoft 应用 ID', 'text', { required: true, maxLength: 36 }), submit('开始 OneDrive 授权')),
+              graphGrant && h('div', null,
+                h('p', null, h('a', { href: graphGrant.verificationUri, target: '_blank', rel: 'noopener noreferrer' },
+                  L('打开 Microsoft 登录页面')), ' · ', h('code', null, graphGrant.userCode)),
+                button('检查授权结果', () => void run({ action: 'onedrive-poll' }, ({ phase }) => {
+                  if (phase !== 'connected') { setNotice(L('等待 Microsoft 授权')); return }
+                  setGraphGrant(null); void discover().then(setStatus).catch((reason) => setError(reason.message))
+                })),
+                button('取消', () => void run({ action: 'onedrive-cancel' }, () => setGraphGrant(null))))))),
+        section('同步范围',
+          h('p', null, L('仅共享选中的聊天正文。导入历史需要单独选中会话。附件、工具结果和隐藏内容留在本机。')),
+          h('label', null, h('input', { type: 'checkbox', checked: selection.all, disabled: busy, onChange: (event) => {
+            setSelection({ ...selection, all: event.target.checked }); setPreview(null)
+          } }), L('全部会话')),
+          options('partitionIds', '选中分区', scope.partitions),
+          h('details', null, h('summary', null, L('指定会话')),
+            options('conversationIds', '指定会话', scope.sessions.map((session) => ({ id: session.id, name: session.title })))),
+          h('details', null, h('summary', null, L('从本策略排除')),
+            options('excludedIds', '排除分区或会话', [...scope.partitions, ...scope.sessions.map((session) => ({ id: session.id, name: session.title }))])),
+          options('recipientDeviceIds', '接收设备', authorizedPeers),
+          h('label', { className: 'chatds-share-field' }, L('同步方式'), h('select', { disabled: busy, value: selection.syncMode, onChange: (event) => {
+            setSelection({ ...selection, syncMode: event.target.value }); setPreview(null)
+          } }, h('option', { value: 'once' }, L('一次性共享')), h('option', { value: 'automatic' }, L('持续自动同步')))),
+          button('预览共享范围', () => void run({ action: 'preview', selection: { ...selection, recipientDeviceIds: selectedDevices } }, setPreview), {
+            disabled: busy || !selectedDevices.length || (!selection.all && !selection.partitionIds.length && !selection.conversationIds.length),
+          }),
+          preview && h('div', null,
+            h('p', null, L('{count} 条消息，{blocked} 条被拦截，省略 {size} KiB 附件', {
+              count: preview.messageCount, blocked: preview.blocked, size: Math.ceil(preview.attachmentBytesOmitted / 1024),
+            })),
+            button('确认共享', () => void run({ action: 'save-policy', selection: { ...selection, recipientDeviceIds: selectedDevices }, confirmation: preview.confirmation }, (value) => {
+              setStatus(value); setPreview(null); setNotice(L('已保存共享策略'))
+            }))),
+          h('details', null, h('summary', null, L('全局禁止同步')),
+            form((data) => void run({ action: 'exclude', ids: String(data.get('ids')).split(/[\s,]+/).filter(Boolean) }),
+              field('ids', '分区、会话或消息 ID', 'text', { defaultValue: status.exclusions?.join(' ') ?? '', key: status.exclusions?.join(' ') }),
+              submit('保存'))),
+          h('details', null, h('summary', null, L('策略与审计')),
+            (status.policies ?? []).map((policy) => h(Row, { key: policy.policyId,
+              label: L(policy.syncMode === 'automatic' ? '持续自动同步' : '一次性共享'),
+              description: '#' + policy.policyVersion + ' · ' + policy.recipientDeviceIds.map((id) => peers.find((peer) => peer.id === id)?.name ?? id).join(', '),
+              children: button('撤销策略', () => {
+                if (window.confirm(L('停止执行这项共享策略？本机历史会保留。'))) void run({ action: 'remove-policy', id: policy.policyId })
+              }) })),
+            button('查看策略记录', () => void run({ action: 'audit' }, setAudit)),
+            audit && h('ol', null, audit.map((entry) => h('li', { key: entry.version },
+              '#' + entry.version, ' · ', new Date(entry.at).toLocaleString(), ' · ', L({ save: '保存', remove: '撤销策略', exclude: '全局禁止同步', scope: '自动同步范围变更' }[entry.action])))))),
+        section('加密与恢复',
+          card('安全状态',
+            h('p', null, L('共享的聊天记录正在受到端到端加密保护。')),
+            h('dl', { className: 'chatds-settings-summary' },
+              summaryCard('端到端加密', L('已开启')), summaryCard('设备同步密码', L(hasPassword ? '已设置' : '尚未设置')),
+              summaryCard('设备授权', L(peers.some((peer) => peer.needsVerification) ? '需要重新验证' : '正常')),
+              summaryCard('密钥更新', L('自动管理'))),
+            h('div', { className: 'chatds-share-actions' },
+              button(hasPassword ? '修改同步密码' : '设置设备同步密码', () => { setPage('设备管理'); openPassword('set') }),
+              button('查看已授权设备', () => setPage('设备管理')))),
+          card('备份与恢复',
+            h('p', null, L('备份保存本机的共享设置和接收记录。请单独保管备份密码，并在替换本机时恢复。')),
+            h('p', null, L('忘记同步密码时，可以在可信设备上重设，或用备份密码恢复。两者都没有时，无法找回原来的共享密钥。')),
+            h('div', { className: 'chatds-share-actions' },
+              button('备份数据', () => setBackupMode(backupMode === 'export' ? null : 'export')),
+              button('从备份恢复', () => setBackupMode(backupMode === 'restore' ? null : 'restore'))),
+          backupMode === 'export' &&
+            form((data, element) => void run({ action: 'backup', password: data.get('password') }, ({ backup }) => {
+              const url = URL.createObjectURL(new Blob([backup], { type: 'application/json' }))
+              const link = document.createElement('a')
+              link.href = url; link.download = 'chatds-sharing-backup.json'; link.click()
+              setTimeout(() => URL.revokeObjectURL(url), 1000)
+              element.reset()
+              setBackupMode(null)
+              setNotice(L('已下载备份。'))
+            }), field('password', '备份口令', 'password', { minLength: 12, required: true }), submit('导出加密备份')),
+          backupMode === 'restore' &&
+            form((data, element) => {
+              const file = data.get('backup')
+              if (!(file instanceof File) || file.size > 17 * 1024 * 1024) return
+              if (!window.confirm(L('替换本机的共享身份和接收记录？恢复后需重新启用同步通道和策略。'))) return
+              void file.text().then((backup) => run({ action: 'restore', password: data.get('password'), backup, confirmed: true }, (value) => {
+                setStatus(value); element.reset(); setBackupMode(null); setNotice(L('备份已恢复。'))
+              })).catch(() => setError(L('无法读取备份')))
+            }, field('backup', '加密备份文件', 'file', { required: true, accept: '.json' }),
+            field('password', '备份口令', 'password', { minLength: 12, required: true }), submit('从备份恢复'))),
+        ), result)
+
+    }
+
     // ── R8.6(七):自由外观设置——单一默认布局 + 颜色/透明度/尺寸/密度直接可调。 ──
 
     /** 外观恢复默认补丁(null = Host 端清除该字段,回落官方 demo 默认观感)。 */
+    const sidebarTitleResetPatch = { sidebarTitle: null, sidebarTitleSize: null, sidebarTitleColor: null, sidebarTitleWeight: null }
     const appearanceResetPatch = {
+      ...sidebarTitleResetPatch,
       appearanceAccent: null, appearanceBgAlpha: null, appearancePanelAlpha: null, appearanceComposerAlpha: null,
       appearanceLineHeight: null, appearanceRadius: null, appearanceDensity: null, appearanceComposerWidth: null,
     }
@@ -934,6 +1776,41 @@ window.__ModuleLoader__.load({
             settings.appearanceAccent
               ? h('button', { type: 'button', disabled: busy, onClick: () => void transact(() => ({ appearanceAccent: null })) }, L('跟随 DSH'))
               : h('small', null, L('跟随 DSH'))) }),
+        h(Row, { key: 'sidebarTitle', label: L('侧边栏标题'), description: L('显示在聊天列表上方。留空使用 WebChat。'),
+          children: h('input', { type: 'text', 'aria-label': L('侧边栏标题'), placeholder: 'WebChat', maxLength: 80, disabled: busy,
+            defaultValue: settings.sidebarTitle ?? '', key: settings.sidebarTitle ?? '',
+            onBlur: (event) => {
+              const title = event.currentTarget.value.trim()
+              event.currentTarget.value = title
+              if (title !== (settings.sidebarTitle ?? '')) void transact(() => ({ sidebarTitle: title || null }))
+            },
+            onKeyDown: (event) => {
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
+                event.preventDefault()
+                event.currentTarget.blur()
+              }
+            } }) }),
+        RangeRow({ keyId: 'sidebarTitleSize', label: L('标题字号'), min: 12, max: 32, step: 1,
+          value: settings.sidebarTitleSize, defaultValue: 20, format: (v) => v + ' px', disabled: busy,
+          onCommit: (v) => void transact(() => ({ sidebarTitleSize: v === 20 ? null : v })) }),
+        h(Row, { key: 'sidebarTitleColor', label: L('标题颜色'),
+          children: h('span', { style: { display: 'flex', gap: 8, alignItems: 'center' } },
+            h('input', { type: 'color', 'aria-label': L('标题颜色'), disabled: busy,
+              defaultValue: settings.sidebarTitleColor ?? settings.appearanceAccent ?? '#3b64ed',
+              key: settings.sidebarTitleColor ?? settings.appearanceAccent ?? 'default',
+              ref: (el) => { if (el) el.onchange = (event) => void transact(() => ({ sidebarTitleColor: event.target.value })) } }),
+            settings.sidebarTitleColor
+              ? h('button', { type: 'button', disabled: busy, onClick: () => void transact(() => ({ sidebarTitleColor: null })) }, L('沿用主题色'))
+              : h('small', null, L('沿用主题色'))) }),
+        h(Row, { key: 'sidebarTitleWeight', label: L('标题字重'),
+          children: h('select', { 'aria-label': L('标题字重'), value: settings.sidebarTitleWeight ?? 600, disabled: busy,
+            onChange: (event) => {
+              const weight = Number(event.currentTarget.value)
+              void transact(() => ({ sidebarTitleWeight: weight === 600 ? null : weight }))
+            } }, [[400, '常规字重'], [500, '中等字重'], [600, '半粗体'], [700, '粗体']].map(([key, label]) =>
+              h('option', { key, value: key }, L(label)))) }),
+        h(Row, { key: 'sidebarTitleReset', label: L('恢复默认标题'),
+          children: h('button', { type: 'button', disabled: busy, onClick: () => void transact(() => sidebarTitleResetPatch) }, L('恢复默认标题')) }),
         alphaRow('appearanceBgAlpha', L('背景透明度'), L('降低后可透出 DSH 桌面/窗口背景。')),
         alphaRow('appearancePanelAlpha', L('浮动面板透明度'), L('弹窗与菜单。')),
         alphaRow('appearanceComposerAlpha', L('输入框透明度'), null),
@@ -1049,10 +1926,8 @@ window.__ModuleLoader__.load({
             entry.capability.nativeSearch ? h('span', { className: 'chatds-chip' }, L('联网')) : null,
             isDefault(entry) ? h('span', { className: 'chatds-chip', 'data-tone': 'brand' }, L('默认')) : null,
             h('button', { type: 'button', className: 'chatds-mini', disabled: busy || isDefault(entry), onClick: () => void transact(() => ({ defaultModel: { channel: entry.channel, provider: entry.provider, model: entry.model } })) }, L('设为默认')),
-            h('button', { type: 'button', className: 'chatds-settings-switch', role: 'switch', 'aria-label': L('启用 {name}', { name: entry.name }),
-              'aria-checked': isAllowed(entry), disabled: busy || !whitelistMode,
-              style: { opacity: whitelistMode ? 1 : 0.4 },
-              onClick: () => void transact(() => toggleWhitelist(entry)) }, h('span', { 'aria-hidden': true })))),
+            Switch({ label: L('启用 {name}', { name: entry.name }), enabled: isAllowed(entry), disabled: !whitelistMode, busy,
+              onToggle: () => void transact(() => toggleWhitelist(entry)) }))),
         )),
         extra,
       ]
@@ -1492,7 +2367,9 @@ window.__ModuleLoader__.load({
             }
             close?.()
           }, openPlugins: () => { close?.(); ctx.layout.selectPanel('plugins') } })))))
-        safeRegister('settings.launcher', () => ctx.slots.inject('settings.launcher', () => ctx.slots.register({ name: 'settings.launcher' }, SettingsLauncher)))
+        // Account-enabled DSH profiles register their own launcher at priority 0.
+        safeRegister('settings.launcher', () => ctx.slots.inject('settings.launcher', () =>
+          ctx.slots.register({ name: 'settings.launcher', priority: -1 }, SettingsLauncher)))
         // 全局主面板:key 与导航行 id 相同,侧栏选择后由 layout 渲染本组件。
         safeRegister('main', () => ctx.slots.inject('main', () =>
           ctx.slots.register({ name: 'main', key: PANEL_ID }, Panel)))

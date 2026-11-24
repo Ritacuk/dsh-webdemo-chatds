@@ -1,5 +1,5 @@
 /** WebChat ZIP backups and compatible v3 history import through the DSH Session writer. */
-import { zipSync, strFromU8, strToU8 } from 'fflate'
+import { zipSync, strToU8 } from 'fflate'
 import { readArchive, readEntry, skipEntry } from './archive-zip.js'
 import { unlink } from 'node:fs/promises'
 import { createHash, randomUUID } from 'node:crypto'
@@ -38,8 +38,11 @@ const MANIFEST_PATH = 'manifest.json'
 const INDEX_PATH = 'chat_session_index.json'
 const SESSION_DIR = 'chat_sessions/'
 const MAX_ARCHIVE_BYTES = 64 * 1024 * 1024
+const MAX_EXPORT_SESSIONS = 200
+export const MAX_IMPORT_ARCHIVE_BYTES = 256 * 1024 * 1024
+const MAX_IMPORT_EXPANDED_BYTES = 256 * 1024 * 1024
+const MAX_IMPORT_SESSIONS = 1_000
 const MAX_MESSAGES_PER_SESSION = 5_000
-const MAX_IMPORT_SESSIONS = 200
 
 const iso = (ms: number) => new Date(ms).toISOString()
 
@@ -240,7 +243,7 @@ function tryReadStoredFile(record: AttachmentRecord): Buffer | undefined {
 }
 
 export function exportSessionsZip(files: readonly ExportSessionFile[], assets: ArchiveAssets = new Map()): Uint8Array {
-  if (!files.length || files.length > MAX_IMPORT_SESSIONS) throw new Error('请选择 1 至 200 个会话。')
+  if (!files.length || files.length > MAX_EXPORT_SESSIONS) throw new Error('请选择 1 至 200 个会话。')
   const entries: Record<string, Uint8Array> = {
     [MANIFEST_PATH]: strToU8(JSON.stringify({ export_format_version: EXPORT_FORMAT_VERSION, webchat_archive_version: 1 })),
   }
@@ -278,6 +281,8 @@ export interface ImportPreviewEntry {
   messageCount: number
   attachmentCount: number
   retainedAttachmentCount: number
+  missingAttachmentCount: number
+  unsupportedFragmentCount: number
   insertedAt: string
   updatedAt: string
 }
@@ -302,19 +307,21 @@ interface ParsedSession {
   assets: ArchiveAssets
 }
 
-/** 解析归档字节(ZIP 或单会话 JSON),严格校验;不写盘。 */
-export async function parseArchive(bytes: Uint8Array): Promise<{ preview: ImportPreview; sessions: ParsedSession[] }> {
-  if (bytes.byteLength > MAX_ARCHIVE_BYTES) {
-    throw new Error(`归档超过大小上限(${Math.round(MAX_ARCHIVE_BYTES / 1024 / 1024)} MB)。`)
+/** 解析 ZIP 或会话 JSON。上传的 ZIP 由文件支持的 Blob 按需分块读取。 */
+export async function parseArchive(input: Blob | Uint8Array): Promise<{ preview: ImportPreview; sessions: ParsedSession[] }> {
+  const size = input instanceof Blob ? input.size : input.byteLength
+  if (size > MAX_IMPORT_ARCHIVE_BYTES) {
+    throw new Error(`归档超过大小上限(${MAX_IMPORT_ARCHIVE_BYTES / 1024 / 1024} MiB)。`)
   }
+  const blob = input instanceof Blob ? input : new Blob([new Uint8Array(input)])
+  const header = new Uint8Array(await blob.slice(0, 4).arrayBuffer())
   let manifest: { export_format_version?: unknown; webchat_archive_version?: unknown } | undefined
   const sessionRecords: { path: string; value: unknown }[] = []
   const assets: ArchiveAssets = new Map()
   const skipped: ImportPreview['skipped'] = []
-  const isZip = bytes.length > 4 && bytes[0] === 0x50 && bytes[1] === 0x4b
+  const isZip = header[0] === 0x50 && header[1] === 0x4b
   if (isZip) {
-    const blob = new Blob([new Uint8Array(bytes)])
-    for await (const entry of readArchive(blob, { bytes: MAX_ARCHIVE_BYTES, entries: 4096 })) {
+    for await (const entry of readArchive(blob, { bytes: MAX_IMPORT_EXPANDED_BYTES, entries: 4096 })) {
       const path = entry.path
       if (/^chat_sessions\/[^/]+_files\/[^/]+$/u.test(path)) {
         assets.set(path, new Uint8Array(await (await readEntry(entry)).arrayBuffer()))
@@ -341,14 +348,16 @@ export async function parseArchive(bytes: Uint8Array): Promise<{ preview: Import
     }
   } else {
     // 兼容直接导入单会话 JSON(DeepChat chat_sessions/*.json 或 ChatDS 导出的裸文件)
+    if (size > MAX_ARCHIVE_BYTES) throw new Error('单会话 JSON 超过 64 MiB。')
     try {
-      const value = JSON.parse(strFromU8(bytes)) as unknown
-      if (value !== null && typeof value === 'object' && Array.isArray((value as { messages?: unknown }).messages)) {
-        manifest = { export_format_version: EXPORT_FORMAT_VERSION }
-        sessionRecords.push({ path: 'chat_sessions/imported.json', value })
-      } else {
-        throw new Error('JSON 缺少 messages 数组。')
-      }
+      const value = JSON.parse(await blob.text()) as unknown
+      if (!Array.isArray(value) && (value === null || typeof value !== 'object' ||
+          !Array.isArray((value as { messages?: unknown }).messages))) throw new Error('JSON 缺少 messages 数组。')
+      manifest = { export_format_version: EXPORT_FORMAT_VERSION }
+      if (Array.isArray(value)) {
+        if (value.length > MAX_IMPORT_SESSIONS) throw new Error('会话数量超过单次导入上限。')
+        value.forEach((session, index) => sessionRecords.push({ path: SESSION_DIR + index + '.json', value: session }))
+      } else sessionRecords.push({ path: 'chat_sessions/imported.json', value })
     } catch (error) {
       throw new Error(`无法识别的归档:${error instanceof Error ? error.message : String(error)}`)
     }
@@ -407,22 +416,27 @@ export async function parseArchive(bytes: Uint8Array): Promise<{ preview: Import
     preview: {
       formatVersion: EXPORT_FORMAT_VERSION,
       format: !isZip ? 'json' : manifest.webchat_archive_version === 1 ? 'webchat' : 'v3',
-      size: bytes.byteLength,
-      sessions: sessions.map((session, index) => ({
-        index,
-        id: session.id,
-        title: session.title,
-        messageCount: session.messages.length,
-        attachmentCount: session.messages.reduce((sum, message) => sum + message.fragments.reduce(
-          (count, fragment) => count + (fragment.type === 'FILE' && Array.isArray(fragment.files) ? fragment.files.length : 0), 0), 0),
-        retainedAttachmentCount: new Set(session.messages.flatMap((message) => message.fragments.flatMap((fragment) =>
-          fragment.type === 'FILE' && Array.isArray(fragment.files)
-            ? fragment.files.flatMap((entry) => typeof entry?.export_path === 'string' && session.assets.has(entry.export_path.normalize('NFC'))
-              ? [entry.export_path.normalize('NFC')] : []) : [],
-        ))).size,
-        insertedAt: session.inserted_at,
-        updatedAt: session.updated_at,
-      })),
+      size,
+      sessions: sessions.map((session, index) => {
+        const fragments = session.messages.flatMap((message) => message.fragments)
+        const attachments = fragments.flatMap((fragment) => fragment.type === 'FILE' && Array.isArray(fragment.files) ? fragment.files : [])
+        const available = attachments.flatMap((entry) => {
+          const path = typeof entry?.export_path === 'string' ? entry.export_path.normalize('NFC') : ''
+          return session.assets.has(path) ? [path] : []
+        })
+        return {
+          index,
+          id: session.id,
+          title: session.title,
+          messageCount: session.messages.length,
+          attachmentCount: attachments.length,
+          retainedAttachmentCount: new Set(available).size,
+          missingAttachmentCount: attachments.length - available.length,
+          unsupportedFragmentCount: fragments.filter(({ type }) => !['FILE', 'REQUEST', 'RESPONSE', 'THINK', 'TEMPLATE_RESPONSE'].includes(type)).length,
+          insertedAt: session.inserted_at,
+          updatedAt: session.updated_at,
+        }
+      }),
       skipped,
     },
     sessions,
@@ -469,7 +483,7 @@ export function archiveFingerprint(session: ParsedSession): string {
 }
 
 /**
- * 把一个解析后的会话写入新的 ChatDS Session(官方事件序列)。
+ * 将解析后的会话写入 WebChat 专用日志。
  * 仅导入 REQUEST→user 与 RESPONSE/THINK→assistant;工具/提示片段不导入。
  */
 export async function importParsedSession(

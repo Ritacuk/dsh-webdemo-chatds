@@ -52,6 +52,7 @@ type ChatState = {
   initError: boolean
   /** 仅列表元数据,按 updatedAt 降序;流式消息更新不会改变此数组。 */
   sessions: WireSessionSummary[]
+  pinPending: Record<string, boolean>
   sessionCache: Record<string, Session>
   sessionLoadErrors: Record<string, boolean>
   /** null 表示新对话(欢迎页) */
@@ -92,6 +93,7 @@ export const useChatStore = create<ChatState>(() => ({
   ready: false,
   initError: false,
   sessions: [],
+  pinPending: {},
   sessionCache: {},
   sessionLoadErrors: {},
   activeId: null,
@@ -124,12 +126,40 @@ export const setRichLedgerOk = (ok: boolean | null): void => {
   set(() => ({ richLedgerOk: ok }))
 }
 
-const sortSessions = (sessions: WireSessionSummary[]) =>
-  [...sessions].sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.updatedAt - a.updatedAt)
+let listRequest = 0
+const sessionUpdates = (() => {
+  try {
+    return typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('chatds:' + window.location.pathname + ':sessions') : undefined
+  } catch { return undefined }
+})()
+
+function updatePin(sessionId: string, pinned: boolean) {
+  set((state) => ({
+    sessions: state.sessions.map((session) => session.id === sessionId ? { ...session, pinned } : session),
+  }))
+}
 
 export const setSessionPinned = async (sessionId: string, pinned: boolean) => {
-  await api.setPinned(sessionId, pinned)
-  await refreshSessions()
+  const current = get().sessions.find(({ id }) => id === sessionId)
+  if (!current || get().pinPending[sessionId] || Boolean(current.pinned) === pinned) return
+  set((state) => ({ pinPending: { ...state.pinPending, [sessionId]: true } }))
+  updatePin(sessionId, pinned)
+  try {
+    await api.setPinned(sessionId, pinned)
+    listRequest++
+    sessionUpdates?.postMessage('refresh')
+  } catch (error) {
+    updatePin(sessionId, Boolean(current.pinned))
+    listRequest++
+    throw error
+  } finally {
+    set((state) => {
+      const pinPending = { ...state.pinPending }
+      delete pinPending[sessionId]
+      return { pinPending }
+    })
+  }
 }
 
 export const setSessionArchived = async (sessionId: string, archived: boolean) => {
@@ -154,31 +184,41 @@ const updateSession = (id: string, updater: (session: Session) => Session) => {
 }
 
 /** 刷新列表(不打断流式;失败静默,下次操作再试)。 */
-export const refreshSessions = async (): Promise<void> => {
+export const refreshSessions = async (required = false): Promise<void> => {
+  const request = ++listRequest
   try {
     const { sessions } = await api.listSessions()
-    set(() => ({ sessions: sortSessions(sessions) }))
-  } catch {
+    if (request !== listRequest) return
+    set((state) => {
+      const pending = new Map(state.sessions.filter(({ id }) => state.pinPending[id]).map(({ id, pinned }) => [id, pinned]))
+      return { sessions: sessions.map((session) => pending.has(session.id) ? { ...session, pinned: pending.get(session.id) } : session) }
+    })
+  } catch (error) {
+    if (required) throw error
     // 列表刷新失败不打扰聊天
   }
 }
+
+sessionUpdates?.addEventListener('message', () => void refreshSessions())
+if (typeof window !== 'undefined') window.addEventListener('focus', () => void refreshSessions())
 
 export const initStore = async (): Promise<void> => {
   try {
     const [models, settings] = await Promise.all([
       api.models().catch(() => null),
       api.getSettings().catch(() => null),
-      refreshSessions(),
+      refreshSessions(true),
     ] as const)
     const resolved = settings as WorkspaceSettings | null
     set(() => ({
       ready: true,
+      initError: false,
       models: models as WireModelCatalog | null,
       settings: resolved,
       draftInput: defaultInput(resolved),
     }))
   } catch {
-    set(() => ({ ready: true, initError: true }))
+    set(() => ({ ready: false, initError: true }))
   }
 }
 
@@ -240,6 +280,8 @@ export const openSession = async (id: string): Promise<void> => {
             updatedAt: wire.updatedAt,
             messages: wire.messages,
             versions: wire.versions,
+            versionSources: wire.versionSources,
+            provenance: wire.provenance,
           },
         },
         sessionLoadErrors: { ...state.sessionLoadErrors, [id]: false },
@@ -251,6 +293,15 @@ export const openSession = async (id: string): Promise<void> => {
   }
 }
 
+export const clearHistoryCache = (): void => {
+  set((state) => ({
+    sessionCache: Object.fromEntries(Object.entries(state.sessionCache).filter(([id]) =>
+      id === state.activeId || Object.hasOwn(state.streaming, id))),
+    sessionLoadErrors: {},
+  }))
+  void refreshSessions()
+}
+
 export const closeSession = (): void => {
   set(() => ({ activeId: null }))
 }
@@ -260,9 +311,9 @@ export const selectSessionVersion = async (id: string, messageId: string) => {
   await refreshVersionPath(id)
 }
 
-async function refreshVersionPath(id: string): Promise<void> {
+export async function refreshVersionPath(id: string): Promise<void> {
   const wire = await api.getSession(id)
-  updateSession(id, (session) => ({ ...session, messages: wire.messages, versions: wire.versions }))
+  updateSession(id, (session) => ({ ...session, messages: wire.messages, versions: wire.versions, versionSources: wire.versionSources, provenance: wire.provenance }))
 }
 
 /**

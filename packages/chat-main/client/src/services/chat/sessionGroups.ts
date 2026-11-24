@@ -9,13 +9,20 @@ import type { SessionSummary } from '@dsh-chat/shared'
 
 const DAY = 86_400_000
 
-const startOfDay = (time: number) => new Date(time).setHours(0, 0, 0, 0)
+const localDay = (time: number) => {
+  const date = new Date(time)
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
+}
 
 /** 分组：今天 / 昨天 / 7 天内 / 30 天内 / 按月 */
 export const groupSessions = (sessions: SessionSummary[], now: number, t = translate) => {
   const groups: { key: string; label: string; sessions: SessionSummary[] }[] = []
+  const pinned = sessions.filter((session) => session.pinned)
+    .sort((a, b) => b.createdAt - a.createdAt || a.id.localeCompare(b.id))
+  if (pinned.length) groups.push({ key: 'pinned', label: t('pinnedChats'), sessions: pinned })
   for (const session of sessions) {
-    const diff = Math.floor((now - startOfDay(session.updatedAt)) / DAY)
+    if (session.pinned) continue
+    const diff = (localDay(now) - localDay(session.updatedAt)) / DAY
     const key =
       diff <= 0
         ? 'sessionHistoryTimelineLabelToday'

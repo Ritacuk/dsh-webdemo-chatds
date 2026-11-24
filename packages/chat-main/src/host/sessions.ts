@@ -1,5 +1,8 @@
+import type { MessageProvenance } from '@dsh-chat/shared'
+import { projectSharedMessage, sharedMessageRecord, type SharedMessageRecord } from './sharing/workspace.js'
 /**
- * 工作区会话管理 — DSH Session 是唯一权威历史来源。
+ * WebChat uses detached Session instances with plugin-owned logs.
+ * Legacy Main logs are read in place and copied on first edit. Agent Side Chat keeps its DSH writer.
  *
  * 写入路径(对齐 dsh-agent-loop/src/index.ts createStoredSession 的官方序列):
  *   prepare → create persistence handle → store initial suffix → enter + announce;
@@ -15,8 +18,8 @@
 
 import { randomUUID } from 'node:crypto'
 import type { Context } from '@deepseek-ai/cordis'
-import { interruptedTurnClosers, SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
-import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
+import { interruptedTurnClosers, Session, SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
+import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
 import type { SessionHandle } from '@deepseek-ai/dsh-session-persistence'
 import {
@@ -38,8 +41,9 @@ declare module '@deepseek-ai/dsh-session' {
 /** 一次 live 会话与其写句柄。 */
 interface LiveEntry {
   session: Session
-  handle: SessionHandle
-  detach: () => void
+  handle?: SessionHandle
+  detach?: () => void
+  saving?: Promise<void>
 }
 
 export class WorkspaceSessionUnavailable extends Error {
@@ -75,21 +79,44 @@ export class WorkspaceSessions {
     await Promise.allSettled(entries.map((entry) => this.flushEntry(entry)))
     for (const entry of entries) {
       try {
-        entry.detach()
+        entry.detach?.()
       } finally {
-        await entry.handle.close().catch(() => {})
+        await entry.handle?.close().catch(() => {})
       }
     }
   }
 
   newKey(): string {
-    return `${this.sidecar ? 'chatws-side' : 'chatws'}-${randomUUID()}`
+    return `${this.sidecar ? 'chatws-side' : 'chatws-local'}-${randomUUID()}`
   }
 
   async reserveImport(id: string, createdAt: number): Promise<void> {
     const table = (await this.store.ensure()).table('sessions')
     if (table.get(id)) throw new Error('会话 ID 已存在。')
-    await table.put(id, { id, title: null, createdAt, updatedAt: createdAt, hidden: true, messageCount: 0 })
+    await table.put(id, { id, title: null, createdAt, updatedAt: createdAt, hidden: true, isolated: true, messageCount: 0 })
+  }
+
+  async sharingTarget(id: string): Promise<boolean> {
+    const record = (await this.store.ensure()).table('sessions').get(id)
+    return !record?.hidden || record.sharingPending === true
+  }
+
+  async reserveSharingReplica(id: string, createdAt: number, provenance: MessageProvenance): Promise<void> {
+    const table = (await this.store.ensure()).table('sessions')
+    const record = table.get(id)
+    if (record?.sharingPending) return
+    if (record) throw new Error('Chat identity is already in use')
+    await table.put(id, {
+      id, title: 'Shared conversation', manualTitle: 'Shared conversation',
+      createdAt, updatedAt: createdAt, hidden: true, isolated: true, sharingPending: true, provenance, messageCount: 0,
+    })
+  }
+
+  async publishSharingReplica(id: string): Promise<void> {
+    const table = (await this.store.ensure()).table('sessions')
+    const record = table.get(id)
+    if (!record?.sharingPending || !record.messageCount) return
+    await table.update(id, (current) => ({ ...current, sharingPending: false, hidden: false }))
   }
 
   async importFingerprints(): Promise<Set<string>> {
@@ -97,14 +124,14 @@ export class WorkspaceSessions {
     return new Set([...table.entries()].flatMap(([, record]) => record.importFingerprint ? [record.importFingerprint] : []))
   }
 
-  async publishImport(id: string, title: string | null, updatedAt: number, pinned: boolean, importFingerprint: string, archived = false): Promise<void> {
+  async publishImport(id: string, title: string | null, updatedAt: number, pinned: boolean, importFingerprint: string | undefined, archived = false): Promise<void> {
     const table = (await this.store.ensure()).table('sessions')
     const record = table.get(id)
     if (!record?.hidden) throw new Error('待导入会话不存在。')
-    await table.put(id, {
-      ...record, hidden: false, updatedAt, pinned, importFingerprint, archived,
+    await table.update(id, (current) => ({
+      ...current, hidden: false, updatedAt, pinned, importFingerprint, archived,
       ...(title?.trim() ? { title: title.trim(), manualTitle: title.trim() } : {}),
-    })
+    }))
   }
 
   /** 创建新会话(写句柄 + KV 索引)。draft 会话在首条消息落盘前不进入历史列表。 */
@@ -163,6 +190,7 @@ export class WorkspaceSessions {
     let handle: SessionHandle | undefined
     let detach: (() => void) | undefined
     try {
+      if (!this.sidecar || await this.isIsolated(id)) return await this.openLocal(id, create)
       let session: Session
       if (create) {
         session = this.ctx.sessions.prepare(id)
@@ -207,6 +235,46 @@ export class WorkspaceSessions {
     }
   }
 
+  private async isIsolated(id: string): Promise<boolean> {
+    if (!this.sidecar && id.startsWith('chatws-local-')) return true
+    const domain = await this.store.ensure()
+    return domain.table('sessions').get(id)?.isolated === true || Boolean(domain.table('session_logs').get(id))
+  }
+
+  private async localSnapshot(id: string): Promise<{ header: SessionHeader; events: SessionEvent[]; inheritedEventCount?: number } | undefined> {
+    const record = (await this.store.ensure()).table('session_logs').get(id)
+    return record && JSON.parse(record.snapshot)
+  }
+
+  private async openLocal(id: SessionId, create: boolean): Promise<Session | undefined> {
+    let snapshot = await this.localSnapshot(id)
+    if (!create && !snapshot && !await this.isIsolated(id)) {
+      try {
+        const handle = await this.ctx.sessionPersistence.open(id, 'read')
+        try {
+          snapshot = { header: handle.header, inheritedEventCount: handle.inheritedEventCount, events: [...(await handle.read(0)).events] }
+        } finally {
+          await handle.close()
+        }
+      } catch (error) {
+        if (!(error instanceof Error) || error.name !== 'SessionPersistenceNotFoundError') throw error
+      }
+    }
+    if (create && snapshot) throw new Error('WebChat session already exists')
+    if (!create && !snapshot) return undefined
+    const projections = this.ctx.sessions.messageProjections
+    const session = snapshot
+      ? Session.fromRestore(id, [...snapshot.events, ...interruptedTurnClosers(snapshot.events)], snapshot.header,
+          SessionLogOffset(snapshot.inheritedEventCount ?? 0), 'detached', projections)
+      : Session.create(id, undefined, undefined, undefined, projections)
+    if (this.stopping) throw new WorkspaceSessionUnavailable(id)
+    const entry: LiveEntry = { session }
+    this.live.set(id, entry)
+    // An independent Session has no attachment and never publishes native events.
+    if (create) await this.flushEntry(entry)
+    return session
+  }
+
   /** 取 live 会话;必要时恢复。 */
   async liveSession(id: string): Promise<Session | undefined> {
     return this.resume(id)
@@ -222,6 +290,7 @@ export class WorkspaceSessions {
       return entry.session.snapshotEvents(SessionLogOffset(0))
     }
     try {
+      if (await this.isIsolated(id)) return (await this.localSnapshot(id))?.events
       const handle = await this.ctx.sessionPersistence.open(SessionId(id), 'read')
       try {
         const read = await handle.read(0)
@@ -239,6 +308,7 @@ export class WorkspaceSessions {
   async list(): Promise<WireSessionSummary[]> {
     const domain = await this.store.ensure()
     const table = domain.table('sessions')
+    const pins = domain.table('session_pins')
     const out: WireSessionSummary[] = []
     for (const [id, record] of table.entries()) {
       if (record.hidden) continue
@@ -249,11 +319,14 @@ export class WorkspaceSessions {
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
         messageCount: record.messageCount,
-        ...(record.pinned ? { pinned: true } : {}),
+        ...(record.provenance ? { provenance: record.provenance } : {}),
+        ...(record.remoteSources?.length ? { remoteSources: record.remoteSources } : {}),
+        ...((pins.get(id)?.pinned ?? record.pinned) ? { pinned: true } : {}),
+        ...(record.importFingerprint ? { imported: true } : {}),
         ...(record.archived ? { archived: true } : {}),
       })
     }
-    out.sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.updatedAt - a.updatedAt)
+    out.sort((a, b) => b.updatedAt - a.updatedAt || a.id.localeCompare(b.id))
     return out
   }
 
@@ -263,7 +336,7 @@ export class WorkspaceSessions {
     const table = domain.table('sessions')
     const record = table.get(id)
     if (record === undefined) return false
-    await table.put(id, { ...record, hidden: true })
+    await table.update(id, (current) => ({ ...current, hidden: true }))
     return true
   }
 
@@ -272,15 +345,15 @@ export class WorkspaceSessions {
     const table = domain.table('sessions')
     const record = table.get(id)
     if (record === undefined || record.hidden) return false
-    await table.put(id, { ...record, title, manualTitle: title })
+    await table.update(id, (current) => ({ ...current, title, manualTitle: title }))
     return true
   }
 
   async setPinned(id: string, pinned: boolean): Promise<boolean> {
-    const table = (await this.store.ensure()).table('sessions')
-    const record = table.get(id)
+    const domain = await this.store.ensure()
+    const record = domain.table('sessions').get(id)
     if (!record || record.hidden) return false
-    await table.put(id, { ...record, pinned })
+    await domain.table('session_pins').put(id, { pinned })
     return true
   }
 
@@ -288,7 +361,7 @@ export class WorkspaceSessions {
     const table = (await this.store.ensure()).table('sessions')
     const record = table.get(id)
     if (!record || record.hidden) return false
-    await table.put(id, { ...record, archived })
+    await table.update(id, (current) => ({ ...current, archived }))
     return true
   }
 
@@ -314,7 +387,7 @@ export class WorkspaceSessions {
     const table = domain.table('sessions')
     const record = table.get(id)
     if (record === undefined) return false
-    await table.put(id, { ...record, hidden: false })
+    await table.update(id, (current) => ({ ...current, hidden: false }))
     return true
   }
 
@@ -322,42 +395,73 @@ export class WorkspaceSessions {
   async persistIndex(session: Session): Promise<void> {
     const domain = await this.store.ensure()
     const table = domain.table('sessions')
-    const projection = this.ctx.sessionProjections?.snapshot(session) as
-      | { values?: { title?: string | null } }
-      | undefined
-    const title = projection?.values?.title ?? null
     const events = session.snapshotEvents(SessionLogOffset(0))
+    let title: string | null = null
     const messageCount = events.filter(
-      (event) => event.type === 'user/message' || event.type === 'assistant/message',
+      (event) => event.type === 'user/message' || event.type === 'assistant/message' || (event.type as string) === sharedMessageRecord,
     ).length
-    const last = events.at(-1)
-    const updatedAt = last?.time ?? Date.now()
-    const previous = table.get(session.id)
+    const remoteSources = new Map<string, string>()
+    const importedTimes = new Map(events.flatMap((event) => {
+      if ((event.type as string) !== 'plugin:chat-workspace/imported-message') return []
+      const { id, createdAt } = event.data as { id: string; createdAt: number }
+      return Number.isFinite(createdAt) ? [[id, createdAt] as const] : []
+    }))
+    let lastActivity = 0
+    for (const event of events) {
+      if (event.type === 'session/title') title = event.data.title
+      if ((event.type as string) === sharedMessageRecord) {
+        const source = (event.data as unknown as SharedMessageRecord).source
+        remoteSources.set(source.deviceId, source.deviceName)
+        lastActivity = Math.max(lastActivity, Date.parse(source.createdAt))
+      } else if (event.type === 'user/message') {
+        lastActivity = Math.max(lastActivity, importedTimes.get(event.data.id) ?? event.time)
+      } else if (event.type === 'assistant/message') {
+        lastActivity = Math.max(lastActivity, importedTimes.get(event.data.message.id) ?? event.time)
+      }
+    }
     // R8.5:draft 占位在首条消息落盘时解除;此后与普通会话一致。
-    const draft = messageCount === 0 && (this.pendingDraft.has(session.id) || previous?.draft === true)
+    const pendingDraft = this.pendingDraft.has(session.id)
     if (messageCount > 0) this.pendingDraft.delete(session.id)
-    await table.put(session.id, {
+    const next = (previous?: ReturnType<typeof table.get>) => ({
       id: session.id,
       title: previous?.manualTitle ?? title,
       ...(previous?.manualTitle === undefined ? {} : { manualTitle: previous.manualTitle }),
       ...(previous?.pinned === undefined ? {} : { pinned: previous.pinned }),
       ...(previous?.archived === undefined ? {} : { archived: previous.archived }),
-      ...(draft ? { draft: true } : {}),
+      ...(messageCount === 0 && (pendingDraft || previous?.draft) ? { draft: true } : {}),
       createdAt: previous?.createdAt ?? session.header.createdAt,
-      updatedAt,
+      updatedAt: Math.max(previous?.updatedAt ?? session.header.createdAt, lastActivity),
       messageCount,
       hidden: previous?.hidden ?? false,
+      ...(previous?.provenance ? { provenance: previous.provenance } : {}),
+      ...(remoteSources.size ? { remoteSources: [...remoteSources].slice(-200).map(([deviceId, deviceName]) => ({ deviceId, deviceName })) } : {}),
+      ...(previous?.sharingPending ? { sharingPending: true } : {}),
+      ...(previous?.isolated ? { isolated: true } : {}),
       ...(previous?.importFingerprint === undefined ? {} : { importFingerprint: previous.importFingerprint }),
     })
+    if (table.get(session.id)) await table.update(session.id, next)
+    else await table.put(session.id, next())
   }
 
-  private async flushEntry(entry: LiveEntry): Promise<void> {
+  private flushEntry(entry: LiveEntry): Promise<void> {
+    const pending = (entry.saving ?? Promise.resolve()).then(() => this.saveEntry(entry))
+    entry.saving = pending
+    return pending
+  }
+
+  private async saveEntry(entry: LiveEntry): Promise<void> {
     const failure = this.unavailable.get(entry.session.id)
     if (failure) throw failure
     try {
       // handle.flush() alone does not drain the JSONL backend's live buffer.
-      if (!await this.ctx.sessions.flush(entry.session)) {
-        throw new Error('DSH has no live session durability listener')
+      if (entry.handle) {
+        if (!await this.ctx.sessions.flush(entry.session)) throw new Error('DSH has no live session durability listener')
+      } else {
+        const table = (await this.store.ensure()).table('session_logs')
+        const { session } = entry
+        await table.put(session.id, { snapshot: JSON.stringify({
+          header: session.header, inheritedEventCount: session.inheritedEventCount, events: session.snapshotEvents(SessionLogOffset(0)),
+        }) })
       }
       await this.persistIndex(entry.session)
     } catch (error) {
@@ -453,13 +557,13 @@ function applyBranchRecords(
     if (!message || excluded.has(message.id)) continue
     const replaced = replacements.get(message.id)
     const explicit = imported.get(message.id)
-    const parent: string | null = explicit ? explicit.parent
+    const parent: string | null = message.provenance ? (message.parentId ?? null) : explicit ? explicit.parent
       : replaced && parents.has(replaced) ? (parents.get(replaced) ?? null) : leaf
     parents.set(message.id, parent)
     const siblings = children.get(parent) ?? []
     siblings.push(message.id)
     children.set(parent, siblings)
-    choose(message.id)
+    if (!message.provenance || (!selected.has(parent) && leaf === parent)) choose(message.id)
   }
   const path: DemoMessage[] = []
   const versions: Record<string, string[]> = Object.create(null) as Record<string, string[]>
@@ -505,7 +609,7 @@ export function replayChatSession(events: readonly SessionEvent[]) {
   const richUsage = new Map<string, NonNullable<DemoAssistant['usage']>>()
   for (const event of events) {
     if (event.type === 'turn/start') hasTurnStarts = true
-    if (event.type === 'assistant/message' || event.type === 'user/message') messagesSoFar++
+    if (event.type === 'assistant/message' || event.type === 'user/message' || (event.type as string) === sharedMessageRecord) messagesSoFar++
     if (event.type === 'turn/end' && event.data.reason.kind === 'error') {
       const { message, code, status } = event.data.reason.error
       failures.set(event.data.turn, {
@@ -544,6 +648,10 @@ export function replayChatSession(events: readonly SessionEvent[]) {
   }
   const messages: DemoMessage[] = []
   for (const event of events) {
+    if ((event.type as string) === sharedMessageRecord) {
+      messages.push(projectSharedMessage(event.data as unknown as SharedMessageRecord))
+      continue
+    }
     if ((event.type as string) === 'plugin:chat-workspace/attachments') {
       continue
     }

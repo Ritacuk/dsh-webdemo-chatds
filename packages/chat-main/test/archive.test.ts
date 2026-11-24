@@ -69,6 +69,21 @@ describe('R8:归档导入', () => {
     expect(sessions[0]!.messages).toHaveLength(2)
   })
 
+  it('accepts a DeepSeek ZIP with more than 200 conversations through a Blob', async () => {
+    const entries: Record<string, Uint8Array> = {
+      'manifest.json': strToU8(JSON.stringify({ export_format_version: EXPORT_FORMAT_VERSION })),
+    }
+    for (let i = 0; i < 201; i++) {
+      const id = `chat-${i}`
+      const session = toSessionFile(id, id, false, 0, 0, [user('u1', 'Hello')])
+      entries[`chat_sessions/${id}.json`] = strToU8(JSON.stringify(session))
+    }
+    const archive = new Blob([new Uint8Array(zipSync(entries))])
+    const { preview } = await parseArchive(archive)
+    expect(preview).toMatchObject({ format: 'v3', size: archive.size, skipped: [] })
+    expect(preview.sessions).toHaveLength(201)
+  })
+
   it('拒绝错误版本与损坏归档', async () => {
     const wrongVersion = zipSync({
       'manifest.json': strToU8(JSON.stringify({ export_format_version: 2 })),

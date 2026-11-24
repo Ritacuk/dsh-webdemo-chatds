@@ -18,6 +18,7 @@ import type {
   ModelRef,
   PromptTemplate,
 } from '@dsh-chat/shared'
+import { partitionStateSchema } from './partitions.js'
 import { currentProfile } from './profile.js'
 import { writePluginRecord } from './plugin-record.js'
 import { prefsFromSession as prefsFromSessionEvents } from './prefs.js'
@@ -69,6 +70,10 @@ const SettingsPatchSchema = z.object({
   readingWidth: z.enum(['preset', 'narrow', 'wide']).optional(),
   // R8.6(七):自由外观系统(全部可选;null = 恢复默认;缺省 = 官方 demo 默认观感)。
   appearanceAccent: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullish(),
+  sidebarTitle: z.string().trim().min(1).max(80).nullish(),
+  sidebarTitleSize: z.number().int().min(12).max(32).nullish(),
+  sidebarTitleColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullish(),
+  sidebarTitleWeight: z.literal([400, 500, 600, 700]).nullish(),
   appearanceBgAlpha: z.number().min(0.4).max(1).nullish(),
   appearancePanelAlpha: z.number().min(0.4).max(1).nullish(),
   appearanceComposerAlpha: z.number().min(0.4).max(1).nullish(),
@@ -112,6 +117,7 @@ const KEY_DEFAULTS = 'defaults'
 const appearanceNullableKeys = [
   'appearanceAccent', 'appearanceBgAlpha', 'appearancePanelAlpha', 'appearanceComposerAlpha',
   'appearanceLineHeight', 'appearanceRadius', 'appearanceDensity', 'appearanceComposerWidth',
+  'sidebarTitle', 'sidebarTitleSize', 'sidebarTitleColor', 'sidebarTitleWeight',
 ] as const
 
 const SESSION_PREFS_SCHEMA = z.object({
@@ -156,6 +162,12 @@ const workspaceDomainSpec = (name: string) => defineDomain({
       id: z.string().min(1),
       title: z.string().nullable(),
       importFingerprint: z.string().optional(),
+      sharingPending: z.boolean().optional(),
+      isolated: z.boolean().optional(),
+      remoteSources: z.array(z.object({ deviceId: z.uuid(), deviceName: z.string().max(64) })).max(200).optional(),
+      provenance: z.object({
+        deviceId: z.uuid(), deviceName: z.string().max(64), createdAt: z.iso.datetime(), receivedAt: z.iso.datetime(),
+      }).optional(),
       manualTitle: z.string().optional(),
       pinned: z.boolean().optional(),
       archived: z.boolean().optional(),
@@ -166,6 +178,8 @@ const workspaceDomainSpec = (name: string) => defineDomain({
       messageCount: z.number().int().nonnegative(),
       hidden: z.boolean(),
     })),
+    session_pins: domainTable(z.object({ pinned: z.boolean() })),
+    session_logs: domainTable(z.object({ snapshot: z.string() })),
     prefs: domainTable(z.object({
       key: z.string().min(1),
       /** 严格子对象:defaults 或会话偏好。 */
@@ -177,6 +191,7 @@ const workspaceDomainSpec = (name: string) => defineDomain({
       deletedPrompts: z.array(z.string().max(80)).max(200).optional(),
     })),
     files: domainTable(ATTACHMENT_SCHEMA),
+    partitions: domainTable(partitionStateSchema),
     /** R8:提示词模板(id 即键;Profile 隔离由 storageDomain 保证)。 */
     prompts: domainTable(z.object({
       id: z.string().min(1).max(80),
@@ -224,9 +239,19 @@ export class WorkspaceStore {
       this.opening = this.ctx.storageDomain.open(workspaceDomainSpec(this.domainName)).then((domain) => {
         this.domain = domain
         return domain
+      }).catch((error) => {
+        this.opening = undefined
+        throw error
       })
     }
     return await this.opening
+  }
+
+  async usage() {
+    const domain = await this.ensure()
+    const logBytes = [...domain.table('session_logs').entries()].reduce((sum, [, record]) => sum + Buffer.byteLength(record.snapshot), 0)
+    const attachmentBytes = [...domain.table('files').entries()].reduce((sum, [, record]) => sum + record.size, 0)
+    return { logBytes, attachmentBytes }
   }
 
   /** 停用时关闭。 */
@@ -272,9 +297,9 @@ export class WorkspaceStore {
     for (const key of appearanceNullableKeys) {
       if (cleaned[key] === null) delete cleaned[key]
     }
-    if (cleaned !== stored) {
+    if (migrated !== stored) {
       // 迁移结果持久化,避免每次读取重复映射(幂等;失败时下次重试)。
-      void this.editSettings(() => cleaned).catch(() => {})
+      void this.editSettings(() => this.migrateAppearance(this.storedDefaults(domain))).catch(() => {})
     }
     // 上一循环已在运行时剥离所有 null;TS 无法据此收窄 SettingsPatch 的可空字段,这里显式断言。
     return { ...DEFAULT_SETTINGS, ...rowDefaults, ...cleaned } as WorkspaceSettings

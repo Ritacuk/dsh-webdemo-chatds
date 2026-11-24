@@ -7,6 +7,8 @@ import type { Session } from '@dsh-chat/shared'
 import { closeSearchPanel } from '../search/searchPanelState.js'
 import { AssistantMessage } from './AssistantMessage.js'
 import { ScrollToBottomContext } from './scrollContext.js'
+import { SharedSource } from '../sharing/SharedSource.js'
+import sharingStyles from '../sharing/Sharing.module.css'
 import { UserMessage } from './UserMessage.js'
 import { BranchSwitcher } from './BranchSwitcher.js'
 import { selectSessionVersion, useChatStore } from '../../store/workspace.js'
@@ -25,6 +27,8 @@ export const MessageList = ({
   session,
   streaming,
   footer,
+  selection,
+  toggleSelection,
   navigationOpen,
   onNavigationOpenChange,
   registerOpenNavigation,
@@ -32,6 +36,8 @@ export const MessageList = ({
   session: Session
   streaming: boolean
   footer: React.ReactNode
+  selection?: string[] | null
+  toggleSelection?: (id: string) => void
   /** R8.6(11.2):定位入口移到 Composer 图标;弹层开合状态由 SessionView 提升。 */
   navigationOpen?: boolean
   onNavigationOpenChange?: (open: boolean) => void
@@ -165,6 +171,11 @@ export const MessageList = ({
             {messages.map((message, index) => {
               const siblings = session.versions?.[message.id]
               return <Fragment key={message.id}>
+              {(message.provenance || (selection && !message.provenance)) && <div className={sharingStyles.messageLabel}>
+                {message.provenance && <SharedSource source={message.provenance} />}
+                {selection && !message.provenance && <label><input type="checkbox" checked={selection.includes(message.id)}
+                  onChange={() => toggleSelection?.(message.id)} /> {t(message.role === 'user' ? 'userMessage' : 'assistantReply')}</label>}
+              </div>}
               {message.role === 'user' ? (
                 <UserMessage
                   key={message.id}
@@ -195,6 +206,12 @@ export const MessageList = ({
                     })
                   }).catch((error: Error) => showToast(error.message))
                 }} />}
+              {siblings?.some((id) => session.versionSources?.[id]) && <details className={sharingStyles.source}>
+                <summary>{t('branchSourceDetails')}</summary>
+                <ol>{siblings.map((id) => <li key={id}>
+                  {session.versionSources?.[id] ? <SharedSource source={session.versionSources[id]!} /> : t('localSource')}
+                </li>)}</ol>
+              </details>}
               </Fragment>
             })}
           </div>

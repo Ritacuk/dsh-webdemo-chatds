@@ -1,3 +1,4 @@
+import type { ChatPartitions, PartitionChange, SharingStatus } from '@dsh-chat/shared'
 /**
  * 页面 → Host 插件路由 的 API 客户端。
  * 页面只与 /chat-workspace/api 通信;凭证与真实 API 请求全在 Host。
@@ -87,7 +88,7 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
 export const api = {
   health: (): Promise<WireHealth> => json('api/health'),
   models: (): Promise<WireModelCatalog> => json('api/models'),
-  listSessions: (): Promise<{ sessions: WireSessionSummary[] }> => json('api/sessions'),
+  listSessions: (): Promise<{ sessions: WireSessionSummary[] }> => json('api/sessions', { signal: AbortSignal.timeout(15_000) }),
   /** R8.5:draft=1 创建占位会话(附件/交接单预建;首条消息前不出现在历史列表)。 */
   createSession: (draft = false): Promise<{ id: string; title: string }> =>
     json(draft ? 'api/sessions?draft=1' : 'api/sessions', { method: 'POST', body: '{}' }),
@@ -103,7 +104,7 @@ export const api = {
   setArchived: (id: string, archived: boolean): Promise<{ ok: true }> =>
     json('api/sessions/' + encodeURIComponent(id) + '/archive', { method: 'PUT', body: JSON.stringify({ archived }) }),
   setPinned: (id: string, pinned: boolean): Promise<{ ok: true }> =>
-    json(`api/sessions/${encodeURIComponent(id)}/pin`, { method: 'PUT', body: JSON.stringify({ pinned }) }),
+    json(`api/sessions/${encodeURIComponent(id)}/pin`, { method: 'PUT', body: JSON.stringify({ pinned }), signal: AbortSignal.timeout(15_000) }),
   renameSession: (id: string, title: string): Promise<{ title: string }> =>
     json(`api/sessions/${encodeURIComponent(id)}/title`, { method: 'PUT', body: JSON.stringify({ title }) }),
   /** R8.5:工作分支——优先选已注册 DSH 工作区(workspaceId);directory 仅用于"新建工作区"流程。 */
@@ -154,6 +155,17 @@ export const api = {
   },
   localSearch: (query: string): Promise<LocalSearchResult> =>
     json('api/local-search', { method: 'POST', body: JSON.stringify({ query }) }),
+  listPartitions: (): Promise<ChatPartitions> => json('api/partitions'),
+  changePartition: (change: PartitionChange): Promise<ChatPartitions> =>
+    json('api/partitions', { method: 'POST', body: JSON.stringify(change) }),
+  sharing: async (light = false): Promise<SharingStatus> => {
+    const response = await fetch('api/sharing' + (light ? '?view=light' : ''), { cache: 'no-store' })
+    if (response.status === 404) return { enabled: false }
+    if (!response.ok) throw new Error('Unable to load Data Sharing')
+    return await response.json() as SharingStatus
+  },
+  sharingCommand: <T>(command: unknown): Promise<T> =>
+    json('api/sharing', { method: 'POST', body: JSON.stringify(command) }),
   getSettings: (): Promise<WorkspaceSettings> => json('api/settings'),
   updateSettings: (patch: Partial<WorkspaceSettings>): Promise<WorkspaceSettings> =>
     json('api/settings', { method: 'PUT', body: JSON.stringify(patch) }),
@@ -260,15 +272,15 @@ export const api = {
     })
     return downloadResponse(response, 'webchat-history.zip')
   },
-  importPreview: async (file: File): Promise<{ formatVersion: number; format: 'webchat' | 'v3' | 'json'; size: number; sessions: { index: number; id: string; title: string | null; messageCount: number; attachmentCount: number; retainedAttachmentCount: number; duplicate: boolean; insertedAt: string; updatedAt: string }[]; skipped: { path: string; reason: string }[] }> => {
+  importPreview: async (file: File): Promise<{ formatVersion: number; format: 'webchat' | 'v3' | 'json'; size: number; sessions: { index: number; id: string; title: string | null; messageCount: number; attachmentCount: number; retainedAttachmentCount: number; missingAttachmentCount: number; unsupportedFragmentCount: number; duplicate: boolean; insertedAt: string; updatedAt: string }[]; skipped: { path: string; reason: string }[] }> => {
     const response = await fetch('api/import', { method: 'POST', body: file })
-    const data = await response.json() as { error?: { message?: string } } | null
+    const data = await response.json().catch(() => null) as { error?: { message?: string } } | null
     if (!response.ok) throw new Error(data?.error?.message ?? `读取归档失败(${response.status})`)
     return data as never
   },
   importConfirm: async (file: File, indices: number[]): Promise<{ imported: { id: string; title: string | null; messageCount: number }[]; failures: { index: number; reason: string }[]; duplicates: number[] }> => {
     const response = await fetch(`api/import?confirm=1&select=${indices.join(',')}`, { method: 'POST', body: file })
-    const data = await response.json() as { imported?: { id: string; title: string | null; messageCount: number }[]; failures?: { index: number; reason: string }[]; duplicates?: number[]; error?: { message?: string } } | null
+    const data = await response.json().catch(() => null) as { imported?: { id: string; title: string | null; messageCount: number }[]; failures?: { index: number; reason: string }[]; duplicates?: number[]; error?: { message?: string } } | null
     if (!response.ok) throw new Error(data?.error?.message ?? `导入失败(${response.status})`)
     return { imported: data?.imported ?? [], failures: data?.failures ?? [], duplicates: data?.duplicates ?? [] }
   },

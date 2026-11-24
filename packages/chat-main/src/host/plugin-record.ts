@@ -80,8 +80,7 @@ export function writePluginRecord(session: Session, type: string, data: unknown)
   }
   const entry = surface.publicationEntry()
   const snapshot = snapshotPluginData(type, data)
-  const events = session.snapshotEvents(SessionLogOffset(0))
-  const previous = events.at(-1)
+  const previous = surface.seq > 0 ? session.snapshotEvents(SessionLogOffset(surface.seq - 1)).at(-1) : undefined
   const seq = previous ? Number(previous.seq) + 1 : 0
   if (surface.seq !== seq) throw new Error('ChatDS Session sequence contract does not match the installed runtime')
   try {

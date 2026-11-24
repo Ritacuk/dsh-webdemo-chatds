@@ -9,7 +9,7 @@ All commands below were executed on real DSH installations. Linux commands verif
 - Recommended: test in an isolated profile first:
 
   ```bash
-  dsh plugin --profile webchat-test add dsh-webdemo-chatds@next
+  dsh plugin --profile webchat-test add dsh-webdemo-chatds@0.12.1
   ```
 
   The profile is initialized on first use; remove it by deleting `$DSH_HOME/profiles/webchat-test`.
@@ -20,9 +20,9 @@ All commands below were executed on real DSH installations. Linux commands verif
 
 ```bash
 # 1. Install into the running profile (official plugin manager):
-dsh plugin --profile web add dsh-webdemo-chatds@next      # from npm
+dsh plugin --profile web add dsh-webdemo-chatds@0.12.1      # from npm
 # or, from a downloaded release tarball:
-dsh plugin --profile web add ./dsh-webdemo-chatds-0.10.0.tgz
+dsh plugin --profile web add ./dsh-webdemo-chatds-0.12.1.tgz
 
 # 2. Restart the DSH web service so the new plugin is loaded.
 #    If you run DSH under systemd (user service), the usual way:
@@ -33,7 +33,7 @@ curl -s http://127.0.0.1:3080/ -o /dev/null -w '%{http_code}\n'   # 401 (token-g
 
 # 3. In the web UI: the sidebar now has a "WebChat" entry.
 #    Health check (cookie-authenticated): /chat-workspace/api/health
-#    → {"ok":true,"plugin":"dsh-webdemo-ChatDS","version":"0.10.0","commit":"..."}
+#    → {"ok":true,"plugin":"dsh-webdemo-ChatDS","version":"0.12.1","commit":"..."}
 ```
 
 Notes for headless servers: the settings page's file-access section always offers a **manual absolute-path grant** (Host-validated) — use it when DSH's directory picker cannot open a GUI dialog.
@@ -45,7 +45,7 @@ Notes for headless servers: the settings page's file-access section always offer
 
    ```bat
    set "DSH=<path-to-DSH-runtime>\resources\runtime\cli\bin\dsh.cmd"
-   "%DSH%" plugin --profile <profile> add dsh-webdemo-chatds@next
+   "%DSH%" plugin --profile <profile> add dsh-webdemo-chatds@0.12.1
    ```
 
 3. Restart DSH Desktop. The sidebar shows "WebChat".
@@ -57,10 +57,12 @@ Notes for headless servers: the settings page's file-access section always offer
 3. Open the panel; the model picker lists your DSH models.
 4. Send one short message; a reply (or an explicit credential/setup error) appears, and a session entry persists in the sidebar after restart.
 
+For device sync passwords and Windows LAN permissions, see the [data sharing guide](sharing-setup.md). Changing LAN permissions while DSH is running updates the ChatDS listener.
+
 ## Upgrade
 
 ```bash
-dsh plugin --profile web add dsh-webdemo-chatds@next   # same command installs the new version
+dsh plugin --profile web add dsh-webdemo-chatds@0.12.1   # same command installs the new version
 ```
 
 Then restart the DSH web service again. User settings and authorized directories live in DSH's storage (per profile) and survive upgrades.

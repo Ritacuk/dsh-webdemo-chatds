@@ -10,8 +10,10 @@
  * 其余 no-cache + 弱 ETag + 304。
  */
 
-import { createReadStream, existsSync, statSync } from 'node:fs'
-import { access, readFile, realpath, stat } from 'node:fs/promises'
+import { createReadStream, createWriteStream, existsSync, openAsBlob, statSync } from 'node:fs'
+import { access, mkdtemp, readFile, realpath, rm, stat } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { pipeline } from 'node:stream/promises'
 import { extname, isAbsolute, join, normalize, resolve, sep } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Context } from '@deepseek-ai/cordis'
@@ -37,6 +39,7 @@ import type { RichGateway } from './rich.js'
 import { receiveUpload, wireAttachment, attachmentsDir, readStoredFile } from './files.js'
 import { unlinkSync } from 'node:fs'
 import type { LocalSearchEngine } from './local-search.js'
+import type { ChatPartitionStore } from './partitions.js'
 import type { WorkspaceStore } from './store.js'
 import type { MainConfig } from './config.js'
 import { pluginIntegrations } from './integrations.js'
@@ -72,6 +75,7 @@ import {
   readableMarkdown,
   handoverText,
   importParsedSession,
+  MAX_IMPORT_ARCHIVE_BYTES,
   parseArchive,
 } from './archive.js'
 import type { WireModelCatalog, WireModelEntry, PromptTemplate } from '@dsh-chat/shared'
@@ -94,6 +98,7 @@ const MIME_BY_EXT: Record<string, string> = {
 export interface RouteDeps {
   config: MainConfig
   sessions: WorkspaceSessions
+  partitions?: ChatPartitionStore
   turns: TurnRunner
   gateway: RichGateway
   search: LocalSearchEngine
@@ -143,6 +148,26 @@ async function readBody(req: IncomingMessage, maxBytes: number): Promise<Buffer>
     chunks.push(buf)
   }
   return Buffer.concat(chunks)
+}
+
+class ImportUploadTooLarge extends Error {
+  constructor() {
+    super(`归档超过上传大小上限(${MAX_IMPORT_ARCHIVE_BYTES / 1024 / 1024} MiB)。`)
+  }
+}
+
+async function saveImportUpload(req: IncomingMessage, path: string): Promise<void> {
+  if (Number(req.headers['content-length']) > MAX_IMPORT_ARCHIVE_BYTES) throw new ImportUploadTooLarge()
+  let size = 0
+  const boundedBody = async function* () {
+    for await (const chunk of req.iterator({ destroyOnReturn: false })) {
+      const bytes = chunk as Buffer
+      size += bytes.length
+      if (size > MAX_IMPORT_ARCHIVE_BYTES) throw new ImportUploadTooLarge()
+      yield bytes
+    }
+  }
+  await pipeline(boundedBody(), createWriteStream(path, { flags: 'wx', mode: 0o600 }))
 }
 
 /** 读取请求体(JSON,带上限)。 */
@@ -242,6 +267,28 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
     }
     sendError(res, 403, 'forbidden')
     return false
+  }
+
+  const partitions = deps.partitions
+  if (partitions !== undefined) {
+    disposers.push(register({
+      kind: 'exact',
+      path: `${apiPrefix}/partitions`,
+      handler: async (req, res) => {
+        if (!guard(req, res)) return
+        if (req.method === 'GET') {
+          sendJson(res, 200, await partitions.read())
+        } else if (req.method === 'POST') {
+          try {
+            sendJson(res, 200, await partitions.change(await readJsonBody(req, 4096)))
+          } catch {
+            sendError(res, 400, 'Invalid partition change')
+          }
+        } else {
+          sendError(res, 405, 'method not allowed')
+        }
+      },
+    }))
   }
 
   if (deps.sidecar !== undefined) {
@@ -474,8 +521,8 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       }
       if (req.method === 'PUT' && action === 'pin') {
         const body = await readJsonBody(req, 4096).catch(() => undefined) as { pinned?: unknown } | undefined
-        if (typeof body?.pinned !== 'boolean' || deps.turns.isRunning(id)) {
-          sendError(res, 400, '请在回复结束后变更置顶状态')
+        if (typeof body?.pinned !== 'boolean') {
+          sendError(res, 400, '置顶状态无效')
         } else if (await deps.sessions.setPinned(id, body.pinned)) {
           sendJson(res, 200, { ok: true })
         } else {
@@ -553,6 +600,9 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
         const replay = replayChatSession(events)
         const wire: WireSession = {
           versions: replay.versions,
+          versionSources: Object.fromEntries(replay.tree.flatMap(({ message }) =>
+            message.provenance ? [[message.id, message.provenance]] : [])),
+          ...(summary?.provenance ? { provenance: summary.provenance } : {}),
           id,
           title: summary?.title ?? '新对话',
           createdAt: summary?.createdAt ?? (events[0]?.time ?? Date.now()),
@@ -886,6 +936,21 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
         sendJson(res, 200, settings)
       } catch (error) {
         sendError(res, 400, error instanceof Error ? error.message : '无法更新文件夹访问权限。')
+      }
+    },
+  }))
+
+  disposers.push(register({
+    kind: 'exact',
+    path: `${apiPrefix}/local-data`,
+    handler: async (req, res) => {
+      if (!guard(req, res)) return
+      if (req.method !== 'GET') { sendError(res, 405, 'method not allowed'); return }
+      try {
+        const [usage, sessions] = await Promise.all([deps.store.usage(), deps.sessions.list()])
+        sendJson(res, 200, { ...usage, sessions: sessions.length })
+      } catch {
+        sendError(res, 503, '无法读取 WebChat 本地存储状态。')
       }
     },
   }))
@@ -1238,25 +1303,36 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       }
       const url = new URL(req.url ?? '/', 'http://x')
       const confirm = url.searchParams.get('confirm') === '1'
-      let bytes: Buffer
-      try {
-        bytes = await readBody(req, 64 * 1024 * 1024)
-      } catch (error) {
-        sendError(res, 413, error instanceof Error ? error.message : '归档过大')
-        return
-      }
+      let directory: string | undefined
       let parsed: Awaited<ReturnType<typeof parseArchive>>
       try {
-        parsed = await parseArchive(new Uint8Array(bytes))
-      } catch (error) {
-        sendError(res, 400, error instanceof Error ? error.message : '无法识别的归档')
-        return
+        directory = await mkdtemp(join(tmpdir(), 'webchat-import-'))
+        const path = join(directory, 'archive')
+        try {
+          await saveImportUpload(req, path)
+        } catch (error) {
+          res.shouldKeepAlive = false
+          if (error instanceof ImportUploadTooLarge) sendError(res, 413, error.message)
+          else sendError(res, 500, '未能接收完整归档，请重试。')
+          return
+        }
+        try {
+          parsed = await parseArchive(await openAsBlob(path))
+        } catch (error) {
+          sendError(res, 400, error instanceof Error ? error.message : '无法识别的归档')
+          return
+        }
+      } finally {
+        if (directory !== undefined) await rm(directory, { recursive: true, force: true })
       }
       if (!confirm) {
         const known = await deps.sessions.importFingerprints()
-        sendJson(res, 200, { ...parsed.preview, sessions: parsed.preview.sessions.map((entry) => ({
-          ...entry, duplicate: known.has(archiveFingerprint(parsed.sessions[entry.index]!)),
-        })) })
+        sendJson(res, 200, { ...parsed.preview, sessions: parsed.preview.sessions.map((entry) => {
+          const fingerprint = archiveFingerprint(parsed.sessions[entry.index]!)
+          const duplicate = known.has(fingerprint)
+          known.add(fingerprint)
+          return { ...entry, duplicate }
+        }) })
         return
       }
       const selection = url.searchParams.get('select')

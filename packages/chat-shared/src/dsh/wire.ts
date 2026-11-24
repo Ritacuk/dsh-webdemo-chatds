@@ -1,3 +1,4 @@
+import type { MessageProvenance } from './sharing.js'
 /**
  * Chat Workspace 页面 ↔ DSH Host 插件路由 的线协议(P2)。
  *
@@ -142,6 +143,9 @@ export type ChatStreamFrame =
 
 /** 会话摘要(列表)。 */
 export interface WireSessionSummary {
+  imported?: boolean
+  provenance?: MessageProvenance
+  remoteSources?: Pick<MessageProvenance, 'deviceId' | 'deviceName'>[]
   archived?: boolean
   pinned?: boolean
   id: string
@@ -154,6 +158,8 @@ export interface WireSessionSummary {
 
 /** 会话完整恢复载荷:与 demo 的 Session 形状一致,页面 store 无需第二套模型 */
 export interface WireSession {
+  provenance?: MessageProvenance
+  versionSources?: Record<string, MessageProvenance>
   versions?: Record<string, string[]>
   id: string
   title: string
@@ -247,6 +253,10 @@ export interface WorkspaceSettings {
   // ── R8.6(七)自由外观系统:全部可选,缺省 = 官方 demo 默认观感(升级无视觉跳变) ──
   /** 主题强调色(#rrggbb);缺省跟随 DSH。 */
   appearanceAccent?: string
+  sidebarTitle?: string
+  sidebarTitleSize?: number
+  sidebarTitleColor?: string
+  sidebarTitleWeight?: 400 | 500 | 600 | 700
   /** 背景不透明度(0.4-1);缺省 1。 */
   appearanceBgAlpha?: number
   /** 浮动面板(弹窗/菜单)不透明度(0.4-1);缺省 1。 */

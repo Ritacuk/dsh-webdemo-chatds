@@ -1,3 +1,4 @@
+import type { MessageProvenance } from '../dsh/sharing.js'
 /**
  * 聊天数据模型 — 回复块、消息、会话。
  * 移植自官方 chat-demo 上游提交 5d5dd754… 的 `src/services/chat/types.ts`,
@@ -35,6 +36,7 @@ export type FileAttachment = {
 
 /** 本地消息的分支关系;字段缺省时按线性消息列表处理。 */
 export type MessageBranch = {
+  provenance?: MessageProvenance
   parentId?: string | null
   /** 当前选中的下一条消息;切换版本时保留每条分支原有的选择。 */
   selectedChildId?: string
@@ -118,6 +120,8 @@ export type Message = UserMessage | AssistantMessage
 
 export type Session = {
   id: string
+  provenance?: MessageProvenance
+  versionSources?: Record<string, MessageProvenance>
   title: string
   createdAt: number
   updatedAt: number
@@ -129,7 +133,7 @@ export type Session = {
 }
 
 /** 会话列表元数据;消息只在打开会话时加载。 */
-export type SessionSummary = Pick<Session, 'id' | 'title' | 'createdAt' | 'updatedAt'> & { pinned?: boolean; archived?: boolean }
+export type SessionSummary = Pick<Session, 'id' | 'title' | 'createdAt' | 'updatedAt'> & { pinned?: boolean; archived?: boolean; provenance?: MessageProvenance }
 
 /** 显式提取字段,避免将完整会话的消息带进列表。 */
 export const toSessionSummary = (session: SessionSummary): SessionSummary => ({

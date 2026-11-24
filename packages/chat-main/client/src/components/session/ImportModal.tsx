@@ -9,7 +9,7 @@ import styles from './ImportModal.module.css'
 
 /**
  * R8 历史导入:DeepChat v3 ZIP 归档。
- * 流程:选择文件 → Host 校验并返回预览 → 用户勾选确认 → 官方写入路径创建新会话。
+ * 流程:选择文件 → Host 校验并返回预览 → 用户勾选确认 → 写入 WebChat 专用存储。
  * 导入失败不留半条损坏会话(Host 逐会话回滚隐藏)。
  */
 
@@ -79,6 +79,7 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
             if (chosen !== undefined) void pick(chosen)
             event.target.value = ''
           }} />
+        <p className={styles.note}>{t('importStorageDestination')}</p>
         {error !== '' && <p role="alert">{error}</p>}
         {busy && <p role="status">{t('importProcessing')}</p>}
         {preview !== null && result === null && (
@@ -90,6 +91,10 @@ export function ImportModal({ onClose }: { onClose: () => void }) {
               attachments: preview.sessions.reduce((sum, item) => sum + item.attachmentCount, 0),
             })}</p>
             <p>{t('importArchiveSize', { size: Math.ceil(preview.size / 1024).toLocaleString(), count: preview.sessions.filter((entry) => entry.duplicate).length })}</p>
+            <p>{t('importMissingSummary', {
+              missing: preview.sessions.reduce((sum, item) => sum + item.missingAttachmentCount, 0),
+              unsupported: preview.sessions.reduce((sum, item) => sum + item.unsupportedFragmentCount, 0),
+            })}</p>
             <div className={styles.list}>
               {preview.sessions.map((entry) => (
                 <label key={entry.index} className={styles.row}>

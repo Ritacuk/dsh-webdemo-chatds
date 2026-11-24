@@ -25,6 +25,7 @@ export async function pluginIntegrations(ctx: Context) {
       description: '在 WebChat 中聊天和检索授权文件夹。',
       rows: {
         'chatds-main': { title: '本地文件检索', description: '按会话授权搜索和读取片段。', kind: 'local' },
+        'chatds-sharing': { title: '数据共享', description: '在配对设备之间加密共享所选聊天。', kind: 'passive' },
         'chatds-sidecar': { title: 'Agent 侧聊', description: '提供独立的侧聊界面，无需模型工具授权。', kind: 'passive' },
       },
     },

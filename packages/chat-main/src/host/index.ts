@@ -17,6 +17,8 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import { fileURLToPath } from 'node:url'
+import type { SharingWorkspace } from './sharing/workspace.js'
+import { ChatPartitionStore } from './partitions.js'
 import { registerRoutes } from './routes.js'
 import { WorkspaceSessions } from './sessions.js'
 import { WorkspaceStore } from './store.js'
@@ -80,11 +82,15 @@ export function mountWorkspace(ctx: Context, config: MainConfig, sidecar: boolea
   const search = new LocalSearchEngine(async () => (await store.getSettings(rowDefaults)).authorizedDirs)
   const turns = new TurnRunner(ctx, sessions, store, gateway, search, async () => ({ requestDiagnostics: (await store.getSettings(rowDefaults)).requestDiagnostics }), ledger)
 
+  const partitions = sidecar ? undefined : new ChatPartitionStore(store, sessions)
+  if (partitions) ctx.provide('chatdsSharingWorkspace', { sessions, partitions, turns, pagePath: config.pagePath } satisfies SharingWorkspace)
+
   // 路由注册 + 会话监听全部折进一个 effect:停用/重载时按注册的逆序释放,
   // 并 flush + close 全部写句柄与 KV 域(持久性屏障在卸载路径上同样成立)。
   ctx.effect(() => {
     const disposeRoutes = registerRoutes(ctx, {
       config,
+      partitions,
       sessions,
       turns,
       gateway,

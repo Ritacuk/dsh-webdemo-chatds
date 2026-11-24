@@ -12,3 +12,13 @@
       disabled: true
       config:
         pagePath: /chat-workspace-sidecar
+    - id: chatds-sharing
+      name: dsh-webdemo-chatds/sharing
+      disabled: true
+      meta:
+        title:
+          zh-cn: 数据共享
+          en-us: Data Sharing
+        description:
+          zh-cn: 在配对设备之间加密共享所选聊天记录
+          en-us: Share selected chats with paired devices

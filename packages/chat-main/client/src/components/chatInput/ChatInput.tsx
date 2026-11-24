@@ -60,13 +60,9 @@ const Input = ({ sessionId, navigationAvailable, onOpenNavigation }: {
   const t = useTranslate()
   // R8.5:草稿文本持久在 store(键 = sessionId 或 'new');发送成功后由 setText('') 归零。
   const draftKey = sessionId ?? 'new'
-  const [text, setTextState] = useState(() => readDraftText(draftKey))
+  const text = useChatStore((state) => state.draftTexts[draftKey] ?? '')
   const setText = (value: string | ((previous: string) => string)) => {
-    setTextState((previous) => {
-      const next = typeof value === 'function' ? value(previous) : value
-      saveDraftText(draftKey, next)
-      return next
-    })
+    saveDraftText(draftKey, typeof value === 'function' ? value(readDraftText(draftKey)) : value)
   }
   const streaming = useChatStore(
     (state) => sessionId !== null && Object.hasOwn(state.streaming, sessionId)

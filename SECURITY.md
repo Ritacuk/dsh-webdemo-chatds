@@ -19,3 +19,6 @@ Please report suspected vulnerabilities privately via GitHub Security Advisories
 - The browser never receives credentials; the Host resolves them per request from DSH's credential store.
 - Local directory grants are read-only and validated Host-side (absolute path, realpath, existence, readability); the search engine re-validates every path it touches against the authorized roots.
 - Session data lives exclusively in DSH's official persistence layer.
+- Data Sharing (optional, off by default) uses an Ed25519 device identity for authentication and one-time/ephemeral X25519 keys for content. LAN sessions derive directional AES-256-GCM keys from an authenticated ephemeral transcript; WebDAV objects use a one-time prekey per message and delete it after receipt. The long-term key is not a content-encryption key. See [docs/sharing-security.md](docs/sharing-security.md).
+
+- Device enrollment uses OPAQUE with Argon2id stretching. The device sync password is separate from content and backup encryption. Only the enrolling host stores its OPAQUE setup and record. Changing the password discards that registration and pauses other devices until verified again. See [the protocol and threat model](docs/sharing-security.md).

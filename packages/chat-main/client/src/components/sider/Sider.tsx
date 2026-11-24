@@ -5,13 +5,15 @@ import { IconPanelLeftOutline16, NewChatIcon, IconEllipsisOutline16, IconDownloa
 import { setSiderCollapsed } from '../../services/settings.js'
 import { groupSessions } from '../../services/chat/sessionGroups.js'
 import { closeSession, deleteSession, useChatStore } from '../../store/workspace.js'
-import type { SessionSummary } from '@dsh-chat/shared'
+import { api } from '../../services/api.js'
+import type { ChatPartitions, PartitionChange, SessionSummary } from '@dsh-chat/shared'
 import { Button } from '../base/Button.js'
 import { IconButton } from '../base/IconButton.js'
 import { Menu } from '../base/Menu.js'
 import { Modal } from '../base/Modal.js'
 import { showToast } from '../base/toastState.js'
 import { closeMobileSider, useMobileSider } from './mobileSiderState.js'
+import { PartitionGroup, PartitionNameForm } from './PartitionGroup.js'
 import { SessionItem } from './SessionItem.js'
 import styles from './Sider.module.css'
 
@@ -20,21 +22,59 @@ import styles from './Sider.module.css'
  * P2-I: 底部设置入口打开工作区设置对话框(SettingsDialog)。
  * R8.5:与 demo 的 newChat 一致——只清空 activeId 回到欢迎页,首条消息提交才创建会话。
  */
-type DataAction = (action: 'import' | 'export') => void
+type DataAction = (action: 'import' | 'export' | 'shared') => void
 
-export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: DataAction }) => {
+export const Sider = ({ mobile = false, onData, sharingEnabled = false }: { mobile?: boolean; onData: DataAction; sharingEnabled?: boolean }) => {
   const t = useTranslate()
   const sessions = useChatStore((state) => state.sessions)
   const activeId = useChatStore((state) => state.activeId)
+  const settings = useChatStore((state) => state.settings)
+  const title = settings?.sidebarTitle ?? t('appName')
   const [now, setNow] = useState(Date.now)
   const [archived, setArchived] = useState(false)
   const [query, setQuery] = useState('')
-  const groups = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase()
-    const matching = sessions.filter((session) => Boolean(session.archived) === archived &&
-      (!term || session.title.toLocaleLowerCase().includes(term)))
-    return groupSessions(matching, now, t)
-  }, [sessions, now, query, t, archived])
+  const [layout, setLayout] = useState<ChatPartitions>({ partitions: [], assignments: {} })
+  const [adding, setAdding] = useState(false)
+  const [source, setSource] = useState('all')
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('chatds:collapsed-partitions') ?? '[]')) }
+    catch { return new Set() }
+  })
+  useEffect(() => {
+    let cancelled = false
+    void api.listPartitions().then((value) => { if (!cancelled) setLayout(value) })
+      .catch((error: Error) => { if (!cancelled) showToast(error.message) })
+    return () => { cancelled = true }
+  }, [])
+  const changePartition = async (change: PartitionChange) => {
+    try {
+      setLayout(await api.changePartition(change))
+      return true
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : String(error))
+      return false
+    }
+  }
+  const toggle = (id: string) => {
+    setCollapsed((previous) => {
+      const next = new Set(previous)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      try { localStorage.setItem('chatds:collapsed-partitions', JSON.stringify([...next])) } catch { /* Private browsing. */ }
+      return next
+    })
+  }
+  const sources = new Map(sessions.flatMap((session) => (session.remoteSources ?? [])
+    .map(({ deviceId, deviceName }) => [deviceId, deviceName] as const)))
+  const term = query.trim().toLocaleLowerCase()
+  const matching = sessions.filter((session) => Boolean(session.archived) === archived &&
+    (source === 'all' || (source === 'local' ? !session.provenance : session.remoteSources?.some(({ deviceId }) => deviceId === source))))
+  const partitions = [...layout.partitions, null].map((partition) => {
+    const entries = matching.filter((session) => (layout.assignments[session.id] ?? null) === (partition?.id ?? null) &&
+      (!term || session.title.toLocaleLowerCase().includes(term) || partition?.name.toLocaleLowerCase().includes(term)))
+    return { partition, groups: groupSessions(entries, now, t) }
+  })
+  const hasMatches = partitions.some(({ groups }) => groups.length > 0)
   const [deleting, setDeleting] = useState<SessionSummary | null>(null)
   const [deletePending, setDeletePending] = useState(false)
   // R8.5:历史遗留的空白会话(从未发送消息)识别与一次性整理建议。只按真实消息数判断,不按标题。
@@ -84,9 +124,14 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
   return (
     <div className={clsx(styles.sider, mobile && styles.mobile)} data-webchat-sider={mobile ? "mobile" : "desktop"}>
       <div className={styles.top}>
-        <div className={styles.appName} data-webchat-appname="">{t('appName')}</div>
+        <div className={styles.appName} data-webchat-appname="" title={title} style={{
+          fontSize: settings?.sidebarTitleSize,
+          color: settings?.sidebarTitleColor,
+          fontWeight: settings?.sidebarTitleWeight,
+        }}>{title}</div>
         <Menu options={[
-          { key: 'archive', label: t(archived ? 'showActiveChats' : 'showArchivedChats'), icon: null, onSelect: () => setArchived(!archived) },
+          { key: 'partition', label: t('newPartition'), icon: null, onSelect: () => setAdding(true) },
+          ...(sharingEnabled ? [{ key: 'shared', label: t('sharedExcerpts'), icon: null, onSelect: () => { closeMobileSider(); onData('shared') } }] : []),
           { key: 'import', label: t('historyImport'), icon: null, onSelect: () => { closeMobileSider(); onData('import') } },
           { key: 'export', label: t('exportChatHistory'), icon: <IconDownloadOutline16 />, onSelect: () => { closeMobileSider(); onData('export') } },
         ]}>
@@ -118,6 +163,20 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
       </button>
       <input className={styles.search} type="search" aria-label={t('searchSessionsAria')} placeholder={t('searchSessionsPlaceholder')} data-webchat-search=""
         value={query} onChange={(event) => setQuery(event.target.value)} />
+      <div className={styles.historyTabs} role="group" aria-label={t('historyView')}>
+        <button type="button" aria-pressed={!archived} onClick={() => setArchived(false)}>{t('activeChatsTab')}</button>
+        <button type="button" aria-pressed={archived} onClick={() => setArchived(true)}>{t('archivedChatsTab')}</button>
+      </div>
+      {sources.size > 0 && <Menu options={[
+        { key: 'all', label: t('allSources'), icon: null, onSelect: () => setSource('all') },
+        { key: 'local', label: t('localSource'), icon: null, onSelect: () => setSource('local') },
+        ...Array.from(sources, ([id, name]) => ({ key: id, label: t('fromDevice', { name }), icon: null, onSelect: () => setSource(id) })),
+      ]}>
+        {({ toggle: open }) => <Button variant="outlined" size="s" onClick={open}>
+          {source === 'all' ? t('filterSource') : source === 'local' ? t('localSource') : sources.get(source)}
+        </Button>}
+      </Menu>}
+      {adding && <PartitionNameForm save={(name) => changePartition({ action: 'create', name })} cancel={() => setAdding(false)} />}
       {!archived && emptySessions.length >= 3 && (
         <button type="button" className={styles.cleanupHint} onClick={() => void hideEmptySessions()} disabled={cleanupPending}>
           {t('emptyHistoryCleanupHint').replace('{count}', String(emptySessions.length))}
@@ -125,22 +184,29 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
       )}
       <div className={styles.listWrap}>
         <div className={styles.list}>
-          {archived && <button type="button" className={styles.newChat} onClick={() => setArchived(false)}>{t('showActiveChats')}</button>}
-          {!groups.length && archived && !query.trim() && <p className={styles.empty}>{t('noArchivedChats')}</p>}
-          {!groups.length && query.trim() && <p className={styles.empty}>{t('noMatchingSessions')}</p>}
-          {groups.map((group) => (
-            <div key={group.key} className={styles.section}>
-              <div className={styles.sectionHeader}>{group.label}</div>
-              {group.sessions.map((session) => (
-                <SessionItem
-                  key={session.id}
-                  session={session}
-                  active={session.id === activeId}
-                  onDelete={() => setDeleting(session)}
-                />
-              ))}
-            </div>
-          ))}
+          {!hasMatches && archived && !term && <p className={styles.empty}>{t('noArchivedChats')}</p>}
+          {!hasMatches && term && <p className={styles.empty}>{t('noMatchingSessions')}</p>}
+          {partitions.filter(({ groups, partition }) => !term || groups.length || partition?.name.toLocaleLowerCase().includes(term))
+            .map(({ partition, groups }) => {
+              const key = partition?.id ?? 'unpartitioned'
+              return <PartitionGroup key={key} partition={partition} expanded={!!term || !collapsed.has(key)}
+                toggle={() => toggle(key)} change={changePartition}
+                first={layout.partitions[0]?.id === key} last={layout.partitions.at(-1)?.id === key}>
+                {groups.map((group) => <div key={group.key} className={styles.section}>
+                  <div className={styles.sectionHeader}>{group.label}</div>
+                  {group.sessions.map((session) => <SessionItem key={session.id} session={session}
+                    active={session.id === activeId} onDelete={() => setDeleting(session)}
+                    moveOptions={[...layout.partitions, null].flatMap((option) => {
+                      const id = option?.id ?? null
+                      if (id === (layout.assignments[session.id] ?? null)) return []
+                      return [{ key: id ?? 'unpartitioned',
+                        label: t('moveToPartition', { name: option?.name ?? t('unpartitioned') }),
+                        icon: null, onSelect: () => void changePartition({ action: 'move', sessionId: session.id, partitionId: id }) }]
+                    })}
+                  />)}
+                </div>)}
+              </PartitionGroup>
+            })}
         </div>
       </div>
       {deleting ? (
@@ -184,7 +250,7 @@ export const Sider = ({ mobile = false, onData }: { mobile?: boolean; onData: Da
 }
 
 /** 移动端抽屉：浮在页面上方，点空白区域关闭。 */
-export const MobileSider = ({ onData }: { onData: DataAction }) => {
+export const MobileSider = ({ onData, sharingEnabled }: { onData: DataAction; sharingEnabled?: boolean }) => {
   const open = useMobileSider((state) => state.open)
   if (!open) {
     return null
@@ -193,7 +259,7 @@ export const MobileSider = ({ onData }: { onData: DataAction }) => {
     <>
       <div className={styles.drawerMask} onClick={closeMobileSider} />
       <div className={styles.drawer}>
-        <Sider mobile onData={onData} />
+        <Sider mobile onData={onData} sharingEnabled={sharingEnabled} />
       </div>
     </>
   )

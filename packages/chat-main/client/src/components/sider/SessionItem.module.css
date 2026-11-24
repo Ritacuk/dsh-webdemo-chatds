@@ -31,6 +31,13 @@
 }
 
 .title {
+  border: 0;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  text-align: start;
+  padding: 0;
+  cursor: pointer;
   flex: 1;
   min-width: 0;
   overflow: hidden;
@@ -40,7 +47,7 @@
 }
 
 .action {
-  display: none;
+  display: flex;
   flex-shrink: 0;
   margin-left: 4px;
 
@@ -89,4 +96,13 @@
     border-radius: 16px;
     font-size: 16px;
   }
+}
+
+
+.source {
+  display: block;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

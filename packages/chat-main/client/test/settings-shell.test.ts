@@ -113,10 +113,12 @@ async function makeHarness(): Promise<Harness> {
   routes.set('/api/prompts', () => ({ templates: [{ id: 't1', name: '模板', category: '通用', summary: '', body: '正文', tags: [] }] }))
   routes.set('/api/cost/today', () => ({ available: true, budgetMerged: { cap: 0.5, used: 0.01 }, budget: { cap: 0.5 } }))
   routes.set('/api/file-access', () => ({ dirs: [] }))
+  routes.set('/api/partitions', () => ({ partitions: [] }))
   routes.set('/api/sessions/', (call) => {
     if (call.method === 'PUT') return { ok: true }
     return { supported: [{ name: 'chatds_search_files', enabled: true }, { name: 'chatds_read_files', enabled: false }] }
   })
+  routes.set('/api/sessions', () => ({ sessions: [] }))
   const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } })
   ;(globalThis as unknown as { fetch: unknown }).fetch = (async (url: unknown, init?: { method?: string; body?: string }) => {
     const call: FetchCall = { url: String(url), method: (init?.method ?? 'GET').toUpperCase(), body: init?.body ? JSON.parse(init.body) : null }
@@ -179,6 +181,26 @@ afterEach(() => {
   document.body.innerHTML = ''
 })
 
+const enabledSharing = {
+  enabled: true,
+  device: { id: '11111111-1111-4111-8111-111111111111', name: 'Windows', invite: 'invite', fingerprint: 'aaaa aaaa aaaa aaaa aaaa aaaa aaaa aaaa', code: 'AAAA-BBBB' },
+  peers: [{ id: '22222222-2222-4222-8222-222222222222', name: 'ritacuk-X99', fingerprint: 'bbbb bbbb bbbb bbbb bbbb bbbb bbbb bbbb', code: 'CCCC-DDDD', reachable: true, discovered: 'http://10.0.0.2:46830' }],
+  lan: true, lanPort: 46830, lanAddresses: ['10.0.0.1'],
+  discovery: { mechanism: 'mdns+multicast', published: true, browsing: true, devices: 1 },
+  devices: [{ id: '22222222-2222-4222-8222-222222222222', name: 'ritacuk-X99', code: 'CCCC-DDDD', address: '10.0.0.2', port: 46830, endpoint: 'http://10.0.0.2:46830', paired: true }],
+  interfaces: [{ name: 'eth0', address: '10.0.0.1', family: 'IPv4', scope: 'private', prefix: 24, eligible: true }],
+  interfaceSelection: [],
+  lanDetails: { port: 46830, addresses: ['10.0.0.1'], loopbackOnly: false,
+    interfaces: [{ name: 'eth0', address: '10.0.0.1', family: 'IPv4', scope: 'private', prefix: 24, eligible: true }],
+    candidates: [{ name: 'eth0', address: '10.0.0.1', family: 'IPv4', scope: 'private', prefix: 24, eligible: true },
+      { name: 'vEthernet', address: '172.18.0.1', family: 'IPv4', scope: 'private', prefix: 16, eligible: false, reason: 'virtual-adapter' }],
+    discovery: { mechanism: 'mdns+multicast', published: true, browsing: true, devices: 1 }, platform: 'linux' },
+  firewall: { supported: true, elevated: false, profile: 'Private', rulePresent: false,
+    hint: 'Windows blocked the inbound connection.', command: 'New-NetFirewallRule -DisplayName [0m"ChatDS"' },
+  pairingCode: 'AAAA-BBBB', prekeys: { available: 32, consumed: 4 },
+  policies: [], exclusions: [], pending: 0, running: false,
+}
+
 describe('R8.6 P0:ChatDS 设置区(真实 client.js + React 渲染)', () => {
   it('挂载后默认渲染常规页,无错误降级框', async () => {
     const h = await makeHarness()
@@ -187,13 +209,46 @@ describe('R8.6 P0:ChatDS 设置区(真实 client.js + React 渲染)', () => {
     await h.unmountAll()
   })
 
-  it('八个设置页逐一点开:每页都渲染内容且不出现错误边界降级(R8.5 崩溃回归)', async () => {
+  it('设置页逐一点开:每页都渲染内容且不出现错误边界降级(R8.5 崩溃回归)', async () => {
     const h = await makeHarness()
-    for (const label of ['模型', '提示词', '用量与费用', '插件与工具', '文件', '数据管理', '外观', '常规']) {
+    for (const label of ['模型', '提示词', '用量与费用', '插件与工具', '数据共享', '外观', '常规']) {
       await h.clickNav(label)
       expect(h.container.querySelector('.chatds-settings-errorbox'), `页面「${label}」出现错误降级框`).toBeNull()
       expect(h.text().length, `页面「${label}」渲染为空`).toBeGreaterThan(0)
     }
+    await h.unmountAll()
+  })
+
+  it('外观页保存侧边栏标题、字号、颜色和字重，并支持单独恢复默认', async () => {
+    const h = await makeHarness()
+    await h.clickNav('外观')
+    const input = (label: string) => h.container.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`)!
+    const title = input('侧边栏标题')
+    await act(async () => {
+      title.focus()
+      title.value = '  我的聊天  '
+      title.blur()
+    })
+    for (const [label, value] of [['标题字号', '28'], ['标题颜色', '#ab1245']]) {
+      await act(async () => {
+        const field = input(label)
+        field.value = value
+        field.dispatchEvent(new Event('change', { bubbles: true }))
+      })
+    }
+    await act(async () => {
+      const weight = h.container.querySelector<HTMLSelectElement>('select[aria-label="标题字重"]')!
+      weight.value = '700'
+      weight.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    await h.clickButton('恢复默认标题')
+    expect(h.fetchCalls.filter((call) => call.method === 'PUT').map((call) => call.body)).toEqual([
+      { sidebarTitle: '我的聊天' },
+      { sidebarTitleSize: 28 },
+      { sidebarTitleColor: '#ab1245' },
+      { sidebarTitleWeight: 700 },
+      { sidebarTitle: null, sidebarTitleSize: null, sidebarTitleColor: null, sidebarTitleWeight: null },
+    ])
     await h.unmountAll()
   })
 
@@ -276,4 +331,44 @@ describe('R8.6 P0:ChatDS 设置区(真实 client.js + React 渲染)', () => {
     expect(h.text()).toContain('聊天界面语言')
     await h.unmountAll()
   })
+  it('数据共享启用态:渲染设备密码和网络诊断，并隐藏旧配对信息', async () => {
+    const h = await makeHarness()
+    const discovery = { mechanism: 'mdns+multicast', published: true, browsing: true, devices: 1 }
+    const interfaces = [{ name: 'eth0', address: '10.0.0.1', family: 'IPv4', scope: 'private', prefix: 24, eligible: true }]
+    h.setRoute('/api/sharing', (call) => call.method === 'POST' ? enabledSharing : enabledSharing)
+    await h.clickNav('数据共享')
+    expect(h.container.querySelector('.chatds-settings-errorbox')).toBeNull()
+    expect(h.text()).toContain('加入已有设备')
+    expect(h.text()).toContain('局域网网卡选择')
+    expect(h.text()).toContain('Windows 防火墙与入站连接')
+    expect(h.text()).not.toContain('可用预密钥 32 枚')
+    expect(h.text()).not.toContain('AAAA-BBBB')
+    expect(h.text()).toContain('ritacuk-X99')
+    await h.unmountAll()
+  })
+
+
+  it('shows general data controls in their own view and lets users recheck a failed LAN listener', async () => {
+    const h = await makeHarness()
+    h.setRoute('/api/local-data', () => ({ sessions: 3, logBytes: 1024, attachmentBytes: 2048 }))
+    expect(h.container.querySelector('.chatds-settings-group:not([hidden]) h2')?.textContent).toBe('基本偏好')
+    await h.clickButton('数据管理')
+    expect(h.container.querySelector('.chatds-settings-group:not([hidden])')?.textContent).toContain('3 个会话')
+    h.setRoute('/api/sharing', () => ({ ...enabledSharing, lanEnabled: true, lan: false, lanState: 'unavailable' }))
+    await h.clickNav('数据共享')
+    expect(h.container.querySelector('.chatds-share-section:not([hidden]) h2')?.textContent).toBe('概览')
+    expect(h.container.querySelector('.chatds-share-section:not([hidden])')?.textContent).toContain('局域网同步暂不可用')
+    const recheck = Array.from(h.container.querySelectorAll<HTMLButtonElement>('.chatds-share-section:not([hidden]) button'))
+      .find((button) => button.textContent === '重新检测网络')!
+    await act(async () => recheck.click())
+    expect(h.fetchCalls.some(({ body }) => (body as { action?: string } | null)?.action === 'lan-recheck')).toBe(true)
+    const channels = Array.from(h.container.querySelectorAll<HTMLButtonElement>('.chatds-share nav button'))
+      .find((button) => button.textContent === '同步通道')!
+    await act(async () => channels.click())
+    const toggle = h.container.querySelector('[role="switch"][aria-label="允许局域网设备连接本机"]')
+    expect(toggle?.getAttribute('aria-checked')).toBe('true')
+    expect(toggle?.textContent).toContain('开启')
+    await h.unmountAll()
+  })
+
 })

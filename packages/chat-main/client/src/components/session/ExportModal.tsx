@@ -38,6 +38,7 @@ export function ExportModal({ onClose, sessionId }: { onClose: () => void; sessi
     <Button variant="outlined" disabled={busy || !ids.length} onClick={() => void download()}>{busy ? t('exportDownloading') : t('exportAllDownload')}</Button>
   }>
     <div className={styles.body}>
+      <p className={styles.note}>{t('exportStorageScope')}</p>
       {error && <p role="alert">{error}</p>}
       {!sessionId && visible.length > 0 &&
         <Button variant="outlined" disabled={busy} onClick={() => {

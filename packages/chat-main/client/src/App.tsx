@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { SharedExcerptsDialog, useSharingPresence } from './components/sharing/SharingDialogs.js'
 import { ImportModal } from './components/session/ImportModal.js'
 import { ExportModal } from './components/session/ExportModal.js'
 import { useTranslate } from './i18n/index.js'
 import { isChineseBrowser, setLocale, useSettings } from './services/settings.js'
 import { useIsMobile, useMobileViewport, usePreventPageScroll } from './app/viewport.js'
-import { initStore, openSession, reloadSettings, useChatStore } from './store/workspace.js'
+import { clearHistoryCache, initStore, openSession, reloadSettings, useChatStore } from './store/workspace.js'
 import { SearchPanel } from './components/search/SearchPanel.js'
 import { closeSearchPanel } from './components/search/searchPanelState.js'
 import { SessionView } from './components/session/SessionView.js'
@@ -49,7 +50,7 @@ export const App = () => {
     state.activeId === null ? false : Object.hasOwn(state.streaming, state.activeId)
   )
   const activeId = useChatStore((state) => state.activeId)
-  const [dataAction, setDataAction] = useState<'import' | 'export' | null>(null)
+  const [dataAction, setDataAction] = useState<'import' | 'export' | 'shared' | null>(null)
   const settledTick = useChatStore((state) => state.settledTick)
 
   usePreventPageScroll(isMobile)
@@ -60,7 +61,10 @@ export const App = () => {
       if (event.data?.type === 'chatds:request-active-session') {
         window.parent.postMessage({ type: 'chatds:active-session', id: useChatStore.getState().activeId }, location.origin)
       }
-      if (event.data?.type === 'chatds:data' && ['import', 'export'].includes(event.data.action)) setDataAction(event.data.action)
+      if (event.data?.type === 'chatds:data') {
+        if (event.data.action === 'clear-cache') clearHistoryCache()
+        if (event.data.action === 'import' || event.data.action === 'export') setDataAction(event.data.action)
+      }
     }
     window.addEventListener('message', receive)
     if (window.parent !== window) window.parent.postMessage({ type: 'chatds:ready' }, location.origin)
@@ -86,10 +90,13 @@ export const App = () => {
 
   useEffect(() => {
     const stopTheme = setupTheme()
-    const settingsChannel = new BroadcastChannel('chatds:settings')
-    settingsChannel.onmessage = () => { void reloadSettings().catch(() => {}) }
+    let settingsChannel: BroadcastChannel | undefined
+    try {
+      settingsChannel = new BroadcastChannel('chatds:settings')
+      settingsChannel.onmessage = () => { void reloadSettings().catch(() => {}) }
+    } catch { /* Some DSH containers have no BroadcastChannel. */ }
     ensureKatex()
-    return () => { stopTheme(); settingsChannel.close() }
+    return () => { stopTheme(); settingsChannel?.close() }
   }, [])
 
   // 搜索结果面板只属于当前会话
@@ -98,12 +105,13 @@ export const App = () => {
   useEffect(closeMobileSider, [activeId, isMobile])
 
   const sideChat = parentSession !== null
+  const sharing = useSharingPresence(sideChat)
   const sessionView = session ? <SessionView session={session} streaming={streaming} siderCollapsed={false} embedded /> : null
 
   return (
     <>
       <div ref={frameRef} className={styles.frame}>
-        {sideChat ? null : isMobile ? <MobileSider onData={setDataAction} /> : siderCollapsed ? null : <Sider onData={setDataAction} />}
+        {sideChat ? null : isMobile ? <MobileSider onData={setDataAction} sharingEnabled={sharing.enabled} /> : siderCollapsed ? null : <Sider onData={setDataAction} sharingEnabled={sharing.enabled} />}
         <main className={styles.main} data-webchat-main="">
           <div className={styles.content} data-webchat-content="">
             {!sideChat && siderCollapsed ? <CollapsedSider /> : null}
@@ -135,7 +143,9 @@ export const App = () => {
               </div>
             ) : session ? (
               <SessionView
+                key={session.id}
                 session={session}
+                sharing={sharing}
                 streaming={streaming}
                 siderCollapsed={siderCollapsed}
               />
@@ -147,6 +157,7 @@ export const App = () => {
         <SearchPanel />
       </div>
       {dataAction === 'import' && <ImportModal onClose={() => setDataAction(null)} />}
+      {dataAction === 'shared' && <SharedExcerptsDialog onClose={() => setDataAction(null)} />}
       {dataAction === 'export' && <ExportModal onClose={() => setDataAction(null)} />}
       <Toast />
     </>

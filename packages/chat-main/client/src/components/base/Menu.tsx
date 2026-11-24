@@ -9,6 +9,7 @@ export type MenuOption = {
   label: string
   icon: ReactNode
   danger?: boolean
+  disabled?: boolean
   onSelect: () => void
 }
 
@@ -25,9 +26,12 @@ export const Menu = ({
   // 左侧对齐并再左移 5px，让菜单文字与触发元素图标对齐
   const { anchorRef, floatingRef, position } = useAnchoredPosition<HTMLSpanElement, HTMLDivElement>(
     open,
-    { align: 'start', alignOffset: -5, offset: 4 }
+    { align: 'start', alignOffset: -5, offset: 4, maxHeight: 360 }
   )
   useDismiss(open, [anchorRef, floatingRef], close)
+  useEffect(() => {
+    if (open) floatingRef.current?.querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true })
+  }, [open, floatingRef])
 
   // R8.6(修):浮层是 fixed 定位,锚点随列表滚动/窗口变化移走后菜单会"悬空飞走"。
   // 打开期间任何容器滚动(捕获阶段,含会话列表)或窗口尺寸变化都立即关闭;
@@ -60,20 +64,34 @@ export const Menu = ({
               className={styles.menu}
               style={position ?? undefined}
               role="menu"
+              onClick={(event) => event.stopPropagation()}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') anchorRef.current?.querySelector<HTMLButtonElement>('button')?.focus()
+                const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'))
+                if (!items.length || !['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+                event.preventDefault()
+                const index = items.indexOf(document.activeElement as HTMLButtonElement)
+                const next = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+                  : (index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+                items[next]?.focus()
+              }}
             >
               {options.map((option) => (
-                <div
+                <button
+                  type="button"
+                  disabled={option.disabled}
                   key={option.key}
                   role="menuitem"
                   className={clsx(styles.option, option.danger && styles.danger)}
                   onClick={() => {
                     setOpen(false)
+                    anchorRef.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true })
                     option.onSelect()
                   }}
                 >
                   <span className={styles.icon}>{option.icon}</span>
                   {option.label}
-                </div>
+                </button>
               ))}
             </div>,
             document.body
