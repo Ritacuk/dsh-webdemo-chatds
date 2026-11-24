@@ -162,3 +162,8 @@
   color: var(--dsw-alias-fg-secondary);
 }
 
+
+.message {
+  background-color: color-mix(in srgb, var(--chatds-assistant-color, transparent) var(--chatds-assistant-alpha, 100%), transparent);
+  border-radius: var(--chatds-assistant-radius, 22px);
+}

@@ -1,4 +1,5 @@
 import type { Context } from '@deepseek-ai/cordis'
+import { describeNativeCapabilities } from './native-capabilities.js'
 import { contextProjectionAvailable, costMeterAvailable } from './bridges.js'
 
 type Localized = string | Record<string, string>
@@ -49,6 +50,8 @@ export async function pluginIntegrations(ctx: Context) {
   const live = new Map(entries.filter((entry) => entry.enabled && entry.fiberPhase === 'active').map((entry) => [entry.entryId, entry]))
   return {
     managementAvailable: true,
+    native: describeNativeCapabilities(bundles, new Set(live.keys())),
+    contextAvailable: contextProjectionAvailable(ctx),
     bundles: bundles.flatMap((bundle) => {
       const integration = (registry as Record<string, typeof registry[keyof typeof registry]>)[bundle.name]
       if (!integration || !bundle.enabled || bundle.availability === 'missing' || bundle.error) return []

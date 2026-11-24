@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useChatDesign } from '../../services/chatDesign.js'
 import { api } from '../../services/api.js'
 import { startRecording, type Recording } from '../../services/speech/recorder.js'
 import { Modal } from '../base/Modal.js'
@@ -172,7 +173,7 @@ export function VoiceInput({ localEngine, onText, onClose }: { localEngine?: boo
     setError('')
     setStage('sending')
     try {
-      const text = await api.transcribe(audio.current, request.signal)
+      const text = await api.transcribe(audio.current, request.signal, useChatDesign.getState().design.speechProvider)
       if (request.signal.aborted || !mounted.current) return
       if (!text) throw new Error(t('voiceNoAudio'))
       onText(text)

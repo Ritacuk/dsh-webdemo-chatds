@@ -1,11 +1,11 @@
 {
   "name": "dsh-webdemo-chatds-workspace",
   "private": true,
-  "version": "0.12.1",
+  "version": "0.12.2-rc.1",
   "description": "WebChat for DeepSeek Harness — community chat plugin (monorepo: shared + main + sidecar)",
   "type": "module",
   "scripts": {
-    "build": "pnpm -r --if-present run build",
+    "build": "pnpm -r --filter '!dsh-chat-workspace-client' --if-present run build",
     "typecheck": "pnpm -r --if-present run typecheck",
     "test": "pnpm -r --if-present run test"
   }

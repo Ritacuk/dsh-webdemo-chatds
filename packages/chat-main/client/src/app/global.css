@@ -25,7 +25,7 @@ body {
   font-family: var(--dsw-font-family), system-ui, "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
   font-size: var(--ds-font-size-m);
   color: var(--dsw-alias-label-primary);
-  background-color: color-mix(in srgb, var(--dsw-alias-bg-base) calc(var(--chat-bg-alpha, 1) * 100%), transparent);
+  background-color: color-mix(in srgb, var(--chatds-background-color, var(--dsw-alias-bg-base)) var(--chatds-background-alpha, calc(var(--chat-bg-alpha, 1) * 100%)), transparent);
   -webkit-text-size-adjust: none;
   -webkit-tap-highlight-color: transparent;
   font-feature-settings: 'kern';
@@ -59,4 +59,13 @@ body.change-theme *::after {
     overflow: hidden;
     overscroll-behavior-y: none;
   }
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--chatds-image) center / var(--chatds-image-fit, cover) no-repeat;
+  opacity: var(--chatds-background-alpha, 100%);
 }

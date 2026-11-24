@@ -87,6 +87,8 @@ export type AssistantMessage = MessageBranch & {
   createdAt: number
   /** 实际使用的模型 id(P2-E:双通路下可以是任意已配置模型;rich 通路取值仍为 ChatModel)。 */
   model: string | null
+  /** Provider from the existing DSH source, used to resolve model-specific display preferences. */
+  modelProvider?: string
   /** 请求时是否开启深度思考 */
   thinking?: boolean
   /** 请求时是否声明 deepseek_web_search;关闭时仍声明 deepseek_read_url */

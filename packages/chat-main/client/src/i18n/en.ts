@@ -1,6 +1,18 @@
 import type { zh } from './zh.js'
 
 export const en = {
+  replyModelName: "Model: {model}",
+  localInputRefusal: "This message matches your keyword rules and is still in the editor.",
+  toolPermissions: "Tool permissions",
+  toolPermissionOpenSession: "Open a conversation to grant tools for that conversation.",
+  toolPermissionHelp: "Available with local search in Plan mode on compatible models.",
+  toolPermissionSearch: "Search authorized folders",
+  toolPermissionRead: "Read authorized file excerpts",
+  toolPermissionLoading: "Loading local tool permissions…",
+  toolPermissionApproval: "Tools that require approval are available in DSH Agent.",
+  attachCity: "Add city to this message",
+  cityContext: "City: {city}",
+  citySharing: "Sending will share this city with the selected model service.",
   branchSourceDetails: 'Branch sources',
   partitions: "Partitions",
   newPartition: "New partition",

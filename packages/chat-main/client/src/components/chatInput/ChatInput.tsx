@@ -1,3 +1,4 @@
+import { matchesRefusal, useChatDesign } from '../../services/chatDesign.js'
 import clsx from 'clsx'
 import { memo, useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
@@ -95,14 +96,26 @@ const Input = ({ sessionId, navigationAvailable, onOpenNavigation }: {
   const dshSpeechAvailable = useChatStore((state) => state.settings?.dshSpeechAvailable === true)
   const sendShortcut = useChatStore((state) => state.settings?.sendShortcut ?? 'enter')
 
+  const permits = (content: string) => {
+    const { refusal } = useChatDesign.getState().design
+    if (!matchesRefusal(content, refusal)) return true
+    showToast(refusal.message.trim() || t('localInputRefusal'))
+    return false
+  }
+
+  const city = useChatDesign((state) => state.design.location ? state.design.city.trim() : '')
+  const [attachedCity, setAttachedCity] = useState('')
+  useEffect(() => setAttachedCity(''), [city])
+
   // 模板「插入并发送」:文本就绪且无上传占用时自动触发一次发送
   useEffect(() => {
     if (!autoSendRef.current) return
     if (streaming || uploading) return
     autoSendRef.current = false
-    if (text.trim() !== '') {
+    if (text.trim() !== '' && permits(text)) {
       const cloud = pending.some((file) => file.handling === 'cloud-files-api')
       void sendMessage(session, text, input, cloud)
+      setAttachedCity('')
       setText('')
     }
   })
@@ -113,7 +126,10 @@ const Input = ({ sessionId, navigationAvailable, onOpenNavigation }: {
     }
     // 文本由提交动作读取最新快照,不使用上一次渲染的草稿。
     const cloud = pending.some((file) => file.handling === 'cloud-files-api')
-    void sendMessage(session, text, input, cloud)
+    const content = city && attachedCity === city ? `${text.trim()}\n\n${t('cityContext', { city })}`.trim() : text
+    if (!permits(content)) return
+    void sendMessage(session, content, input, cloud)
+    setAttachedCity('')
     setText('')
     if (isMobile) {
       textareaRef.current?.blur()
@@ -189,7 +205,7 @@ const Input = ({ sessionId, navigationAvailable, onOpenNavigation }: {
           <span>{t('modelBlockedBanner')}</span>
         </div>
       )}
-      {permissionsOpen && <Modal title="插件权限" onClose={() => setPermissionsOpen(false)}>
+      {permissionsOpen && <Modal title={t('toolPermissions')} className={styles.permissionDialog} closable onClose={() => setPermissionsOpen(false)}>
         <ToolPermissions sessionId={sessionId} />
       </Modal>}
       {voiceOpen && <VoiceInput localEngine={dshSpeechAvailable} onClose={() => setVoiceOpen(false)} onText={(value) => {
@@ -242,6 +258,11 @@ const Input = ({ sessionId, navigationAvailable, onOpenNavigation }: {
             <small>发送时由 DeepSeek 云端解析 PDF 或图片。文件引用可用于后续对话。</small>}
         </div>
       )}
+      {city && <div className={styles.locationRow}>
+        <label><input type="checkbox" checked={attachedCity === city}
+          onChange={(event) => setAttachedCity(event.target.checked ? city : '')} /> {t('attachCity')}</label>
+        {attachedCity === city && <small>{t('cityContext', { city })} · {t('citySharing')}</small>}
+      </div>}
       <div className={styles.functionRow} data-webchat-composer-bar="">
         <div className={styles.toggles} data-webchat-toggles="">
           <input ref={fileInputRef} type="file" multiple hidden onChange={(event) => {
@@ -445,8 +466,10 @@ function CapabilitySwitch({ label, checked, disabled, toggle }: {
  *   写入类/未标记工具执行时需要本次确认。
  */
 function ToolPermissions({ sessionId }: { sessionId: string | null }) {
+  const t = useTranslate()
   const [catalog, setCatalog] = useState<Awaited<ReturnType<typeof api.toolPermissions>>>()
   const [busy, setBusy] = useState(false)
+  const writing = useRef(false)
   const [error, setError] = useState('')
   useEffect(() => {
     let active = true
@@ -457,30 +480,39 @@ function ToolPermissions({ sessionId }: { sessionId: string | null }) {
     }
     return () => { active = false }
   }, [sessionId])
-  if (sessionId === null) return <p>打开一条会话后,可以为该会话单独授权工具。</p>
+  if (sessionId === null) return <p>{t('toolPermissionOpenSession')}</p>
   const toggle = async (name: string) => {
-    if (!catalog || busy) return
+    if (!catalog || writing.current) return
+    writing.current = true
     setBusy(true)
     setError('')
     const next = catalog.supported.map((tool) => tool.name === name ? { ...tool, enabled: !tool.enabled } : tool)
     try {
       await api.setToolGrants(sessionId, next.filter((tool) => tool.enabled).map((tool) => tool.name))
-      setCatalog({ ...catalog, supported: next })
+      setCatalog(await api.toolPermissions(sessionId))
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : String(reason))
     } finally {
+      writing.current = false
       setBusy(false)
     }
   }
-  return <div className={styles.toolPermissions}>
+  return <div className={styles.toolPermissions} aria-busy={busy}>
     {error && <p role="alert">{error}</p>}
     {catalog ? <>
-      <p>ChatDS 本地只读工具(不收费):仅在兼容模型的 Plan 模式启用本地检索时可用。</p>
-      {catalog.supported.map((tool) => <CapabilitySwitch key={tool.name}
-        label={tool.name === 'chatds_search_files' ? '搜索授权目录' : '读取授权文件片段'}
-        checked={tool.enabled} disabled={busy} toggle={() => void toggle(tool.name)} />)}
-    </> : sessionId !== null ? <p role="status">正在读取本地工具权限…</p> : null}
-    <p>需要审批的工具可在 DSH Agent 中使用。</p>
+      <p>{t('toolPermissionHelp')}</p>
+      {catalog.supported.map((tool) => {
+        const label = t(tool.name === 'chatds_search_files' ? 'toolPermissionSearch' : 'toolPermissionRead')
+        return <div className={styles.permissionRow} key={tool.name}>
+          <span>{label}</span>
+          <button type="button" role="switch" aria-label={label} aria-checked={tool.enabled}
+            aria-disabled={busy} className={styles.permissionSwitch} onClick={() => void toggle(tool.name)}>
+            <span className={styles.switchTrack} aria-hidden="true" />
+          </button>
+        </div>
+      })}
+    </> : !error && <p role="status">{t('toolPermissionLoading')}</p>}
+    <p>{t('toolPermissionApproval')}</p>
   </div>
 }
 

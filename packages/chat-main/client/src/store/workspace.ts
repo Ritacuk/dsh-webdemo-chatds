@@ -12,6 +12,10 @@
 
 import { create } from 'zustand'
 import { api, streamTurn } from '../services/api.js'
+import { matchesRefusal, useChatDesign } from '../services/chatDesign.js'
+import { buildReplyView } from '../services/chat/view.js'
+import { readLocalReply } from '../services/speech/read-reply.js'
+import { translate } from '../i18n/index.js'
 import { useSettings } from '../services/settings.js'
 import { showToast } from '../components/base/toastState.js'
 import {
@@ -191,7 +195,11 @@ export const refreshSessions = async (required = false): Promise<void> => {
     if (request !== listRequest) return
     set((state) => {
       const pending = new Map(state.sessions.filter(({ id }) => state.pinPending[id]).map(({ id, pinned }) => [id, pinned]))
-      return { sessions: sessions.map((session) => pending.has(session.id) ? { ...session, pinned: pending.get(session.id) } : session) }
+      const sessionCache = { ...state.sessionCache }
+      for (const { id, title } of sessions) {
+        if (sessionCache[id] && sessionCache[id].title !== title) sessionCache[id] = { ...sessionCache[id], title }
+      }
+      return { sessionCache, sessions: sessions.map((session) => pending.has(session.id) ? { ...session, pinned: pending.get(session.id) } : session) }
     })
   } catch (error) {
     if (required) throw error
@@ -559,6 +567,10 @@ const streamTurnLoop = async (args: {
           if (frame.cost !== undefined) merged.cost = frame.cost
           current = merged
           patchReply(() => merged)
+          if (get().activeId === sessionId && useChatDesign.getState().design.autoRead && merged.status === 'done' && merged.stopReason !== 'refusal') {
+            const answer = buildReplyView(merged, false).answer?.text
+            if (answer) readLocalReply(answer)
+          }
           // 通知状态条等轻量订阅刷新费用/上下文
           set((state) => ({ settledTick: state.settledTick + 1 }))
           if (frame.title !== undefined) {
@@ -629,6 +641,11 @@ const streamTurnLoop = async (args: {
     })
     // 拉权威终态(标题/用量已由 Host 落盘)
     await refreshSessions()
+    if (settled && get().settings?.compatTitle) {
+      for (const delay of [1000, 3500, 8500, 26000]) {
+        setTimeout(() => { if (get().settings?.compatTitle) void refreshSessions() }, delay)
+      }
+    }
   }
 }
 
@@ -692,6 +709,11 @@ export const sendMessage = async (sessionArg: Session | null, content: string, o
  */
 export const editMessage = async (sessionId: string, messageId: string, content: string): Promise<boolean> => {
   const text = content.trim()
+  const { refusal } = useChatDesign.getState().design
+  if (matchesRefusal(text, refusal)) {
+    showToast(refusal.message.trim() || translate('localInputRefusal'))
+    return false
+  }
   const session = getSession(sessionId)
   if (session === undefined || getStreamController(sessionId) !== undefined) return false
   const index = session.messages.findIndex((message) => message.id === messageId)

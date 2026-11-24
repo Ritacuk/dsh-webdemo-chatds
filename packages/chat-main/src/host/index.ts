@@ -1,3 +1,4 @@
+import { ChatDSSessionBridge } from './session-bridge.js'
 /**
  * dsh-chat-workspace-main — 独立聊天工作区主组件(Cordis 插件)。
  *
@@ -80,9 +81,11 @@ export function mountWorkspace(ctx: Context, config: MainConfig, sidecar: boolea
     defaultSearch: config.search,
   }
   const search = new LocalSearchEngine(async () => (await store.getSettings(rowDefaults)).authorizedDirs)
-  const turns = new TurnRunner(ctx, sessions, store, gateway, search, async () => ({ requestDiagnostics: (await store.getSettings(rowDefaults)).requestDiagnostics }), ledger)
-
   const partitions = sidecar ? undefined : new ChatPartitionStore(store, sessions)
+  const bridge = partitions ? new ChatDSSessionBridge(ctx, store, sessions, partitions) : undefined
+  if (bridge) ctx.provide('chatdsSessionBridge', bridge)
+  const turns = new TurnRunner(ctx, sessions, store, gateway, search, async () => ({ requestDiagnostics: (await store.getSettings(rowDefaults)).requestDiagnostics }), ledger, bridge)
+
   if (partitions) ctx.provide('chatdsSharingWorkspace', { sessions, partitions, turns, pagePath: config.pagePath } satisfies SharingWorkspace)
 
   // 路由注册 + 会话监听全部折进一个 effect:停用/重载时按注册的逆序释放,
@@ -97,12 +100,14 @@ export function mountWorkspace(ctx: Context, config: MainConfig, sidecar: boolea
       search,
       store,
       ledger,
+      bridge,
       clientDist: resolveClientDist(),
       sidecar: sidecar ? new SidecarContext(ctx, sessions, turns) : undefined,
     })
     return async () => {
       disposeRoutes()
       await turns.dispose()
+      await bridge?.dispose()
       await sessions.disposeAll()
       await ledger?.dispose()
       await store.close()

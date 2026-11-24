@@ -1,4 +1,4 @@
-import type { ChatPartitions, PartitionChange, SharingStatus } from '@dsh-chat/shared'
+import type { ChatDSMemory, HistoryHit, ChatPartitions, PartitionChange, SharingStatus } from '@dsh-chat/shared'
 /**
  * 页面 → Host 插件路由 的 API 客户端。
  * 页面只与 /chat-workspace/api 通信;凭证与真实 API 请求全在 Host。
@@ -86,6 +86,17 @@ async function json<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
+  translationOptions: (signal: AbortSignal): Promise<{ available: boolean; provider?: 'bing' | 'google'; language?: string; reason?: string }> =>
+    json('api/bridge/translation', { signal }),
+  translateReasoning: (data: { id: string; messageId: string; index: number; locale: string; provider: string }, signal: AbortSignal): Promise<{ text: string }> =>
+    json('api/bridge/translation', { method: 'POST', body: JSON.stringify(data), signal }),
+  historySearch: (data: { query: string; partition?: string; from?: number; to?: number }, signal: AbortSignal): Promise<{ hits: HistoryHit[]; truncated: boolean }> =>
+    json('api/bridge/history', { method: 'POST', body: JSON.stringify(data), signal }),
+  listMemories: (): Promise<{ memories: ChatDSMemory[] }> => json('api/bridge/memory'),
+  saveMemory: (data: { id?: string; text: string; category: string; partition: string | null }): Promise<ChatDSMemory> =>
+    json('api/bridge/memory', { method: 'PUT', body: JSON.stringify(data) }),
+  deleteMemory: (id: string): Promise<{ ok: boolean }> =>
+    json('api/bridge/memory', { method: 'DELETE', body: JSON.stringify({ id }) }),
   health: (): Promise<WireHealth> => json('api/health'),
   models: (): Promise<WireModelCatalog> => json('api/models'),
   listSessions: (): Promise<{ sessions: WireSessionSummary[] }> => json('api/sessions', { signal: AbortSignal.timeout(15_000) }),
@@ -260,8 +271,9 @@ export const api = {
     const extension = /\.(jpe?g|png|webp|gif|pdf|txt|md|csv|json|docx|xlsx|pptx)$/i.exec(originalName)?.[1]?.toLowerCase() ?? 'bin'
     return downloadResponse(await fetch(`api/files?${params}`), `webchat-attachment-${id}.${extension}`)
   },
-  transcribe: async (audio: Blob, signal: AbortSignal): Promise<string> => {
-    const response = await fetch('api/voice/transcribe', { method: 'POST', body: audio, signal })
+  transcribe: async (audio: Blob, signal: AbortSignal, providerId?: string): Promise<string> => {
+    const query = providerId ? '?' + new URLSearchParams({ provider: providerId }) : ''
+    const response = await fetch('api/voice/transcribe' + query, { method: 'POST', body: audio, signal })
     const data = await response.json() as { text?: unknown; error?: { message?: string } }
     if (!response.ok || typeof data.text !== 'string') throw new Error(data.error?.message ?? '语音转写失败。')
     return data.text

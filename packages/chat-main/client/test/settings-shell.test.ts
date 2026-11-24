@@ -37,7 +37,7 @@ if (abortSignalCtor && typeof abortSignalCtor.timeout !== 'function') {
   abortSignalCtor.timeout = () => undefined
 }
 
-const SESSION_ID = 'chatws-123e4567-e89b-42d3-a456-426614174000'
+const SESSION_ID = 'chatws-local-123e4567-e89b-42d3-a456-426614174000'
 
 type FetchCall = { url: string; method: string; body: unknown }
 type RouteHandler = (call: FetchCall) => unknown
@@ -211,7 +211,7 @@ describe('R8.6 P0:ChatDS 设置区(真实 client.js + React 渲染)', () => {
 
   it('设置页逐一点开:每页都渲染内容且不出现错误边界降级(R8.5 崩溃回归)', async () => {
     const h = await makeHarness()
-    for (const label of ['模型', '提示词', '用量与费用', '插件与工具', '数据共享', '外观', '常规']) {
+    for (const label of ['模型与接口', '提示词', '用量与费用', '插件与工具', '长期记忆', '原生能力', '聊天界面设计', '位置与隐私', '数据共享', '外观', '常规']) {
       await h.clickNav(label)
       expect(h.container.querySelector('.chatds-settings-errorbox'), `页面「${label}」出现错误降级框`).toBeNull()
       expect(h.text().length, `页面「${label}」渲染为空`).toBeGreaterThan(0)

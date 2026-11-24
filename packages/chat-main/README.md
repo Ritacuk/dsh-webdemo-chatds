@@ -2,11 +2,11 @@
 
 WebChat for DeepSeek Harness — the Main chat surface, Agent Side Chat and optional Data Sharing.
 
-Version `0.12.1` introduces device sync passwords and lets ChatDS apply its Windows LAN rules while DSH is running.
+This preview adds DSH reasoning translation, ChatDS history search, optional model-assisted titles and local long-term memory. Stable is 0.12.1.
 
 ## Install
 
-Recommended: open the DSH plugin manager, find **WebChat / ChatDS**, and install `0.12.1`.
+For the stable version, open the DSH plugin manager, find **WebChat / ChatDS**, and install `0.12.1`. To try the preview, install `dsh-webdemo-chatds@next` in a separate profile. Your existing conversations stay in their current store.
 
 Command line:
 

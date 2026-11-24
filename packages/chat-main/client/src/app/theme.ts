@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react'
 import type { WorkspaceSettings } from '@dsh-chat/shared'
 import { useChatStore } from '../store/workspace.js'
+import { designVariables, useChatDesign } from '../services/chatDesign.js'
 import './appearance.css'
 
 export type Theme = 'light' | 'dark'
@@ -34,7 +35,7 @@ export const useTheme = (): Theme => {
 
 const syncPageBackground = () => {
   const backgroundColor = getComputedStyle(document.body).backgroundColor
-  document.documentElement.style.backgroundColor = backgroundColor
+  document.documentElement.style.removeProperty('background-color')
   document.querySelector('meta[name="theme-color"]')?.setAttribute('content', backgroundColor)
 }
 
@@ -61,6 +62,7 @@ const applyTheme = (theme: Theme) => {
 }
 
 let appliedTheme: Theme | null = null
+let appliedDesignVariables: string[] = []
 
 const syncTheme = () => {
   const settings = parentProfileAppearance ?? useChatStore.getState().settings
@@ -72,6 +74,15 @@ const syncTheme = () => {
     if (value === undefined) vars.removeProperty(name)
     else vars.setProperty(name, value)
   }
+  const design = useChatDesign.getState().design
+  const palette = design.palettes[theme]
+  for (const name of appliedDesignVariables) vars.removeProperty(name)
+  const designValues = designVariables(palette, design)
+  for (const [name, value] of Object.entries(designValues)) set(name, value)
+  appliedDesignVariables = Object.keys(designValues)
+  set('--chatds-sidebar-width', design.width === undefined ? undefined : `${design.width}px`)
+  set('--dsw-alias-label-primary', palette.text)
+  set('--dsw-alias-label-secondary', palette.secondary)
   set('--chat-accent', settings?.appearanceAccent || undefined)
   set('--chat-bg-alpha', settings?.appearanceBgAlpha !== undefined ? String(settings.appearanceBgAlpha) : undefined)
   set('--chat-panel-alpha', settings?.appearancePanelAlpha !== undefined ? String(settings.appearancePanelAlpha) : undefined)
@@ -90,7 +101,7 @@ const syncTheme = () => {
   if (theme !== appliedTheme) {
     appliedTheme = theme
     applyTheme(theme)
-  }
+  } else if (document.readyState === 'complete') syncPageBackground()
 }
 
 /** 首屏渲染前同步应用一次，之后随主题设置与系统深浅色变化更新 */
@@ -103,6 +114,7 @@ export const setupTheme = () => {
   const unsubscribe = useChatStore.subscribe((state, previous) => {
     if (state.settings !== previous.settings) syncTheme()
   })
+  const stopDesign = useChatDesign.subscribe(syncTheme)
   const message = (event: MessageEvent) => {
     if (window.parent === window || event.origin !== location.origin || event.source !== window.parent) return
     if (event.data?.type !== 'chatds:theme' || !['light', 'dark'].includes(event.data.mode)) return
@@ -137,5 +149,6 @@ export const setupTheme = () => {
     window.removeEventListener('load', syncPageBackground)
     window.removeEventListener('message', message)
     unsubscribe()
+    stopDesign()
   }
 }

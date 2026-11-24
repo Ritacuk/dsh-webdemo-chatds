@@ -1,3 +1,5 @@
+import { ReasoningTranslation } from '../bridge/ReasoningTranslation.js'
+import { useChatDesign } from '../../services/chatDesign.js'
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
 import { memo, useEffect, useState, type ReactNode } from 'react'
@@ -54,18 +56,24 @@ const useTicker = (active: boolean, interval: number) => {
  * 未开启时只有工具步骤（如普通搜索的「已阅读 N 个网页」）。
  */
 export const ReplyArea = memo(function ReplyArea({
+  sessionId,
   message,
   view,
   streaming,
   hasResponse,
 }: {
+  sessionId: string
   message: AssistantMessage
   view: ReplyView
   streaming: boolean
   hasResponse: boolean
 }) {
   useTranslate()
-  const [open, setOpen] = useState(true)
+  const policy = useChatDesign((state) => state.design.reasoning)
+  const [override, setOverride] = useState<{ key: string; open: boolean }>()
+  const key = `${policy}:${streaming}`
+  const defaultOpen = policy === 'expanded' || policy === 'native' || (policy === 'completed' && streaming)
+  const open = override?.key === key ? override.open : defaultOpen
   const titleActive = streaming && !hasResponse
   useTicker(titleActive, 1000)
   if (view.steps.length === 0 && !(message.thinking && streaming)) {
@@ -78,13 +86,13 @@ export const ReplyArea = memo(function ReplyArea({
   return (
     <div className={styles.area}>
       {title ? (
-        <div className={styles.title} onClick={() => setOpen((value) => !value)}>
+        <button type="button" className={styles.title} aria-expanded={open} onClick={() => setOverride({ key, open: !open })}>
           <span className={clsx(styles.titleIcon, stopped && styles.stoppedIcon)}>
             <IconThinkOutline16 />
           </span>
           <span className={clsx(styles.titleText, titleActive && styles.shimmer)}>{title}</span>
           {open ? <IconChevronDownOutline14 /> : <IconChevronRightOutline14 />}
-        </div>
+        </button>
       ) : null}
       {open || !title ? (
         <div className={styles.steps}>
@@ -92,6 +100,7 @@ export const ReplyArea = memo(function ReplyArea({
             <StepItem
               key={stepKey(step, index)}
               step={step}
+              sessionId={sessionId}
               message={message}
               sources={view.sources}
               streaming={streaming}
@@ -111,12 +120,14 @@ const stepKey = (step: Step, index: number) =>
 
 const StepItem = ({
   step,
+  sessionId,
   message,
   sources,
   streaming,
   isLast,
 }: {
   step: Step
+  sessionId: string
   message: AssistantMessage
   sources: Source[]
   streaming: boolean
@@ -129,12 +140,17 @@ const StepItem = ({
         streaming && lastBlock?.startedAt !== undefined && lastBlock.endedAt === undefined
       return (
         <ContentItem isLast={isLast} active={thinking}>
-          <Markdown
+          {streaming || sessionId.startsWith('chatws-side-') ? <Markdown
             content={step.blocks.map((block) => block.thinking).join('')}
             loading={thinking}
             cacheKey={`${message.id}-${step.key}`}
             disableLink
-          />
+          /> : step.blocks.map((block, position) => {
+            const index = message.blocks.filter((entry) => entry.type === 'thinking').indexOf(block)
+            return <ReasoningTranslation key={position} sessionId={sessionId} messageId={message.id} index={index}>
+              <Markdown content={block.thinking} loading={false} cacheKey={`${message.id}-${step.key}-${position}`} disableLink />
+            </ReasoningTranslation>
+          })}
         </ContentItem>
       )
     }

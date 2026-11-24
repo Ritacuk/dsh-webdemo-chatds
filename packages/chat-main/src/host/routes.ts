@@ -1,3 +1,5 @@
+import { z } from 'zod'
+import { BridgeError, type ChatDSSessionBridge } from './session-bridge.js'
 /**
  * 路由注册(P2)— 页面、静态资源与 API,全部经 ctx.webServer.register()(官方路由接口),
  * 用 ctx.effect 包裹由调用方释放;停用插件即摘路由。
@@ -99,6 +101,7 @@ export interface RouteDeps {
   config: MainConfig
   sessions: WorkspaceSessions
   partitions?: ChatPartitionStore
+  bridge?: ChatDSSessionBridge
   turns: TurnRunner
   gateway: RichGateway
   search: LocalSearchEngine
@@ -111,8 +114,8 @@ export interface RouteDeps {
 
 /** R8.5:DSH 语音输入组件提供的转写服务(experimental-voice-input bundle;可选)。 */
 interface DshSpeechLike {
-  listProviders(): readonly unknown[]
-  resolve(request: { audio: Uint8Array }): unknown
+  listProviders(): readonly { id: string; name: string }[]
+  resolve(request: { audio: Uint8Array; providerId?: string }): unknown
   transcribe(spec: unknown, signal: AbortSignal): Promise<{ text?: unknown }>
 }
 
@@ -133,6 +136,8 @@ async function settingsView(ctx: Context, settings: WorkspaceSettings): Promise<
     // voiceAvailable = 用户偏好(enableVoiceInput)——唯一决定麦克风入口显示。
     // 旧实现把服务可用性混入 voiceAvailable,导致关闭语音后 Composer 按钮仍然显示。
     dshSpeechAvailable: speech !== undefined,
+    dshSpeechProviders: (speech?.listProviders() ?? []).flatMap((provider) =>
+      typeof provider?.id === 'string' && typeof provider.name === 'string' ? [{ id: provider.id, name: provider.name }] : []),
     voiceAvailable: settings.enableVoiceInput === true,
   }
 }
@@ -421,6 +426,59 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       sendJson(res, 200, catalog)
     },
   }))
+
+  const bridge = deps.bridge
+  if (bridge) {
+    const relay = (part: string, handler: (req: IncomingMessage, res: ServerResponse, signal: AbortSignal) => Promise<void>) => {
+      disposers.push(register({ kind: 'exact', path: `${apiPrefix}/bridge/${part}`, handler: async (req, res) => {
+        // The detached repository has no DSH workspace assignment for delegated peers.
+        const admission = typeof ctx.connection.admit === 'function' ? ctx.connection.admit(req) : undefined
+        if (!admission || 'rejection' in admission || admission.peer.principal.kind !== 'owner') {
+          sendError(res, 403, 'forbidden')
+          return
+        }
+        const abort = new AbortController()
+        const cancel = () => abort.abort()
+        res.once('close', cancel)
+        try {
+          await handler(req, res, AbortSignal.any([abort.signal, AbortSignal.timeout(65_000)]))
+        } catch (error) {
+          if (!res.destroyed) {
+            if (error instanceof BridgeError) sendError(res, error.status, error.message)
+            else if (error instanceof z.ZodError || error instanceof SyntaxError) sendError(res, 400, 'Invalid ChatDS request.')
+            else sendError(res, 503, 'The operation failed. Retry or check the configured service.')
+          }
+        } finally { res.off('close', cancel) }
+      } }))
+    }
+    relay('translation', async (req, res, signal) => {
+      if (req.method === 'GET') {
+        sendJson(res, 200, await bridge.translationOptions(signal))
+      } else if (req.method === 'POST') {
+        const data = z.object({ id: z.string().max(120), messageId: z.string().max(160), index: z.number().int().min(0).max(500),
+          locale: z.enum(['zh-CN', 'en-US', 'ja-JP']), provider: z.enum(['bing', 'google']) }).parse(await readJsonBody(req, 2048))
+        sendJson(res, 200, await bridge.translate(data.id, data.messageId, data.index, data.locale, data.provider, signal))
+      } else sendError(res, 405, 'method not allowed')
+    })
+    relay('history', async (req, res, signal) => {
+      if (req.method !== 'POST') { sendError(res, 405, 'method not allowed'); return }
+      const options = z.object({ query: z.string().trim().min(2).max(160), partition: z.union([z.uuid(), z.literal('')]).optional(),
+        from: z.number().int().nonnegative().optional(), to: z.number().int().nonnegative().optional() }).parse(await readJsonBody(req, 2048))
+      sendJson(res, 200, await bridge.search(options, signal))
+    })
+    relay('memory', async (req, res) => {
+      if (req.method === 'GET') sendJson(res, 200, { memories: await bridge.memories() })
+      else if (req.method === 'PUT') {
+        const input = z.object({ id: z.uuid().optional(), text: z.string().trim().min(1).max(600), category: z.string().trim().max(80),
+          partition: z.uuid().nullable() }).parse(await readJsonBody(req, 8192))
+        sendJson(res, 200, await bridge.saveMemory(input))
+      } else if (req.method === 'DELETE') {
+        const { id } = z.object({ id: z.uuid() }).parse(await readJsonBody(req, 1024))
+        await bridge.deleteMemory(id)
+        sendJson(res, 200, { ok: true })
+      } else sendError(res, 405, 'method not allowed')
+    })
+  }
 
   // ── 会话列表/创建 ──
   disposers.push(register({
@@ -1386,6 +1444,11 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
       const settings = await deps.store.getSettings({})
       const speech = dshSpeech(ctx)
       const speechReady = speech !== undefined
+      const providerId = new URL(req.url ?? '/', 'http://x').searchParams.get('provider') || undefined
+      if (providerId !== undefined && !speech?.listProviders().some((provider) => provider.id === providerId)) {
+        sendError(res, 422, 'The selected DSH speech provider is unavailable.')
+        return
+      }
       if (!settings.enableVoiceInput && !speechReady) {
         sendError(res, 403, '语音输入不可用:请在 ChatDS 设置中开启语音输入,或启用 DSH 语音输入组件。')
         return
@@ -1407,7 +1470,7 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
         // 引擎优先级:DSH 语音输入组件(本地/用户已配置的 provider)→ DeepSeek ASR。
         if (speech !== undefined) {
           try {
-            const spec = speech.resolve({ audio: new Uint8Array(bytes) })
+            const spec = speech.resolve({ audio: new Uint8Array(bytes), ...(providerId ? { providerId } : {}) })
             const transcript = await speech.transcribe(spec, signal)
             const text = typeof transcript?.text === 'string' ? transcript.text.trim() : ''
             if (text !== '') {
@@ -1417,12 +1480,8 @@ export function registerRoutes(ctx: Context, deps: RouteDeps): () => void {
             throw new Error('转写结果为空。')
           } catch (error) {
             if (signal.aborted) throw error
-            // 只有用户显式开启语音输入(接受 DeepSeek 转写费用)时才回退付费 ASR;
-            // 否则如实报告 DSH 语音组件的问题,不悄悄花钱。
-            if (!settings.enableVoiceInput) {
-              if (!res.destroyed) sendError(res, 502, `DSH 语音转写不可用:${error instanceof Error ? error.message : String(error)}。可在 ChatDS 设置中开启语音输入以改用 DeepSeek 转写。`)
-              return
-            }
+            if (!res.destroyed) sendError(res, 502, `DSH 语音转写不可用:${error instanceof Error ? error.message : String(error)}。`)
+            return
           }
         }
         const text = await deps.gateway.transcribe(new Uint8Array(bytes), signal)

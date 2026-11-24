@@ -21,6 +21,13 @@ window.__ModuleLoader__.load({
     /** 聊天页面路径(Host 插件行 Config 的 pagePath 默认值 /chat-workspace)。 */
     const PAGE_PATH = '/chat-workspace'
     let pendingDataAction = null
+    const readNavigationLabel = () => {
+      try {
+        const value = JSON.parse(window.localStorage.getItem('chatds:chat-design') ?? 'null')
+        if (value?.version === 1 && typeof value.navigationLabel === 'string') return value.navigationLabel.trim().slice(0, 48) || 'WebChat'
+      } catch { /* Browser storage is optional. */ }
+      return 'WebChat'
+    }
 
     /** macOS 键位标注:实现侧(Ctrl 或 ⌘)两者都接受,标签按平台显示(macOS 验收 R1)。 */
     const IS_MAC_LIKE = /Mac|iPhone|iPad/i.test(`${typeof navigator !== 'undefined' ? navigator.platform : ''} ${typeof navigator !== 'undefined' ? navigator.userAgent : ''}`)
@@ -43,10 +50,44 @@ window.__ModuleLoader__.load({
       return fillParams(zh, params)
     }
     const syncUiLanguage = (value) => {
-      uiLanguage = value === 'en-US' ? 'en' : value === 'ja-JP' ? 'ja' : 'zh'
+      if (value === 'browser') {
+        const lang = navigator.language.toLowerCase()
+        uiLanguage = lang.startsWith('zh') ? 'zh' : lang.startsWith('ja') ? 'ja' : 'en'
+      } else {
+        uiLanguage = value === 'en-US' ? 'en' : value === 'ja-JP' ? 'ja' : 'zh'
+      }
     }
     const STRINGS = {
       en: {
+        '管理 ChatDS 本地记忆': 'Manage ChatDS local memory',
+        '搜索 ChatDS 历史': 'Search ChatDS history',
+        'WebChat 会话隔离。由 DSH Translator 翻译思考，模型标题和历史搜索属于 ChatDS 兼容功能。': 'ChatDS uses isolated conversations. Thinking translation uses the DSH Translator when a free provider is enabled. Optional model titles and history search are ChatDS compatibility features.',
+        '长期记忆': 'Long-term memory',
+        '当前 Profile 没有可用于 ChatDS 的记忆管理或召回服务。': 'The installed context integration provides usage and request projections. This profile exposes no supported memory management or recall service to ChatDS.',
+        "模型与接口": "Models and services",
+        "原生能力": "Native capabilities",
+        "已安装但未启用": "Installed, disabled",
+        "已启用，服务未就绪": "Enabled, service unavailable",
+        "当前 Profile 中运行": "Running in this profile",
+        "未安装": "Not installed",
+        "状态不可用": "Status unavailable",
+        "原生思考翻译": "Native reasoning translation",
+        "原生跨会话搜索": "Native cross-session search",
+        "原生随对话更新标题": "Native evolving titles",
+        "原生会话服务在 DSH 中运行。独立 WebChat 会话暂时无法接入这些插槽和服务。": "The native services run in DSH. Their session slots and services are currently unavailable to independent WebChat conversations.",
+        "语音识别": "Speech recognition",
+        "跟随 DSH 语音服务": "Uses the DSH speech service",
+        "使用 DeepSeek 转写（需要凭据）": "Uses DeepSeek transcription with configured credentials",
+        "语音朗读": "Speech playback",
+        "使用浏览器提供的本地语音": "Uses local voices available in the browser",
+        "图片理解": "Image understanding",
+        "选择目录中带视觉标记的模型。": "Select a model marked Vision in the catalog.",
+        "文字识别与生图": "OCR and image generation",
+        "当前 WebChat 未提供独立服务路由。": "Separate service routing is unavailable in WebChat.",
+        '聊天界面设计': 'Chat interface design',
+        '位置与隐私': 'Location and privacy',
+        '打开实时设计器': 'Open live designer',
+        '管理位置设置': 'Manage location settings',
         "操作完成": "Done",
         "查看失败原因": "View details",
         "本机设备": "This device",
@@ -383,6 +424,35 @@ window.__ModuleLoader__.load({
         'Rich 外部账本 ${cost}(合并合计 ${total})': 'Rich external ledger ${cost} (merged total ${total})',
       },
       ja: {
+        '管理 ChatDS 本地记忆': 'ChatDS ローカル記憶を管理',
+        '搜索 ChatDS 历史': 'ChatDS の履歴を検索',
+        'WebChat 会话隔离。由 DSH Translator 翻译思考，模型标题和历史搜索属于 ChatDS 兼容功能。': 'ChatDS は独立した会話を使用します。無料プロバイダーが有効な場合は DSH の翻訳サービスを使用します。タイトル更新と履歴検索は ChatDS の互換機能です。',
+        '长期记忆': '長期記憶',
+        '当前 Profile 没有可用于 ChatDS 的记忆管理或召回服务。': 'コンテキスト連携は使用量とリクエストの情報を提供します。このプロファイルでは ChatDS が利用できる記憶管理・検索サービスがありません。',
+        "模型与接口": "モデルとサービス",
+        "原生能力": "ネイティブ機能",
+        "已安装但未启用": "インストール済み・無効",
+        "已启用，服务未就绪": "有効・サービス未準備",
+        "当前 Profile 中运行": "現在のプロファイルで稼働中",
+        "未安装": "未インストール",
+        "状态不可用": "状態を取得できません",
+        "原生思考翻译": "ネイティブ推論翻訳",
+        "原生跨会话搜索": "ネイティブ会話横断検索",
+        "原生随对话更新标题": "ネイティブ自動タイトル更新",
+        "原生会话服务在 DSH 中运行。独立 WebChat 会话暂时无法接入这些插槽和服务。": "ネイティブ機能は DSH で動作します。独立した WebChat の会話では、現在これらの機能を利用できません。",
+        "语音识别": "音声認識",
+        "跟随 DSH 语音服务": "DSH の音声サービスを使用",
+        "使用 DeepSeek 转写（需要凭据）": "認証情報を設定した DeepSeek の文字起こしを使用",
+        "语音朗读": "音声読み上げ",
+        "使用浏览器提供的本地语音": "ブラウザーで利用可能なローカル音声を使用",
+        "图片理解": "画像理解",
+        "选择目录中带视觉标记的模型。": "カタログで画像対応と表示されたモデルを選択してください。",
+        "文字识别与生图": "文字認識と画像生成",
+        "当前 WebChat 未提供独立服务路由。": "WebChat では個別のサービス経路を利用できません。",
+        '聊天界面设计': 'チャット画面のデザイン',
+        '位置与隐私': '位置情報とプライバシー',
+        '打开实时设计器': 'ライブデザイナーを開く',
+        '管理位置设置': '位置情報の設定を開く',
         "操作完成": "完了しました",
         "查看失败原因": "詳細を表示",
         "本机设备": "このデバイス",
@@ -695,23 +765,23 @@ window.__ModuleLoader__.load({
         padding-block:4px 16px; overflow-wrap:anywhere;
       }
       .chatds-settings nav { display:flex; flex-wrap:wrap; gap:4px; padding:3px; min-width:0 }
-      .chatds-settings-header { margin:0; font-weight:650; letter-spacing:-.015em }
-      .chatds-settings-subnav { margin-bottom:12px; border-bottom:1px solid var(--chat-border) }
+      .chatds-settings .chatds-settings-header { margin:0; font-weight:650; letter-spacing:-.015em }
+      .chatds-settings .chatds-settings-subnav { margin-bottom:12px; border-bottom:1px solid var(--chat-border) }
       .chatds-settings nav button[aria-pressed=true] { color:var(--chat-accent); font-weight:650 }
       .chatds-settings [hidden] { display:none }
       .chatds-settings .chatds-share-section[hidden] { display:none }
       .chatds-settings .chatds-settings-group { padding-block:8px 16px }
-      .chatds-settings-group > :last-child { margin-block-end:0 }
-      .chatds-settings-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:10px; margin-block:10px }
-      .chatds-settings-summary > div { min-width:0; background:var(--chat-surface-muted); border-radius:var(--chat-radius); padding:13px }
-      .chatds-settings-summary dt { color:var(--chat-text-secondary); font-size:12px }
-      .chatds-settings-summary dd { font-weight:600; margin:3px 0 0 }
-      .chatds-share fieldset { min-width:0; margin:0 }
-      .chatds-share-actions { display:flex; flex-wrap:wrap; gap:8px }
-      .chatds-share details > summary { cursor:pointer }
-      .chatds-share details > summary:focus-visible { outline-offset:3px }
+      .chatds-settings .chatds-settings-group > :last-child { margin-block-end:0 }
+      .chatds-settings .chatds-settings-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr)); gap:10px; margin-block:10px }
+      .chatds-settings .chatds-settings-summary > div { min-width:0; background:var(--chat-surface-muted); border-radius:var(--chat-radius); padding:13px }
+      .chatds-settings .chatds-settings-summary dt { color:var(--chat-text-secondary); font-size:12px }
+      .chatds-settings .chatds-settings-summary dd { font-weight:600; margin:3px 0 0 }
+      .chatds-settings .chatds-share fieldset { min-width:0; margin:0 }
+      .chatds-settings .chatds-share-actions { display:flex; flex-wrap:wrap; gap:8px }
+      .chatds-settings .chatds-share details > summary { cursor:pointer }
+      .chatds-settings .chatds-share details > summary:focus-visible { outline-offset:3px }
       @media (max-width:560px) {
-        .chatds-settings-card { padding-inline:10px }
+        .chatds-settings .chatds-settings-card { padding-inline:10px }
         .chatds-settings .chatds-settings-row { flex-wrap:wrap; gap:7px }
         .chatds-settings .chatds-settings-row > div:first-child { flex:1 0 100% }
         .chatds-settings .chatds-settings-row select { max-width:100% }
@@ -719,89 +789,89 @@ window.__ModuleLoader__.load({
       .chatds-settings button,.chatds-settings select,.chatds-settings input,.chatds-settings textarea { font:inherit; color:inherit; min-height:32px; padding:0 10px; border-radius:8px; border:1px solid var(--dsw-alias-border-l2,#8884); background:var(--dsw-specific-input-major,Canvas); box-sizing:border-box }
       .chatds-settings textarea { padding:8px 10px; width:100%; min-height:96px; resize:vertical; line-height:1.5 }
       .chatds-settings nav button { background:transparent; border-color:transparent; flex:none }
-      .chatds-settings nav button[aria-pressed=true],.chatds-settings button:not(:disabled):hover { background:var(--dsw-alias-interactive-bg-hover,#8882) }
+      .chatds-settings nav button[aria-pressed=true],.chatds-settings button:not(.chatds-settings-switch):not(:disabled):hover { background:var(--dsw-alias-interactive-bg-hover,#8882) }
       .chatds-settings :focus-visible { outline:2px solid currentColor; outline-offset:2px }
-      .chatds-settings-card { border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:14px; padding:0 16px }
-      .chatds-settings-card > p { margin:16px 0 }
-      .chatds-settings-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; overflow-wrap:anywhere }
-      .chatds-settings-row + .chatds-settings-row { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-settings-row > div { min-width:0 }
-      .chatds-settings-label { font-weight:500 }
+      .chatds-settings .chatds-settings-card { border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:14px; padding:0 16px }
+      .chatds-settings .chatds-settings-card > p { margin:16px 0 }
+      .chatds-settings .chatds-settings-row { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:14px 0; overflow-wrap:anywhere }
+      .chatds-settings .chatds-settings-row + .chatds-settings-row { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-settings .chatds-settings-row > div { min-width:0 }
+      .chatds-settings .chatds-settings-label { font-weight:500 }
       .chatds-settings small { color:var(--dsw-alias-label-secondary,#777); font-size:12px }
       .chatds-settings select,.chatds-settings input[type=number],.chatds-settings input[type=search] { width:160px; max-width:46%; box-sizing:border-box }
       .chatds-settings button:disabled,.chatds-settings select:disabled,.chatds-settings input:disabled,.chatds-settings textarea:disabled { opacity:.55 }
-      .chatds-settings button.chatds-settings-switch { display:inline-flex; flex:none; align-items:center; gap:8px; padding:5px 7px; background:transparent; min-height:36px; border-radius:8px; cursor:pointer }
-      .chatds-settings-switch .chatds-switch-track { display:flex; align-items:center; width:38px; height:22px; box-sizing:border-box; padding:3px; border-radius:20px; background:var(--chat-switch-off); }
-      .chatds-settings-switch[aria-checked=true] .chatds-switch-track { background:var(--chat-switch-on) }
-      .chatds-switch-thumb { width:16px; height:16px; border-radius:50%; background:#fff; transition:transform 120ms ease }
-      .chatds-settings-switch[aria-checked=true] .chatds-switch-thumb { transform:translateX(16px) }
-      .chatds-switch-state { min-width:2em; font-size:12px; text-align:start }
+      .chatds-settings button.chatds-settings-switch { display:inline-flex; flex:none; align-items:center; gap:8px; padding:5px 7px; appearance:none; border:0; background:transparent; min-height:44px; border-radius:8px; cursor:pointer }
+      .chatds-settings .chatds-settings-switch .chatds-switch-track { display:flex; align-items:center; width:38px; height:22px; box-sizing:border-box; flex:none; padding:3px; border-radius:20px; background:var(--chat-switch-off); }
+      .chatds-settings .chatds-settings-switch[aria-checked=true] .chatds-switch-track { background:var(--chat-switch-on) }
+      .chatds-settings .chatds-switch-thumb { flex:none; width:16px; height:16px; border-radius:50%; background:#fff; transition:transform 120ms ease }
+      .chatds-settings .chatds-settings-switch[aria-checked=true] .chatds-switch-thumb { transform:translateX(16px) }
+      .chatds-settings .chatds-switch-state { min-width:2em; font-size:12px; text-align:start }
       .chatds-settings button.chatds-settings-switch:focus-visible { outline:2px solid var(--chat-accent); outline-offset:2px }
       .chatds-settings button.chatds-settings-switch[data-busy] .chatds-switch-thumb { animation:chatds-switch-busy 900ms ease-in-out infinite }
       .chatds-settings button.chatds-settings-switch:disabled { cursor:default }
       @keyframes chatds-switch-busy { 0%,100% { opacity:1 } 50% { opacity:.45 } }
-      .chatds-model-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 0; border-bottom:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-model-toolbar input[type=search] { flex:1 1 140px; max-width:none }
-      .chatds-scope { display:flex; gap:0; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; overflow:hidden }
-      .chatds-scope button { border:0; border-radius:0; background:transparent; min-height:28px }
-      .chatds-scope button[aria-pressed=true] { background:var(--dsw-alias-interactive-bg-hover,#8882); font-weight:600 }
-      .chatds-model-group { padding:6px 0 }
-      .chatds-model-group > button { background:transparent; border:0; width:100%; text-align:start; padding:8px 0; font-weight:600; display:flex; gap:8px; align-items:center }
-      .chatds-model-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884); min-width:0 }
-      .chatds-model-row:first-of-type { border-top:0 }
-      .chatds-model-name { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-      .chatds-model-name small { color:var(--dsw-alias-label-secondary,#777); margin-left:6px; font-size:11px }
-      .chatds-chip { flex:none; font-size:11px; padding:1px 8px; border-radius:99px; border:1px solid var(--dsw-alias-border-l2,#8884); color:var(--dsw-alias-label-secondary,#777) }
-      .chatds-chip[data-tone=brand] { color:#3b64ed; border-color:#3b64ed66 }
-      .chatds-mini { flex:none; min-height:26px; padding:0 8px; font-size:12px }
-      .chatds-star { background:transparent; border:0; padding:2px 4px; font-size:14px; line-height:1; cursor:pointer; opacity:.45 }
-      .chatds-star[aria-pressed=true] { opacity:1; color:#e0a10f }
-      .chatds-tool-row { display:flex; align-items:flex-start; gap:10px; padding:12px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-tool-row:first-of-type { border-top:0 }
-      .chatds-tool-main { min-width:0; flex:1 }
-      .chatds-tool-main code { font-size:12px; color:var(--dsw-alias-label-secondary,#777) }
-      .chatds-details summary { cursor:pointer; margin:12px 0; color:var(--dsw-alias-label-secondary,#777) }
-      .chatds-details pre { font-size:11px; overflow:auto; max-height:180px; background:var(--dsw-specific-input-major,Canvas); border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; padding:8px }
-      .chatds-template-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-template-row:first-of-type { border-top:0 }
-      .chatds-template-main { min-width:0; flex:1 }
-      .chatds-template-body { margin:0; white-space:pre-wrap; font-size:12px; color:var(--dsw-alias-label-secondary,#777); max-height:64px; overflow:hidden }
-      .chatds-status { padding:10px 0; font-size:12px; color:var(--dsw-alias-label-secondary,#777); min-height:34px }
+      .chatds-settings .chatds-model-toolbar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:12px 0; border-bottom:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-settings .chatds-model-toolbar input[type=search] { flex:1 1 140px; max-width:none }
+      .chatds-settings .chatds-scope { display:flex; gap:0; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; overflow:hidden }
+      .chatds-settings .chatds-scope button { border:0; border-radius:0; background:transparent; min-height:28px }
+      .chatds-settings .chatds-scope button[aria-pressed=true] { background:var(--dsw-alias-interactive-bg-hover,#8882); font-weight:600 }
+      .chatds-settings .chatds-model-group { padding:6px 0 }
+      .chatds-settings .chatds-model-group > button { background:transparent; border:0; width:100%; text-align:start; padding:8px 0; font-weight:600; display:flex; gap:8px; align-items:center }
+      .chatds-settings .chatds-model-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:8px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884); min-width:0 }
+      .chatds-settings .chatds-model-row:first-of-type { border-top:0 }
+      .chatds-settings .chatds-model-name { min-width:0; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+      .chatds-settings .chatds-model-name small { color:var(--dsw-alias-label-secondary,#777); margin-left:6px; font-size:11px }
+      .chatds-settings .chatds-chip { flex:none; font-size:11px; padding:1px 8px; border-radius:99px; border:1px solid var(--dsw-alias-border-l2,#8884); color:var(--dsw-alias-label-secondary,#777) }
+      .chatds-settings .chatds-chip[data-tone=brand] { color:#3b64ed; border-color:#3b64ed66 }
+      .chatds-settings .chatds-mini { flex:none; min-height:26px; padding:0 8px; font-size:12px }
+      .chatds-settings .chatds-star { background:transparent; border:0; padding:2px 4px; font-size:14px; line-height:1; cursor:pointer; opacity:.45 }
+      .chatds-settings .chatds-star[aria-pressed=true] { opacity:1; color:#e0a10f }
+      .chatds-settings .chatds-tool-row { display:flex; align-items:flex-start; gap:10px; padding:12px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-settings .chatds-tool-row:first-of-type { border-top:0 }
+      .chatds-settings .chatds-tool-main { min-width:0; flex:1 }
+      .chatds-settings .chatds-tool-main code { font-size:12px; color:var(--dsw-alias-label-secondary,#777) }
+      .chatds-settings .chatds-details summary { cursor:pointer; margin:12px 0; color:var(--dsw-alias-label-secondary,#777) }
+      .chatds-settings .chatds-details pre { font-size:11px; overflow:auto; max-height:180px; background:var(--dsw-specific-input-major,Canvas); border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; padding:8px }
+      .chatds-settings .chatds-template-row { display:flex; align-items:center; gap:8px; padding:10px 0; border-top:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-settings .chatds-template-row:first-of-type { border-top:0 }
+      .chatds-settings .chatds-template-main { min-width:0; flex:1 }
+      .chatds-settings .chatds-template-body { margin:0; white-space:pre-wrap; font-size:12px; color:var(--dsw-alias-label-secondary,#777); max-height:64px; overflow:hidden }
+      .chatds-settings .chatds-status { padding:10px 0; font-size:12px; color:var(--dsw-alias-label-secondary,#777); min-height:34px }
       .chatds-settings h2 { font-size:18px; margin:16px 0 8px }
       .chatds-settings h3 { font-size:14px; margin:16px 0 8px }
-      .chatds-status[data-tone=error] { color:#d03050 }
-      .chatds-bundle { border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:12px; margin:12px 0; padding:0 12px }
-      .chatds-bundle > summary { padding:12px 0; cursor:pointer }
-      .chatds-bundle summary > :is(img,strong,small) { margin-inline:4px; vertical-align:middle }
-      .chatds-component + .chatds-component { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-settings-errorbox { border:1px solid color-mix(in srgb,#d03050 40%,transparent); border-radius:10px; padding:12px 14px; margin:14px 0; display:grid; gap:8px; justify-items:start }
-      .chatds-settings-errorbox p { margin:0 }
-      .chatds-settings-errorbox pre { width:100%; box-sizing:border-box; font-size:11px; overflow:auto; max-height:160px; background:var(--dsw-specific-input-major,Canvas); border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; padding:8px; margin:0; white-space:pre-wrap }
-      .chatds-range { display:flex; align-items:center; gap:10px }
-      .chatds-range input[type=range] { width:150px; min-height:20px; padding:0; border:0; background:transparent; accent-color:var(--chat-accent, var(--dsw-alias-brand-primary,#3b64ed)) }
-      .chatds-range small { min-width:64px; text-align:right }
+      .chatds-settings .chatds-status[data-tone=error] { color:#d03050 }
+      .chatds-settings .chatds-bundle { border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:12px; margin:12px 0; padding:0 12px }
+      .chatds-settings .chatds-bundle > summary { padding:12px 0; cursor:pointer }
+      .chatds-settings .chatds-bundle summary > :is(img, .chatds-settings strong, .chatds-settings small) { margin-inline:4px; vertical-align:middle }
+      .chatds-settings .chatds-component + .chatds-component { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-settings .chatds-settings-errorbox { border:1px solid color-mix(in srgb,#d03050 40%,transparent); border-radius:10px; padding:12px 14px; margin:14px 0; display:grid; gap:8px; justify-items:start }
+      .chatds-settings .chatds-settings-errorbox p { margin:0 }
+      .chatds-settings .chatds-settings-errorbox pre { width:100%; box-sizing:border-box; font-size:11px; overflow:auto; max-height:160px; background:var(--dsw-specific-input-major,Canvas); border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px; padding:8px; margin:0; white-space:pre-wrap }
+      .chatds-settings .chatds-range { display:flex; align-items:center; gap:10px }
+      .chatds-settings .chatds-range input[type=range] { width:150px; min-height:20px; padding:0; border:0; background:transparent; accent-color:var(--chat-accent, var(--dsw-alias-brand-primary,#3b64ed)) }
+      .chatds-settings .chatds-range small { min-width:64px; text-align:right }
       .chatds-settings input[type=color] { width:38px; height:28px; padding:2px; border-radius:8px }
-      .chatds-share { display:grid; gap:16px; min-width:0; overflow-wrap:anywhere }
-      .chatds-share-card,.chatds-share-feedback { display:grid; gap:10px; min-width:0; padding:14px 16px; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:10px }
-      .chatds-share-feedback { border-inline-start:3px solid var(--dsw-alias-brand-primary,#3b64ed); justify-items:start }
-      .chatds-share-feedback[data-error=true] { border-inline-start-color:#c44863 }
-      .chatds-share-feedback p { margin:0 }
-      .chatds-share-form-actions { flex-basis:100% }
-      .chatds-share-field select { width:100%; min-width:0 }
-      .chatds-share-devices { padding:0; margin:0; list-style:none; display:grid; gap:8px }
-      .chatds-share-devices li { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-width:0; padding-block:6px }
-      .chatds-share-devices li + li { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
-      .chatds-share-section { display:grid; gap:10px; border-top:1px solid var(--dsw-alias-border-l2,#8884); padding-top:8px }
-      .chatds-share-section h3,.chatds-share-section p { margin:0 }
-      .chatds-share-section > button { justify-self:start }
-      .chatds-share-form { display:flex; flex-wrap:wrap; align-items:end; gap:8px; margin:8px 0 }
-      .chatds-share-field { display:grid; gap:4px; flex:1 1 180px; min-width:0 }
-      .chatds-share-field input { width:100%; min-width:0 }
-      .chatds-share-options { display:grid; gap:6px; max-height:180px; overflow:auto; padding:8px 12px; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px }
-      .chatds-share label:has(input[type=checkbox]) { display:flex; align-items:center; gap:6px }
-      .chatds-share input[type=checkbox] { min-height:16px; width:16px; accent-color:var(--dsw-alias-brand-primary,#3b64ed) }
-      .chatds-share-code { overflow-wrap:anywhere; color:var(--dsw-alias-label-secondary,#777) }
-      @media (prefers-reduced-motion:reduce) { .chatds-settings-switch span { transition:none } }
+      .chatds-settings .chatds-share { display:grid; gap:16px; min-width:0; overflow-wrap:anywhere }
+      .chatds-settings .chatds-share-card, .chatds-settings .chatds-share-feedback { display:grid; gap:10px; min-width:0; padding:14px 16px; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:10px }
+      .chatds-settings .chatds-share-feedback { border-inline-start:3px solid var(--dsw-alias-brand-primary,#3b64ed); justify-items:start }
+      .chatds-settings .chatds-share-feedback[data-error=true] { border-inline-start-color:#c44863 }
+      .chatds-settings .chatds-share-feedback p { margin:0 }
+      .chatds-settings .chatds-share-form-actions { flex-basis:100% }
+      .chatds-settings .chatds-share-field select { width:100%; min-width:0 }
+      .chatds-settings .chatds-share-devices { padding:0; margin:0; list-style:none; display:grid; gap:8px }
+      .chatds-settings .chatds-share-devices li { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; min-width:0; padding-block:6px }
+      .chatds-settings .chatds-share-devices li + li { border-top:1px solid var(--dsw-alias-border-l2,#8884) }
+      .chatds-settings .chatds-share-section { display:grid; gap:10px; border-top:1px solid var(--dsw-alias-border-l2,#8884); padding-top:8px }
+      .chatds-settings .chatds-share-section h3, .chatds-settings .chatds-share-section p { margin:0 }
+      .chatds-settings .chatds-share-section > button { justify-self:start }
+      .chatds-settings .chatds-share-form { display:flex; flex-wrap:wrap; align-items:end; gap:8px; margin:8px 0 }
+      .chatds-settings .chatds-share-field { display:grid; gap:4px; flex:1 1 180px; min-width:0 }
+      .chatds-settings .chatds-share-field input { width:100%; min-width:0 }
+      .chatds-settings .chatds-share-options { display:grid; gap:6px; max-height:180px; overflow:auto; padding:8px 12px; border:1px solid var(--dsw-alias-border-l2,#8884); border-radius:8px }
+      .chatds-settings .chatds-share label:has(input[type=checkbox]) { display:flex; align-items:center; gap:6px }
+      .chatds-settings .chatds-share input[type=checkbox] { min-height:16px; width:16px; accent-color:var(--dsw-alias-brand-primary,#3b64ed) }
+      .chatds-settings .chatds-share-code { overflow-wrap:anywhere; color:var(--dsw-alias-label-secondary,#777) }
+      @media (prefers-reduced-motion:reduce) { .chatds-settings .chatds-settings-switch span { transition:none } }
     `
 
     function StatusLine({ state }) {
@@ -1101,7 +1171,7 @@ window.__ModuleLoader__.load({
               void transact(retry, save)
             } }, L('重试')))
         : busy ? h(StatusLine, { key: 'status', state: { tone: 'pending', message: L('正在处理…') } }) : null
-      const pages = ['常规', '模型', '提示词', '用量与费用', '插件与工具', '外观', '数据共享']
+      const pages = ['常规', '模型', '提示词', '用量与费用', '插件与工具', '长期记忆', '原生能力', '聊天界面设计', '位置与隐私', '外观', '数据共享']
       const generalGroups = ['基本偏好', '聊天界面偏好', '本地文件访问', '数据管理', '隐私与清理']
       const general = (label, ...controls) => h('section', { key: label, hidden: generalPage !== label, className: 'chatds-settings-group' },
         h('h2', null, L(label)), ...controls)
@@ -1159,17 +1229,29 @@ window.__ModuleLoader__.load({
           general('本地文件访问', h(FileAccess, { settings, busy, transact, pickDirectory })),
           general('数据管理', h(DataSettings, { openData, active: generalPage === '数据管理' })),
         ],
-        模型: () => h(ModelManager, { settings, busy, transact }),
+        模型: () => h(React.Fragment, null,
+          h(Row, { label: L('语音识别'), description: L(settings.dshSpeechAvailable ? '跟随 DSH 语音服务' : '使用 DeepSeek 转写（需要凭据）'),
+            children: h('button', { type: 'button', onClick: () => openData('voice-settings') }, L('语音识别')) }),
+          h(Row, { label: L('语音朗读'), description: L('使用浏览器提供的本地语音') }),
+          h(Row, { label: L('图片理解'), description: L('选择目录中带视觉标记的模型。') }),
+          h(Row, { label: L('文字识别与生图'), description: L('当前 WebChat 未提供独立服务路由。') }),
+          h(ModelManager, { settings, busy, transact })),
         提示词: () => h(PromptManager, { settings, busy, transact }),
         用量与费用: () => h(CostManager, { settings, busy, transact, openCostMeter }),
         插件与工具: () => h(ToolManager, { openPlugins }),
+        长期记忆: () => h('button', { type: 'button', onClick: () => openData('memory') }, L('管理 ChatDS 本地记忆')),
+        原生能力: () => h(NativeCapabilities, { openPlugins, openData }),
         数据共享: () => h(SharingSettings, { openPlugins }),
+        聊天界面设计: () => h(Row, { label: L('聊天界面设计'),
+          children: h('button', { type: 'button', onClick: () => openData('design') }, L('打开实时设计器')) }),
+        位置与隐私: () => h(Row, { label: L('位置与隐私'),
+          children: h('button', { type: 'button', onClick: () => openData('privacy') }, L('管理位置设置')) }),
         外观: () => h(AppearanceSettings, { settings, busy, transact, theme }),
       }
       return h('section', { className: 'chatds-settings', 'aria-busy': busy },
         h('style', null, chatDSSettingsStyles),
         h('nav', { 'aria-label': L('ChatDS 设置') },
-          pages.map((label) => h('button', { key: label, type: 'button', 'aria-pressed': page === label, onClick: () => setPage(label) }, L(label)))),
+          pages.map((label) => h('button', { key: label, type: 'button', 'aria-pressed': page === label, onClick: () => setPage(label) }, L(label === '模型' ? '模型与接口' : label)))),
         // R8.6(P0):每页独立错误边界——单页渲染异常只降级该页卡片,导航仍可切换其他页。
         h('div', { className: 'chatds-settings-card' },
           h(SettingsBoundary, { key: page, label: page }, content[page]())), statusLine)
@@ -2109,6 +2191,30 @@ window.__ModuleLoader__.load({
 
     // ── 插件与工具(R8:官方注册表;全局授权滑块) ──
 
+    function NativeCapabilities({ openPlugins, openData }) {
+      const [status, setStatus] = React.useState(undefined)
+      React.useEffect(() => {
+        let active = true
+        apiGet('/api/integrations').then((value) => { if (active) setStatus(value.native ?? {}) },
+          () => { if (active) setStatus({}) })
+        return () => { active = false }
+      }, [])
+      const describe = (key) => {
+        if (status === undefined) return '正在读取插件状态…'
+        const item = status[key]
+        if (!item) return '状态不可用'
+        if (!item.installed) return '未安装'
+        if (!item.enabled) return '已安装但未启用'
+        return item.active ? '当前 Profile 中运行' : '已启用，服务未就绪'
+      }
+      return h(React.Fragment, null,
+        h('p', null, L('WebChat 会话隔离。由 DSH Translator 翻译思考，模型标题和历史搜索属于 ChatDS 兼容功能。')),
+        h('button', { type: 'button', onClick: () => openData('history') }, L('搜索 ChatDS 历史')),
+        ...Object.entries({ reasoningTranslation: '原生思考翻译', historySearch: '原生跨会话搜索', updatingTitle: '原生随对话更新标题' })
+          .map(([key, label]) => h(Row, { key, label: L(label), description: L(describe(key)) })),
+        h('button', { type: 'button', onClick: openPlugins }, L('前往 DSH 插件管理器')))
+    }
+
     function ToolManager({ openPlugins }) {
       const [catalog, setCatalog] = React.useState(null)
       const [error, setError] = React.useState('')
@@ -2144,7 +2250,7 @@ window.__ModuleLoader__.load({
         const receive = (event) => {
           if (event.source !== frame?.contentWindow || event.origin !== location.origin || event.data?.type !== 'chatds:active-session') return
           const id = event.data.id
-          const next = typeof id === 'string' && /^chatws-[a-f0-9-]{36}$/.test(id) ? id : null
+          const next = typeof id === 'string' && /^chatws-(?:local-)?[a-f0-9-]{36}$/.test(id) ? id : null
           current.current = next
           setSessionId(next)
         }
@@ -2360,12 +2466,10 @@ window.__ModuleLoader__.load({
         }, ({ close }) => h(SettingsBoundary, { label: 'ChatDS 设置', fallbackText: L('设置区暂时无法渲染，可以重试。') },
           h(ChatDSSettings, { theme, pickDirectory, openCostMeter: () => ctx.layout.selectPanel('settings'), openData(action) {
             const frame = document.querySelector('iframe[data-chatds-main]')
-            if (frame?.contentWindow) frame.contentWindow.postMessage({ type: 'chatds:data', action }, location.origin)
-            else {
-              pendingDataAction = action
-              ctx.layout.selectPanel(PANEL_ID)
-            }
             close?.()
+            if (frame?.contentWindow) frame.contentWindow.postMessage({ type: 'chatds:data', action }, location.origin)
+            else pendingDataAction = action
+            if (action !== 'clear-cache' || !frame?.contentWindow) ctx.layout.selectPanel(PANEL_ID)
           }, openPlugins: () => { close?.(); ctx.layout.selectPanel('plugins') } })))))
         // Account-enabled DSH profiles register their own launcher at priority 0.
         safeRegister('settings.launcher', () => ctx.slots.inject('settings.launcher', () =>
@@ -2374,16 +2478,26 @@ window.__ModuleLoader__.load({
         safeRegister('main', () => ctx.slots.inject('main', () =>
           ctx.slots.register({ name: 'main', key: PANEL_ID }, Panel)))
         // 左侧导航行(图标 + 名称)。选中后 layout.selectPanel(PANEL_ID) 切到上面的主面板。
-        safeRegister('sidebar.panellist', () => ctx.slots.inject('sidebar.panellist', () =>
-          ctx.slots.register(
-            {
-              name: 'sidebar.panellist',
-              id: PANEL_ID,
-              order: 10,
-              label: () => 'WebChat',
-            },
-            ChatWorkspaceIcon,
-          )))
+        safeRegister('sidebar.panellist', () => ctx.slots.inject('sidebar.panellist', () => {
+          const register = () => ctx.slots.register({
+            name: 'sidebar.panellist', id: PANEL_ID, order: 10, label: readNavigationLabel,
+          }, ChatWorkspaceIcon)
+          let label = readNavigationLabel()
+          let dispose = register()
+          const onStorage = (event) => {
+            if (event.key !== 'chatds:chat-design' && event.key !== null) return
+            const next = readNavigationLabel()
+            if (label === next || typeof dispose !== 'function') return
+            dispose()
+            dispose = register()
+            label = next
+          }
+          window.addEventListener('storage', onStorage)
+          return () => {
+            window.removeEventListener('storage', onStorage)
+            if (typeof dispose === 'function') dispose()
+          }
+        }))
         // ── R8.5(F09):Side Chat —— 右栏 tab(kind 全局唯一,与 dsh-better-sidebar 的 sidechat 不冲突)──
         // tab 类型注册经 ctx.inject 等待 sidebarRightTabs 服务就绪(官方 ui-subagent 同款模式);
         // guide 入口出现在右栏"+"页面。整条依赖同样失败隔离。
@@ -2428,7 +2542,7 @@ window.__ModuleLoader__.load({
             if (document.querySelector('img[src*="webchat-icon"]')) return true
             const navList = document.querySelector('[data-slot="sidebar.panellist"]') ?? document.querySelector('nav[aria-label]')
             if (!navList) return false
-            return Array.from(navList.querySelectorAll('button')).some((node) => (node.textContent ?? '').includes('WebChat'))
+            return Array.from(navList.querySelectorAll('button')).some((node) => (node.textContent ?? '').includes(readNavigationLabel()))
           }
           const removeBanner = () => {
             if (banner) { banner.remove(); banner = null }

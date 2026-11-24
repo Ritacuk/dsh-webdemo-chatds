@@ -1,0 +1,63 @@
+.dialog { width: min(820px, calc(100vw - 32px)); max-height: calc(100dvh - 24px); }
+.content { display: grid; gap: 16px; min-height: 0; overflow: auto; padding: 2px 4px 4px; }
+.card { min-width: 0; margin: 0; padding: 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; display: grid; gap: 10px; }
+.card legend { font-weight: 650; padding: 0 6px; }
+.card label { display: inline-flex; align-items: center; flex-wrap: wrap; gap: 8px; min-width: 0; }
+.card :is(button, select, input, textarea) { font: inherit; color: inherit; max-width: 100%; }
+.card :is(button, select, textarea, input:not([type=checkbox], [type=range], [type=file])) {
+  min-height: 32px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-specific-input-major); padding-inline: 8px;
+}
+.card button { justify-self: start; cursor: pointer; }
+.card button:disabled { opacity: .55; cursor: default; }
+.card :focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.card p { margin: 0; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.surface { display: grid; gap: 8px; padding-block: 8px; border-top: 1px solid var(--dsw-alias-border-l2); }
+.preview {
+  --preview-paper: #f7f8fc;
+  --preview-sidebar: #e7ecf7;
+  --preview-user: #dce7ff;
+  --preview-input: #fff;
+  display: flex; min-height: 186px; border-radius: 12px; overflow: hidden; isolation: isolate;
+  color: var(--chatds-text, #242b39); border: 1px solid var(--chatds-panel-border, var(--dsw-alias-border-l2));
+  background: color-mix(in srgb, var(--chatds-background-color, var(--preview-paper)) var(--chatds-background-alpha, 100%), transparent);
+  position: relative;
+}
+.preview::before {
+  content: ''; position: absolute; inset: 0; z-index: -1;
+  background: var(--chatds-image) center / var(--chatds-image-fit, cover) no-repeat;
+  opacity: var(--chatds-background-alpha, 100%);
+}
+.preview[data-tone=dark] {
+  --preview-paper: #21232d; --preview-sidebar: #303342; --preview-user: #3a4867; --preview-input: #373a49;
+  color: var(--chatds-text, #f0f1f8);
+}
+.previewSidebar {
+  width: min(35%, var(--preview-sidebar-width, 24%)); min-width: 70px; padding: 10px;
+  background: color-mix(in srgb, var(--chatds-sidebar-color, var(--preview-sidebar)) var(--chatds-sidebar-alpha, 100%), transparent);
+  border-inline-end: 1px solid var(--chatds-sidebar-border, transparent);
+}
+.preview[data-side=right] .previewSidebar { order: 1; border-inline-end: 0; border-inline-start: 1px solid var(--chatds-sidebar-border, transparent); }
+.previewChat { display: grid; flex: 1; gap: 6px; padding: 10px; min-width: 0; }
+.previewUser, .previewAssistant, .previewComposer { padding: 6px 10px; }
+.previewUser {
+  justify-self: end; border-radius: var(--chatds-user-radius, 22px);
+  background: color-mix(in srgb, var(--chatds-user-color, var(--preview-user)) var(--chatds-user-alpha, 100%), transparent);
+}
+.previewAssistant {
+  justify-self: start; border-radius: var(--chatds-assistant-radius, 22px);
+  background: color-mix(in srgb, var(--chatds-assistant-color, transparent) var(--chatds-assistant-alpha, 100%), transparent);
+}
+.previewComposer {
+  color: var(--chatds-secondary, inherit); border-radius: var(--chatds-composer-radius, 24px);
+  border: 1px solid var(--chatds-composer-border, transparent);
+  background: color-mix(in srgb, var(--chatds-composer-color, var(--preview-input)) var(--chatds-composer-alpha, 100%), transparent);
+}
+.previewPanel {
+  justify-self: end; padding: 2px 10px; border-radius: 8px;
+  border: 1px solid var(--chatds-panel-border, transparent);
+  background: color-mix(in srgb, var(--chatds-panel-color, var(--preview-input)) var(--chatds-panel-alpha, 100%), transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--chatds-divider-color, transparent) var(--chatds-divider-alpha, 100%), transparent);
+}
+.identity { display: flex; align-items: center; gap: 7px; margin-block-end: 6px; font-size: 13px; font-weight: 650; }
+.avatar { display: grid; place-content: center; width: 26px; height: 26px; flex: none; border-radius: 50%; object-fit: cover; background: var(--chat-surface-muted); }

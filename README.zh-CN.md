@@ -97,6 +97,17 @@ WebChat 提供一个独立的 **数据共享** 插件行，默认关闭，与 Ma
 
 安装、密码重设、备份及旧版本迁移见 [数据共享使用指南](docs/sharing-setup.md)。
 
+### 正式版与预发布版
+
+稳定版为 **0.12.1**。试用 **0.12.2-rc.1** 时，在独立 DSH Profile 安装 `dsh-webdemo-chatds@next`。回到稳定版时，在相同 Profile 安装 `dsh-webdemo-chatds@0.12.1`。
+
+```sh
+dsh plugin --profile web add dsh-webdemo-chatds@next
+dsh plugin --profile web add dsh-webdemo-chatds@0.12.1
+```
+
+旧历史和分支沿用 ChatDS 原有隔离存储，升级无需搬迁。会话栏更多菜单可搜索标题及正文。长期记忆设置打开 ChatDS 本地记忆管理，记忆注入、自动提炼及额外模型标题更新均由用户主动开启。展开思考后可选择逐段翻译，使用 DSH 配置的免费翻译服务。见 [Session 桥接指南](docs/session-bridge.md)。
+
 ## 安装
 
 ### 需要什么？

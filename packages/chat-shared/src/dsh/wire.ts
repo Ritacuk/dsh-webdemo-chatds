@@ -240,7 +240,26 @@ export type WireHealth = {
 }
 
 /** 设置(P2-I):运行时可变默认值,存 KV 域 global;部署级默认在插件行 Config。 */
+export interface HistoryHit {
+  id: string
+  title: string
+  messageId?: string
+  excerpt: string
+  at: number
+}
+export interface ChatDSMemory {
+  id: string
+  text: string
+  category: string
+  partition: string | null
+  source?: string
+  updatedAt: number
+}
 export interface WorkspaceSettings {
+  compatTitle?: boolean
+  memoryInject?: boolean
+  memoryExtract?: boolean
+  memoryBudget?: number
   interfaceLanguage: 'browser' | 'zh-CN' | 'en-US' | 'ja-JP'
   sendShortcut: 'enter' | 'ctrl-enter'
   enableVoiceInput: boolean
@@ -316,6 +335,7 @@ export interface WorkspaceSettings {
   voiceAvailable?: boolean
   /** DSH 语音输入组件是否可用(提供本地/已配置的转写引擎)。 */
   dshSpeechAvailable?: boolean
+  dshSpeechProviders?: { id: string; name: string }[]
 }
 
 /** 会话级持久化偏好(P2-A:随会话保存,切换会话恢复)。 */

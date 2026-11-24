@@ -1,0 +1,15 @@
+.dialog { width: min(680px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); }
+.body { display: grid; gap: 12px; min-height: 0; overflow: auto; padding: 3px; }
+.form, .buttons { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.body label { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.body :is(button, input, select, textarea), .translation button {
+  color: inherit; background: var(--dsw-specific-input-major); border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px; padding: 5px 8px; font: inherit; max-width: 100%; box-sizing: border-box;
+}
+.body button, .translation button { cursor: pointer; }
+.body button:disabled { opacity: .5; cursor: default; }
+.results { margin: 0; padding: 0; list-style: none; }
+.results li { display: grid; gap: 4px; padding-block: 8px; border-bottom: 1px solid var(--dsw-alias-border-l2); }
+.results li > button { text-align: start; }
+.translation > small { display: block; }
+.translated { white-space: pre-wrap; overflow-wrap: anywhere; }

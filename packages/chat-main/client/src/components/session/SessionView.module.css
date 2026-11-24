@@ -18,7 +18,7 @@
   height: 60px;
   padding: 12px 18px 0;
   box-sizing: border-box;
-  background: var(--dsw-alias-bg-base);
+  background: color-mix(in srgb, var(--chatds-background-color, var(--dsw-alias-bg-base)) var(--chatds-background-alpha, calc(var(--chat-bg-alpha, 1) * 100%)), transparent);
 }
 
 .title {
@@ -50,8 +50,8 @@
     to bottom,
     transparent 0%,
     transparent 30%,
-    var(--dsw-alias-bg-base) 30%,
-    var(--dsw-alias-bg-base) 100%
+    color-mix(in srgb, var(--chatds-background-color, var(--dsw-alias-bg-base)) var(--chatds-background-alpha, calc(var(--chat-bg-alpha, 1) * 100%)), transparent) 30%,
+    color-mix(in srgb, var(--chatds-background-color, var(--dsw-alias-bg-base)) var(--chatds-background-alpha, calc(var(--chat-bg-alpha, 1) * 100%)), transparent) 100%
   );
 }
 
@@ -74,3 +74,5 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 }
+
+[data-chatds-side=right] .withCollapsedSider { margin-left: 0; margin-right: 113px; }

@@ -60,6 +60,10 @@ const ModelRefSchema = z.object({
 })
 
 const SettingsPatchSchema = z.object({
+  compatTitle: z.boolean().optional(),
+  memoryInject: z.boolean().optional(),
+  memoryExtract: z.boolean().optional(),
+  memoryBudget: z.number().int().min(128).max(2048).optional(),
   interfaceLanguage: z.enum(['browser', 'zh-CN', 'en-US', 'ja-JP']).optional(),
   sendShortcut: z.enum(['enter', 'ctrl-enter']).optional(),
   enableVoiceInput: z.boolean().optional(),
@@ -169,6 +173,7 @@ const workspaceDomainSpec = (name: string) => defineDomain({
         deviceId: z.uuid(), deviceName: z.string().max(64), createdAt: z.iso.datetime(), receivedAt: z.iso.datetime(),
       }).optional(),
       manualTitle: z.string().optional(),
+      compatTitle: z.string().optional(),
       pinned: z.boolean().optional(),
       archived: z.boolean().optional(),
       /** R8.5:附件上传/交接单预建的占位会话;首条用户消息落盘前不出现在历史列表。 */
@@ -179,6 +184,11 @@ const workspaceDomainSpec = (name: string) => defineDomain({
       hidden: z.boolean(),
     })),
     session_pins: domainTable(z.object({ pinned: z.boolean() })),
+    reasoning_translations: domainTable(z.object({ text: z.string().max(500_000) })),
+    memories: domainTable(z.object({
+      id: z.uuid(), text: z.string().max(600), category: z.string().max(80), partition: z.uuid().nullable(),
+      source: z.string().max(120).optional(), updatedAt: z.number().int().nonnegative(),
+    })),
     session_logs: domainTable(z.object({ snapshot: z.string() })),
     prefs: domainTable(z.object({
       key: z.string().min(1),

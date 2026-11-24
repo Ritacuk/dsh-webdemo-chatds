@@ -51,15 +51,17 @@ const write = (key: string, value: string | null) => {
 }
 
 /** 应用语言默认跟随浏览器语言 */
-export const isChineseBrowser = (): boolean =>
-  (typeof navigator === 'undefined' ? 'zh' : navigator.language).toLowerCase().startsWith('zh')
+export const browserLocale = (): Locale => {
+  const language = (typeof navigator === 'undefined' ? 'zh' : navigator.language).toLowerCase()
+  return language.startsWith('zh') ? 'zh-CN' : language.startsWith('ja') ? 'ja-JP' : 'en-US'
+}
 
 const initialLocale = (): Locale => {
   const saved = read(KEYS.locale)
   if (saved === 'zh-CN' || saved === 'en-US' || saved === 'ja-JP') {
     return saved
   }
-  return isChineseBrowser() ? 'zh-CN' : 'en-US'
+  return browserLocale()
 }
 
 /** 未保存过时跟随系统 */

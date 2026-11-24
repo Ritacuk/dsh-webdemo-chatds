@@ -27,3 +27,15 @@ Kept truthful and version-stamped. Last updated: 2026-11-21 (0.9.0-rc.8).
 ## Import/export
 
 - Archives whose attachments were originally cloud-only references cannot restore the underlying blobs; the UI states this explicitly and preserves the metadata.
+
+## 0.12.2 local candidate
+
+The WebChat conversation sidebar can move within its own panel. Native DSH right-side tabs attach to native sessions and remain the integration point for Agent Side Chat.
+
+The detected DSH 0.2.2-rc.5 translation and automatic title providers depend on managed DSH sessions. Detached WebChat sessions use their own single reasoning display and the DSH deterministic title fallback. The experimental session-search service is isolated in its bundle, and dsh-context 0.84.1 exposes context projections. WebChat has no public, permission-scoped access to their native search or memory management operations.
+
+Voice selection uses a registered DSH speech provider. Local browser voices can read replies; audio output availability depends on the OS and browser. Vision follows DSH model metadata. Standalone OCR, image generation, and continuous calls are unavailable in this candidate.
+
+## 0.12.2-rc.1 preview
+
+ChatDS remains the authority for its isolated conversation history. The preview directly calls the DSH Translator for confirmed Bing or Google reasoning requests. Paid translation and automatic use of native title providers require managed Sessions. Full-text search and memory are local ChatDS capabilities with profile scope. Model-assisted titles and memory extraction are optional generic-model requests. The stable npm channel is 0.12.1.

@@ -80,7 +80,7 @@ body[data-chat-density="relaxed"] [data-webchat-column] > * {
   body[data-chat-glass="strong"] [data-webchat-session="full"] [data-webchat-composer],
   body[data-chat-glass="light"] [data-webchat-welcome] [data-webchat-composer],
   body[data-chat-glass="strong"] [data-webchat-welcome] [data-webchat-composer] {
-    background: color-mix(in srgb, var(--dsw-specific-input-major, Canvas) var(--chat-glass-opacity, 80%), transparent);
+    background: color-mix(in srgb, var(--chatds-composer-color, var(--dsw-specific-input-major, Canvas)) var(--chatds-composer-alpha, var(--chat-glass-opacity, 80%)), transparent);
     backdrop-filter: var(--chat-glass-blur, none);
     -webkit-backdrop-filter: var(--chat-glass-blur, none);
   }

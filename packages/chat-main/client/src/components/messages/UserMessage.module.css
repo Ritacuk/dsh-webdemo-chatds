@@ -31,11 +31,11 @@
   max-width: calc(100% - 88px);
   box-sizing: border-box;
   padding: 10px 16px;
-  border-radius: var(--chat-bubble-radius, 22px);
+  border-radius: var(--chatds-user-radius, var(--chat-bubble-radius, 22px));
   font-size: var(--chat-reading-size, 16px);
   line-height: var(--chat-reading-line, 1.5);
   color: var(--dsw-alias-label-primary);
-  background-color: var(--dsw-specific-bubble);
+  background-color: color-mix(in srgb, var(--chatds-user-color, var(--dsw-specific-bubble)) var(--chatds-user-alpha, 100%), transparent);
   white-space: pre-wrap;
   word-break: break-word;
 }

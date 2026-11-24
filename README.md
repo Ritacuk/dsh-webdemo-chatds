@@ -86,6 +86,17 @@ The DeepSeek Demo-based default interface is kept, plus **free appearance settin
 
 The interface offers Chinese, English, and Japanese; switching the UI language does not translate existing chats.
 
+### Stable and preview channels
+
+Stable is pinned to **0.12.1**. To evaluate **0.12.2-rc.1**, install `dsh-webdemo-chatds@next` in a separate DSH profile. To return to stable, install `dsh-webdemo-chatds@0.12.1` in that profile.
+
+```sh
+dsh plugin --profile web add dsh-webdemo-chatds@next
+dsh plugin --profile web add dsh-webdemo-chatds@0.12.1
+```
+
+The preview keeps ChatDS history and branches in their current isolated storage, so upgrade and rollback do not require moving old conversations. The conversation list menu opens ChatDS history search. The Long-term memory settings page opens ChatDS's own local, profile-scoped memory; injection, automatic extraction and generic-model titles are optional. Each expanded reasoning paragraph can be translated with an enabled DSH Translator and a free configured provider after confirming the service. See the [session bridge guide](docs/session-bridge.md).
+
 ### 6. Data sharing between your own devices (opt-in)
 
 WebChat ships an optional **Data Sharing** plugin row. It is disabled by default and is separate from Main and Side Chat. Turn it on in the DSH plugin manager when you want to move selected chats between devices you own.

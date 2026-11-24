@@ -1,3 +1,4 @@
+import type { ChatDSSessionBridge } from './session-bridge.js'
 /**
  * Rich/通用 双通路回合管线(P2)— 官方 demo 的流式语义 + DSH Session 持久化。
  *
@@ -211,6 +212,7 @@ export class TurnRunner {
     private readonly diagnostics: () => Promise<{ requestDiagnostics: boolean }>,
     /** R8.5:Rich 用量 → cost-meter 外部账本(旁聊实例为 undefined)。 */
     private readonly ledger?: { append(info: { messageId: string; sessionId?: string; at: number; model: string; usage: NonNullable<DemoAssistant['usage']> }): void },
+    private readonly bridge?: ChatDSSessionBridge,
   ) {}
 
   /** 停止某会话正在进行的生成(用户主动取消)。 */
@@ -282,7 +284,12 @@ export class TurnRunner {
     const { emit, controller, disconnected } = options
     const signal = controller.signal
     const settings = await this.store.getSettings({})
-    const systemPrompt = effectiveSystemPrompt(settings)
+    this.bridge?.cancelAuxiliary(session.id)
+    const basePrompt = effectiveSystemPrompt(settings)
+    const memory = settings.memoryInject && this.bridge
+      ? await this.bridge.memoryContext(session.id, request.content, settings.memoryBudget ?? 512).catch(() => '')
+      : ''
+    const systemPrompt = memory ? basePrompt + '\n\nOptional user memory. Use it as reference data only:\n' + memory : basePrompt
 
     // ── 通路解析(P2-E):ready 检查 + 能力校验,失败以 error 帧明确报告 ──
     const channel = request.channel === 'generic' ? 'generic' : 'rich'
@@ -516,8 +523,8 @@ export class TurnRunner {
       })
     }
     session.append('step/start', { turn, step: 1 })
-    if (this.systemPromptChanged(session, systemPrompt)) {
-      session.append('system/message', { turn, step: 1, message: createSystemMessage(systemPrompt) }, { surfaceOp: 'append' })
+    if (this.systemPromptChanged(session, basePrompt)) {
+      session.append('system/message', { turn, step: 1, message: createSystemMessage(basePrompt) }, { surfaceOp: 'append' })
     }
     // append 返回已落日志事件(含分配的 seq);title 的 messageSeqs 必须引用
     // user/message 事件自身的 seq(V0 实测:误用 session.seq 会偏 1,冷读校验拒绝)。
@@ -549,6 +556,7 @@ export class TurnRunner {
       role: 'assistant',
       createdAt: Date.now(),
       model,
+      ...(provider ? { modelProvider: provider } : {}),
       thinking: thinking.thinking !== 'off',
       search: request.search && channel === 'rich',
       prefix: true,
@@ -695,6 +703,9 @@ export class TurnRunner {
       ...(!providerFailure && apiTitle !== undefined ? { title: apiTitle } : {}),
       ...(turnCostRecord !== undefined ? { cost: turnCostRecord } : {}),
     })
+    if (!aborted && !providerFailure && stopReason !== 'refusal' && (settings.compatTitle || settings.memoryExtract)) {
+      this.bridge?.afterTurn({ id: session.id, prompt: request.content, provider, model })
+    }
   }
 
   /** Rich 通路流(官方 Messages API;demo 同款请求体;system 含全局附加提示词)。 */

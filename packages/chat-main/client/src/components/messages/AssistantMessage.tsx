@@ -1,3 +1,5 @@
+import { readLocalReply } from '../../services/speech/read-reply.js'
+import { AssistantIdentity } from '../design/ChatDesign.js'
 import { useTranslate } from '../../i18n/index.js'
 import clsx from 'clsx'
 import { memo, useEffect, useRef, useState } from 'react'
@@ -83,20 +85,12 @@ export const AssistantMessage = memo(function AssistantMessage({
           setReading(false)
           return
         }
-        const lang = /[\u3400-\u9fff]/u.test(copyText) ? 'zh' : 'en'
-        const voice = speech.getVoices().find((voice) => voice.localService && voice.lang.toLowerCase().startsWith(lang))
-        if (!voice) { showToast(t('noLocalVoice')); return }
-        speech.cancel()
-        const request = new SpeechSynthesisUtterance(copyText
-          .replace(/^`{3}[^\n]*[\s\S]*?^`{3}/gm, '').replace(/^#{1,6}\s/gm, ''))
-        request.voice = voice
-        request.lang = voice.lang
-        const finished = () => { if (utterance.current === request) { utterance.current = null; setReading(false) } }
-        request.onend = finished
-        request.onerror = finished
+        const request = readLocalReply(copyText, () => {
+          if (utterance.current === request) { utterance.current = null; setReading(false) }
+        })
+        if (!request) { showToast(t('noLocalVoice')); return }
         utterance.current = request
         setReading(true)
-        speech.speak(request)
       },
     })
   }
@@ -112,11 +106,13 @@ export const AssistantMessage = memo(function AssistantMessage({
   })
   return (
     <div className={styles.message} data-chat-message={message.id} data-chat-role="assistant">
+      <AssistantIdentity model={message.model && message.modelProvider ? `${message.modelProvider}:${message.model}` : message.model} />
       {branchPickerOpen && (
         <WorkBranchPicker sessionId={sessionId} messageId={message.id} onClose={() => setBranchPickerOpen(false)} onCreated={openBranch} />
       )}
       {refused ? null : (
         <ReplyArea
+          sessionId={sessionId}
           message={message}
           view={view}
           streaming={streaming}
@@ -191,7 +187,7 @@ export const AssistantMessage = memo(function AssistantMessage({
         <div className={styles.modelBadge} role="status">{t('replyStopped')}</div>
       ) : null}
       {!streaming && !refused && message.model !== null ? (
-        <div className={styles.modelBadge}>模型: {String(message.model)}</div>
+        <div className={styles.modelBadge}>{t('replyModelName', { model: message.model })}</div>
       ) : null}
       {!streaming && !refused ? <UsageLine message={message} richCost={richCost} /> : null}
       {streaming ? null : (

@@ -1,3 +1,5 @@
+import { SiderResize } from './SiderResize.js'
+import { useSettings } from '../../services/settings.js'
 import clsx from 'clsx'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslate } from '../../i18n/index.js'
@@ -22,10 +24,12 @@ import styles from './Sider.module.css'
  * P2-I: 底部设置入口打开工作区设置对话框(SettingsDialog)。
  * R8.5:与 demo 的 newChat 一致——只清空 activeId 回到欢迎页,首条消息提交才创建会话。
  */
-type DataAction = (action: 'import' | 'export' | 'shared') => void
+type DataAction = (action: 'import' | 'export' | 'shared' | 'history' | 'memory') => void
 
-export const Sider = ({ mobile = false, onData, sharingEnabled = false }: { mobile?: boolean; onData: DataAction; sharingEnabled?: boolean }) => {
+export const Sider = ({ mobile = false, onData, sharingEnabled = false, onDesign }: { mobile?: boolean; onData: DataAction; sharingEnabled?: boolean; onDesign: () => void }) => {
   const t = useTranslate()
+  const locale = useSettings((state) => state.locale)
+  const designLabel = { 'zh-CN': '聊天界面设计', 'en-US': 'Chat interface design', 'ja-JP': 'チャット画面のデザイン' }[locale]
   const sessions = useChatStore((state) => state.sessions)
   const activeId = useChatStore((state) => state.activeId)
   const settings = useChatStore((state) => state.settings)
@@ -130,6 +134,11 @@ export const Sider = ({ mobile = false, onData, sharingEnabled = false }: { mobi
           fontWeight: settings?.sidebarTitleWeight,
         }}>{title}</div>
         <Menu options={[
+          { key: 'history', label: { 'zh-CN': '搜索聊天历史', 'en-US': 'Search chat history', 'ja-JP': 'チャット履歴を検索' }[locale],
+            icon: null, onSelect: () => { closeMobileSider(); onData('history') } },
+          { key: 'memory', label: { 'zh-CN': 'ChatDS 本地记忆', 'en-US': 'ChatDS local memory', 'ja-JP': 'ChatDS ローカル記憶' }[locale],
+            icon: null, onSelect: () => { closeMobileSider(); onData('memory') } },
+          { key: 'design', label: designLabel, icon: null, onSelect: () => { closeMobileSider(); onDesign() } },
           { key: 'partition', label: t('newPartition'), icon: null, onSelect: () => setAdding(true) },
           ...(sharingEnabled ? [{ key: 'shared', label: t('sharedExcerpts'), icon: null, onSelect: () => { closeMobileSider(); onData('shared') } }] : []),
           { key: 'import', label: t('historyImport'), icon: null, onSelect: () => { closeMobileSider(); onData('import') } },
@@ -245,12 +254,13 @@ export const Sider = ({ mobile = false, onData, sharingEnabled = false }: { mobi
           {t('deleteSessionWithFilesDescription')}
         </Modal>
       ) : null}
+      {!mobile && <SiderResize />}
     </div>
   )
 }
 
 /** 移动端抽屉：浮在页面上方，点空白区域关闭。 */
-export const MobileSider = ({ onData, sharingEnabled }: { onData: DataAction; sharingEnabled?: boolean }) => {
+export const MobileSider = ({ onData, sharingEnabled, onDesign }: { onData: DataAction; sharingEnabled?: boolean; onDesign: () => void }) => {
   const open = useMobileSider((state) => state.open)
   if (!open) {
     return null
@@ -259,7 +269,7 @@ export const MobileSider = ({ onData, sharingEnabled }: { onData: DataAction; sh
     <>
       <div className={styles.drawerMask} onClick={closeMobileSider} />
       <div className={styles.drawer}>
-        <Sider mobile onData={onData} sharingEnabled={sharingEnabled} />
+        <Sider mobile onData={onData} sharingEnabled={sharingEnabled} onDesign={onDesign} />
       </div>
     </>
   )

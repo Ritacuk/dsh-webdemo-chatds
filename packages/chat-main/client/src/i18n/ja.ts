@@ -6,6 +6,18 @@
 import type { zh } from './zh.js'
 
 export const ja = {
+  replyModelName: "モデル：{model}",
+  localInputRefusal: "キーワードルールに該当したため、メッセージは入力欄に残っています。",
+  toolPermissions: "ツールの権限",
+  toolPermissionOpenSession: "会話を開くと、その会話のツールを許可できます。",
+  toolPermissionHelp: "対応モデルの Plan モードでローカル検索を有効にすると利用できます。",
+  toolPermissionSearch: "許可済みフォルダーを検索",
+  toolPermissionRead: "許可済みファイルの一部を読む",
+  toolPermissionLoading: "ローカルツールの権限を読み込んでいます…",
+  toolPermissionApproval: "承認が必要なツールは DSH Agent で利用できます。",
+  attachCity: "このメッセージに都市を追加",
+  cityContext: "都市：{city}",
+  citySharing: "送信すると、この都市が選択したモデルサービスに共有されます。",
   branchSourceDetails: '分岐の送信元',
   partitions: "チャット区分",
   newPartition: "区分を作成",

@@ -21,6 +21,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { interruptedTurnClosers, Session, SessionId, SessionLogOffset } from '@deepseek-ai/dsh-session'
 import type { SessionEvent, SessionHeader } from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-session-projection'
+import { fallbackSessionTitle } from '@deepseek-ai/dsh-session-title'
 import type { SessionHandle } from '@deepseek-ai/dsh-session-persistence'
 import {
   dshContentToReplyBlocks,
@@ -397,6 +398,7 @@ export class WorkspaceSessions {
     const table = domain.table('sessions')
     const events = session.snapshotEvents(SessionLogOffset(0))
     let title: string | null = null
+    let firstPromptTitle: string | undefined
     const messageCount = events.filter(
       (event) => event.type === 'user/message' || event.type === 'assistant/message' || (event.type as string) === sharedMessageRecord,
     ).length
@@ -414,17 +416,24 @@ export class WorkspaceSessions {
         remoteSources.set(source.deviceId, source.deviceName)
         lastActivity = Math.max(lastActivity, Date.parse(source.createdAt))
       } else if (event.type === 'user/message') {
+        if (!firstPromptTitle) {
+          const prompt = event.data.content.flatMap((part) => part.type === 'text' ? [part.text] : []).join(' ').trim()
+          firstPromptTitle = fallbackSessionTitle(prompt, 5, 40)
+        }
         lastActivity = Math.max(lastActivity, importedTimes.get(event.data.id) ?? event.time)
       } else if (event.type === 'assistant/message') {
         lastActivity = Math.max(lastActivity, importedTimes.get(event.data.message.id) ?? event.time)
       }
     }
+    const nativeTitle = this.ctx.get?.('sessionTitle')
+    if (typeof nativeTitle?.get === 'function') title = nativeTitle.get(session)?.title ?? title
     // R8.5:draft 占位在首条消息落盘时解除;此后与普通会话一致。
     const pendingDraft = this.pendingDraft.has(session.id)
     if (messageCount > 0) this.pendingDraft.delete(session.id)
     const next = (previous?: ReturnType<typeof table.get>) => ({
       id: session.id,
-      title: previous?.manualTitle ?? title,
+      title: previous?.manualTitle ?? title ?? previous?.compatTitle ?? firstPromptTitle ?? null,
+      ...(previous?.compatTitle === undefined ? {} : { compatTitle: previous.compatTitle }),
       ...(previous?.manualTitle === undefined ? {} : { manualTitle: previous.manualTitle }),
       ...(previous?.pinned === undefined ? {} : { pinned: previous.pinned }),
       ...(previous?.archived === undefined ? {} : { archived: previous.archived }),
@@ -685,6 +694,7 @@ export function replayChatSession(events: readonly SessionEvent[]) {
         role: 'assistant',
         createdAt: origin?.createdAt ?? event.time,
         model: data.message.source.model ?? null,
+        ...(data.message.source.provider && data.message.source.provider !== 'deepseek-rich' ? { modelProvider: data.message.source.provider } : {}),
         prefix: origin === undefined,
         ...(origin ? { thinking: origin.thinking, search: origin.search } : {}),
         ...(origin?.status === 'CONTENT_FILTER' ? { stopReason: 'refusal' as const } : {}),
